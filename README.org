@@ -1,1 +1,8 @@
-* Closure Web Engine
+#+TITLE: Closure Web Engine
+
+Home page: https://closure.common-lisp.dev/
+
+Plan: Resurect this seemingly abandoned project to provide a Lisp-native
+renderer for the https://nyxt.atlas.engineer browser.
+
+Other Git repository: https://github.com/dym/closure.
