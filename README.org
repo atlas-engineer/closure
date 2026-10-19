@@ -36,9 +36,10 @@ surface here and a window surface on each operating system. JavaScript is
 not executed yet; bind =closure.engine:*script-evaluator*= when that engine
 is added.
 
-The engine parses HTML5, cascades author and user-agent CSS (including
-flex, grid, tables, positioned boxes, media queries, custom properties,
-and =calc=), lays the box tree out, and paints with Cairo.
+The engine parses HTML5, runs classic scripts with its own JavaScript
+interpreter, cascades author and user-agent CSS (including flex, grid,
+tables, positioned boxes, media queries, custom properties, and =calc=),
+lays the box tree out, and paints with Cairo.
 
 #+begin_src lisp
 (ql:quickload :closure/engine)
