@@ -115,8 +115,10 @@
                                                                    (glisp:g/read-byte input nil nil)))
                                                                ((null x))
                                                              (write-char (code-char x) bag))))))
-                      ((member mime-type (list (netlib:find-mime-type "text/html")))
-                       (sgml::parse-html input charset))
+                      ((member mime-type (list (netlib:find-mime-type "text/html")
+                                               (netlib:find-mime-type "application/xhtml+xml")))
+                       ;; HTML5-compatible parse (html5lib algorithm → SGML PT)
+                       (closure.html5:parse-html input charset))
                       ((member mime-type (list (netlib:find-mime-type "text/xml")))
                        (cxml:parse-stream input (rune-dom:make-dom-builder) :recode nil))
 

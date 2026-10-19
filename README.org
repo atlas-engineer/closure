@@ -6,3 +6,42 @@ Plan: Resurect this seemingly abandoned project to provide a Lisp-native
 renderer for the https://nyxt.atlas.engineer browser.
 
 Other Git repository: https://github.com/dym/closure.
+
+* Modern HTML5 support
+
+Closure parses HTML with [[https://github.com/copyleft/cl-html5-parser][cl-html5-parser]] (an html5lib port). Documents are
+converted into Closure's SGML PT model for the existing renderer. Semantic
+HTML5 elements are covered in =resources/css/default.css=.
+
+** Requirements
+
+- SBCL (tested with 2.6.9 from https://www.sbcl.org/)
+- Quicklisp
+- McCLIM and other Quicklisp dependencies (see =closure.asd=)
+
+** HTML5 compatibility tests
+
+Run the html5lib suite plus Closure's HTML5→PT smoke tests (no GUI required):
+
+#+begin_src lisp
+(ql:quickload :closure/html5-tests)
+(asdf:test-system :closure/html5-tests)
+#+end_src
+
+* Layout and paint engine
+
+=closure/engine= is Closure's own renderer. It does not use McCLIM. Cairo is
+the cross-platform raster backend: the same paint path targets an image
+surface here and a window surface on each operating system. JavaScript is
+not executed yet; bind =closure.engine:*script-evaluator*= when that engine
+is added.
+
+The engine parses HTML5, cascades author and user-agent CSS (including
+flex, grid, tables, positioned boxes, media queries, custom properties,
+and =calc=), lays the box tree out, and paints with Cairo.
+
+#+begin_src lisp
+(ql:quickload :closure/engine)
+(closure.engine:render-html "<h1>Hello</h1>" :output #p"/tmp/page.png")
+(asdf:test-system :closure/engine)
+#+end_src

@@ -81,10 +81,18 @@
      (:file "match"
 	    :depends-on ("package" dependent "util"))))
 
+;;; HTML5 parser bridge (no GUI / McCLIM required)
+(asdf:defsystem closure/html5
+    :pathname "src/html/"
+    :default-component-class closure-source-file
+    :depends-on (:glisp :cl-html5-parser)
+    :components
+    ((:file "html5")))
 
 (asdf:defsystem closure
     :depends-on (:mcclim
                  :glisp
+                 :closure/html5
 		 :bordeaux-threads
 		 :drakma
 		 ;;:iolib
@@ -224,3 +232,33 @@
 	  CLOSURE-SYSTEM:+OPTIMIZE-NORMAL+
 	  CLOSURE-SYSTEM:+OPTIMIZE-VERY-FAST-TRUSTED+
 	  CLOSURE-SYSTEM:+OPTIMIZE-FAST+))
+
+(asdf:defsystem closure/html5-tests
+  :depends-on (:closure/html5 :cl-html5-parser-tests)
+  :pathname "tests/"
+  :components ((:file "html5-compat"))
+  :perform (asdf:test-op (o c)
+             (uiop:symbol-call :closure-html5-tests
+                               :run-html5-compatibility-tests)))
+
+;;; Layout and paint engine. Cairo is the raster backend. No McCLIM.
+(asdf:defsystem :closure/engine
+  :depends-on (:cl-html5-parser :cffi)
+  :pathname "src/engine/"
+  :serial t
+  :components ((:file "package")
+               (:file "cairo")
+               (:file "dom")
+               (:file "css")
+               (:file "layout")
+               (:file "paint")
+               (:file "engine"))
+  :perform (asdf:test-op (o c)
+             (asdf:test-system :closure/engine-tests)))
+
+(asdf:defsystem :closure/engine-tests
+  :depends-on (:closure/engine)
+  :pathname "tests/"
+  :components ((:file "engine"))
+  :perform (asdf:test-op (o c)
+             (uiop:symbol-call :closure.engine.tests :run-tests)))

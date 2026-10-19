@@ -81,12 +81,15 @@ IMG { margin: 2px 2px; }
 
 /* inline */
     A, ABBR, ACRONYM, B, BIG, CODE, DFN, EM, FONT, I, IMG, INPUT, KBD,
-    Q, S, SAMP, SMALL, SPAN, STRIKE, STRONG, SUB, SUP, TT, U, VAR, CITE, BDO, LABEL
+    Q, S, SAMP, SMALL, SPAN, STRIKE, STRONG, SUB, SUP, TT, U, VAR, CITE, BDO, LABEL,
+    MARK, TIME, DATA, METER, PROGRESS, OUTPUT, RUBY, RT, RP, BDI, WBR
             { display: inline; }
     
 /* block */
     BR, ADDRESS, BLOCKQUOTE, BODY, CENTER, DD, DIR, DIV, DL, DT, FORM, H1, H2,
-    H3, H4, H5, H6, HR, IFRAME, MENU, OL, P, PRE, TD, TH, UL, NOFRAMES
+    H3, H4, H5, H6, HR, IFRAME, MENU, OL, P, PRE, TD, TH, UL, NOFRAMES,
+    ARTICLE, ASIDE, SECTION, NAV, HEADER, FOOTER, MAIN, FIGURE, FIGCAPTION,
+    DETAILS, SUMMARY, DIALOG
             { display: block; }
     
 /* special */
@@ -98,8 +101,13 @@ IMG { margin: 2px 2px; }
     
 /* none  */
     AREA, BASE, BASEFONT, COL, COLGROUP, ISINDEX, SCRIPT, OPTION,
-    STYLE, PARAM, LEGEND, CAPTION, OPTGROUP
+    STYLE, PARAM, LEGEND, CAPTION, OPTGROUP, TEMPLATE, SLOT
             { display: none; }
+
+/* HTML5 media / embedded */
+VIDEO, AUDIO, CANVAS { display: inline; }
+SOURCE, TRACK { display: none; }
+PICTURE { display: inline; }
     
 /* don't know (have to look up) */
 APPLET   {display: none; } /* ??? */

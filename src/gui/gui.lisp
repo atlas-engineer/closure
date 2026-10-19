@@ -409,20 +409,23 @@
     (setf *ht* (slurp-patterns "resources/patterns/english.ptn"))
     (princ " done.") )
   ||#
+  ;; HTML5 parsing no longer requires the HTML 4 SGML DTD. Keep optional
+  ;; loading for any remaining SGML-only code paths.
   (unless closure-html:*html-dtd*
-    (cond 
-     ;; xxx hack
-     ((probe-file (compile-file-pathname "html-dtd.lisp"))
-      (format T "~&;; Loading DTD ")
-      (setf closure-html:*html-dtd* (sgml::undump-dtd "html-dtd"))
-      (princ " done.")
-      (finish-output))
-     (t
-      (format T "~&;; Parsing DTD ")
-      (sgml:slurp-catalog (url:parse-url "file://closure/resources/dtd/catalog"))
-      (setf closure-html:*html-dtd* (sgml:parse-dtd '(:public "-//W3C//DTD HTML 4.0 Frameset//EN")))
-      (princ " done.")
-      (finish-output))))
+    (ignore-errors
+      (cond
+        ((probe-file (compile-file-pathname "html-dtd.lisp"))
+         (format T "~&;; Loading DTD ")
+         (setf closure-html:*html-dtd* (sgml::undump-dtd "html-dtd"))
+         (princ " done.")
+         (finish-output))
+        (t
+         (format T "~&;; Parsing DTD (optional) ")
+         (sgml:slurp-catalog (url:parse-url "file://closure/resources/dtd/catalog"))
+         (setf closure-html:*html-dtd*
+               (sgml:parse-dtd '(:public "-//W3C//DTD HTML 4.0 Frameset//EN")))
+         (princ " done.")
+         (finish-output))))))
 
   (unless r2::*default-style-sheet* 
     (format T "~&;; Parsing default style sheet ...")
