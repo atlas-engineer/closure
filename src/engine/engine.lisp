@@ -23,6 +23,7 @@ script element after style and layout. Left unset until that engine exists.")
    h3 { font-size: 1.17em; margin-top: 1em; margin-bottom: 1em; }
    p, ul, ol, dl, blockquote, pre { margin-top: 1em; margin-bottom: 1em; }
    ul, ol { padding-left: 40px; }
+   dd { margin-left: 40px; }
    ul { list-style-type: disc; }
    ol { list-style-type: decimal; }
    li { display: list-item; }
