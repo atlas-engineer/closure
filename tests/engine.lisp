@@ -111,8 +111,29 @@
       (check "perf layout finished" laid)
       (check "perf under 8s" (< dt 8d0)))))
 
+(defun test-javascript ()
+  (let* ((html "<h1 id='title'>Old</h1>
+                <p id='out'></p>
+                <script>
+                  var n = 2 + 3 * 4;
+                  function shout(x) { return x + '!'; }
+                  var el = document.getElementById('title');
+                  el.textContent = shout('JS');
+                  document.getElementById('out').innerHTML = '<div id=\"b\">n=' + n + '</div>';
+                  console.log('ran');
+                </script>")
+         (root (closure.engine:layout-html html :width 400 :height 200 :stylesheet "body{margin:0}"))
+         (title (closure.engine:find-box root "title"))
+         (b (closure.engine:find-box root "b")))
+    (check "js title box" title)
+    (check "js rewrote text" (and title (search "JS" (closure.engine::dom-text-content (closure.engine::box-element title)))))
+    (check "js innerHTML element" b)
+    (check "js innerHTML text"
+           (and b (search "n=14" (closure.engine::dom-text-content (closure.engine::box-element b)))))))
+
 (defun run-tests ()
   (format t "~&Closure engine tests~%")
+  (test-javascript)
   (test-selectors-and-cascade)
   (test-flex)
   (test-grid-and-calc)

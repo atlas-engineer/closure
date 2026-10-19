@@ -132,10 +132,13 @@ script element after style and layout. Left unset until that engine exists.")
                                                      :width width :height height))))))
     (unless html-el
       (return-from layout-html nil))
+    ;; Scripts run before style and layout so DOM writes are visible.
+    (if *script-evaluator*
+        (note-scripts html-el)
+        (js-execute-document doc))
     (multiple-value-bind (rules frames) (collect-rules sheets)
       (cascade-tree html-el rules)
       (apply-animations html-el frames (float time 1d0))
-      (note-scripts html-el)
       (layout-document html-el))))
 
 (defun render-html (html &key (width 1024) (height 768) (stylesheet "")

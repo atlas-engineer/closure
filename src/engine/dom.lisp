@@ -57,45 +57,14 @@
       (walk el))))
 
 (defun import-document (html5-document)
-  (labels ((imp (node parent)
-             (case (html5-parser:node-type node)
-               (:document
-                (let ((doc (make-dom-document)))
-                  (html5-parser:element-map-children
-                   (lambda (c)
-                     (let ((k (imp c doc)))
-                       (when k (push k (dom-node-children doc)))))
-                   node)
-                  (setf (dom-node-children doc)
-                        (nreverse (dom-node-children doc)))
-                  doc))
-               (:element
-                (let ((el (make-dom-element
-                           :parent parent
-                           :tag (string-downcase (html5-parser:node-name node)))))
-                  (html5-parser:element-map-attributes
-                   (lambda (name namespace value)
-                     (declare (ignore namespace))
-                     (let ((n (string-downcase name)))
-                       (push (cons n value) (dom-element-attrs el))
-                       (cond ((string= n "id") (setf (dom-element-id el) value))
-                             ((string= n "class")
-                              (setf (dom-element-classes el) (split-ws value))))))
-                   node)
-                  (html5-parser:element-map-children
-                   (lambda (c)
-                     (let ((k (imp c el)))
-                       (when k (push k (dom-node-children el)))))
-                   node)
-                  (setf (dom-node-children el)
-                        (nreverse (dom-node-children el)))
-                  el))
-               (:text
-                (let ((v (html5-parser:node-value node)))
-                  (when (and v (plusp (length v)))
-                    (make-dom-text :parent parent :text v))))
-               (t nil))))
-    (imp html5-document nil)))
+  (let ((doc (make-dom-document)))
+    (html5-parser:element-map-children
+     (lambda (c)
+       (let ((k (import-document-child c doc)))
+         (when k (push k (dom-node-children doc)))))
+     html5-document)
+    (setf (dom-node-children doc) (nreverse (dom-node-children doc)))
+    doc))
 
 (defun find-element (node tag)
   (labels ((walk (n)
@@ -114,6 +83,72 @@
                  (funcall fn c)
                  (walk c)))))
     (walk node)))
+
+(defun find-element-by-id (node id)
+  (when (and node id)
+    (labels ((walk (n)
+               (dolist (c (dom-node-children n))
+                 (when (dom-element-p c)
+                   (when (and (dom-element-id c) (string= (dom-element-id c) id))
+                     (return-from find-element-by-id c))
+                   (walk c)))))
+      (walk node)
+      nil)))
+
+(defun set-element-text (el text)
+  (let ((node (make-dom-text :parent el :text (or text ""))))
+    (setf (dom-node-children el) (list node))
+    text))
+
+(defun set-element-inner-html (el html)
+  (let* ((frag (html5-parser:parse-html5-fragment (or html "")
+                                                  :container (or (dom-element-tag el) "div")))
+         (kids nil))
+    (html5-parser:element-map-children
+     (lambda (child)
+       (let ((imported (import-document-child child el)))
+         (when imported (push imported kids))))
+     frag)
+    (setf (dom-node-children el) (nreverse kids))
+    html))
+
+(defun import-document-child (node parent)
+  "Import one HTML5 parser node. Used by innerHTML and by import-document."
+  (case (html5-parser:node-type node)
+    (:element
+     (let ((el (make-dom-element
+                :parent parent
+                :tag (string-downcase (html5-parser:node-name node)))))
+       (html5-parser:element-map-attributes
+        (lambda (name namespace value)
+          (declare (ignore namespace))
+          (let ((n (string-downcase name)))
+            (push (cons n value) (dom-element-attrs el))
+            (cond ((string= n "id") (setf (dom-element-id el) value))
+                  ((string= n "class")
+                   (setf (dom-element-classes el) (split-ws value))))))
+        node)
+       (html5-parser:element-map-children
+        (lambda (c)
+          (let ((k (import-document-child c el)))
+            (when k (push k (dom-node-children el)))))
+        node)
+       (setf (dom-node-children el) (nreverse (dom-node-children el)))
+       el))
+    (:text
+     (let ((v (html5-parser:node-value node)))
+       (when (and v (plusp (length v)))
+         (make-dom-text :parent parent :text v))))
+    ((:document :document-fragment)
+     (let ((wrapper (make-dom-element :parent parent :tag "fragment")))
+       (html5-parser:element-map-children
+        (lambda (c)
+          (let ((k (import-document-child c wrapper)))
+            (when k (push k (dom-node-children wrapper)))))
+        node)
+       (setf (dom-node-children wrapper) (nreverse (dom-node-children wrapper)))
+       wrapper))
+    (t nil)))
 
 (defun sibling-index (el &key of-type from-end)
   (let* ((parent (dom-node-parent el))

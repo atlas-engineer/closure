@@ -252,6 +252,7 @@
                (:file "css")
                (:file "layout")
                (:file "paint")
+               (:file "js")
                (:file "engine"))
   :perform (asdf:test-op (o c)
              (asdf:test-system :closure/engine-tests)))
