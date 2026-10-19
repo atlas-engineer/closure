@@ -1,0 +1,29 @@
+#!/bin/sh
+# Drop automatic Cursor co-author trailers from commit messages.
+# Installed as .git/hooks/commit-msg.
+
+msgfile=$1
+[ -n "$msgfile" ] && [ -f "$msgfile" ] || exit 0
+
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+
+awk '
+  BEGIN { IGNORECASE = 1 }
+  /^Co-authored-by:.*cursor/ { next }
+  /^Signed-off-by:.*cursor/ { next }
+  { print }
+' "$msgfile" > "$tmp"
+
+# Trim trailing blank lines left behind by a removed trailer.
+awk '
+  { line[NR] = $0 }
+  END {
+    n = NR
+    while (n > 0 && line[n] ~ /^[[:space:]]*$/) n--
+    for (i = 1; i <= n; i++) print line[i]
+    if (n > 0) print ""
+  }
+' "$tmp" > "$msgfile"
+
+exit 0
