@@ -49,6 +49,7 @@
   (text-transform :none)
   (text-decoration :none)
   (text-decoration-color nil)
+  (text-underline-offset 0d0)
   (white-space :normal)
   (text-overflow :clip)
   (overflow-wrap :normal)
@@ -124,7 +125,7 @@
  "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
  "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "object-fit"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
- "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
+ "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-underline-offset" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
  "justify-content" "align-items" "align-content" "align-self" "order" "gap"
  "row-gap" "column-gap"
@@ -944,6 +945,10 @@
       ((:text-align) (kw '("start" "end" "left" "right" "center" "justify")))
       ((:text-transform) (kw '("none" "uppercase" "lowercase" "capitalize")))
       ((:text-indent) (len))
+      ((:text-underline-offset)
+       (if (and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "auto"))
+           :auto
+           (len)))
       ((:letter-spacing :word-spacing)
        (if (and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "normal"))
            0d0
@@ -1987,6 +1992,12 @@
                   (if (numberp v) (float v 1d0) 0d0))))
          (:text-decoration (when value (setf (computed-text-decoration style) value)))
          (:text-decoration-color (setf (computed-text-decoration-color style) value))
+         (:text-underline-offset
+          (setf (computed-text-underline-offset style)
+                (let ((v (if (eq value :auto)
+                             0d0
+                             (absolutize value (or (computed-font-size style) 16d0)))))
+                  (if (numberp v) (float v 1d0) 0d0))))
          (:white-space (setf (computed-white-space style) value))
          (:text-overflow (when value (setf (computed-text-overflow style) value)))
          ((:overflow-wrap :word-wrap)
@@ -2066,6 +2077,7 @@
       (setf (computed-text-transform s) (computed-text-transform parent))
       (setf (computed-text-indent s) (computed-text-indent parent))
       (setf (computed-letter-spacing s) (computed-letter-spacing parent))
+      (setf (computed-text-underline-offset s) (computed-text-underline-offset parent))
       (setf (computed-word-spacing s) (computed-word-spacing parent))
       (setf (computed-text-shadow s) (computed-text-shadow parent))
       (setf (computed-white-space s) (computed-white-space parent))
