@@ -399,9 +399,12 @@ from the Lisp engine without calling Node or another browser engine.
 - A subscript drops by the parent size divided by five, plus one pixel,
   and a superscript rises by the size divided by three, plus one pixel.
   The subscript line is 26.52px. A figure is indented 40px on each side.
+- A word's advance rounds to the nearest 1/64px after kerning in font
+  units. The sample tables are 73.875px and 48.016px wide. An address is
+  an italic line across the content width.
 
 ## Next
 
-1. The first table is 73.86px wide where the browser draws 73.88px. The
-   done condition is not met; pages still need more of the web than this
-   viewport.
+1. On the first line, "big" starts about 0.03px to the right of the
+   browser. The done condition is not met; pages still need more of the
+   web than this viewport.

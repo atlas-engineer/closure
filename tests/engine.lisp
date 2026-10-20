@@ -2451,7 +2451,19 @@ b</div>"
            (and italic roman
                 (eq (closure.engine::computed-font-style (closure.engine::box-style roman)) :normal)
                 (~ (closure.engine:box-width italic)
-                   (closure.engine::text-advance "Mail" 16d0 "serif" :normal :italic))))))
+                   (closure.engine::text-advance "Mail" 16d0 "serif" :normal :italic))))
+    (labels ((find-tag (b)
+               (when b
+                 (when (string= (or (closure.engine::box-tag b) "") "address")
+                   (return-from find-tag b))
+                 (dolist (c (closure.engine::box-children b))
+                   (let ((hit (find-tag c)))
+                     (when hit (return-from find-tag hit)))))))
+      (let ((block (find-tag root)))
+        (check "address spans the content width"
+               (and block (~ (closure.engine:box-width block) 200d0)))
+        (check "address has no extra indent"
+               (and block (~ (closure.engine:box-x block) 0d0)))))))
 
 (defun test-wbr ()
   (let* ((whole (closure.engine:layout-html
@@ -2654,8 +2666,10 @@ mono two</pre>")
                    (closure.engine::text-advance "w" 16d0 "serif" :normal :normal)
                    (closure.engine::text-advance "o" 16d0 "serif" :normal :normal))))
     (format t "~&  kern Two ~A parts ~A~%" two parts)
-    (check "Two is tucked by the unfitted kern"
-           (~ (- parts two) 1.125d0 0.05d0))))
+    (check "Two matches the browser advance"
+           (~ two 28.21875d0 0.001d0))
+    (check "Two is tucked tighter than its letters"
+           (< two parts))))
 
 (defun test-normal-line-height ()
   (let* ((html "<p id='p'>Hello</p><h1 id='h'>Hi</h1>")
@@ -3036,8 +3050,7 @@ mono two</pre>")
             (and wide (closure.engine:box-width wide)))
     (check "auto-width table" (and table cap a b word long tiny wide))
     (check "an auto table stays as wide as its cells"
-           (and table (< (closure.engine:box-width table) 160d0)
-                (> (closure.engine:box-width table) 30d0)))
+           (and table (~ (closure.engine:box-width table) 73.875d0 0.001d0)))
     (check "the cells sit side by side inside that table"
            (and a b table
                 (> (closure.engine:box-x b) (closure.engine:box-x a))

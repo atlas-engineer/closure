@@ -245,9 +245,13 @@ disturb the context that measures text."
                             (if (zerop (ft-get-kerning face
                                                        (ft-get-char-index face (char-code left))
                                                        (ft-get-char-index face (char-code right))
-                                                       1 vec)) ; FT_KERNING_UNFITTED, not grid-fitted
-                                (/ (float (cffi:foreign-slot-value vec '(:struct ft-vector) 'x) 1d0)
-                                   64d0)
+                                                       2 vec)) ; FT_KERNING_UNSCALED, font units
+                                (let ((units (cffi:mem-ref face :unsigned-short 136)))
+                                  (if (and (>= units 16) (<= units 16384))
+                                      (/ (* (float (cffi:foreign-slot-value vec '(:struct ft-vector) 'x) 1d0)
+                                            (float size 1d0))
+                                         units)
+                                      0d0))
                                 0d0)))
                     (when (and face (not (cffi:null-pointer-p face)))
                       (cairo-ft-unlock-face scaled)))))))))
@@ -258,6 +262,13 @@ disturb the context that measures text."
       (loop for i from 1 below (length text)
             sum (pair-kern (char text (1- i)) (char text i)
                            size family weight style))))
+
+(defun snap-layout-unit (px)
+  "Nearest 1/64px, with a half-unit rounding away from zero. That is the
+unit a browser stores a used width in."
+  (let ((scaled (* px 64d0)))
+    (/ (float (truncate (+ scaled (if (minusp scaled) -0.5d0 0.5d0))) 1d0)
+       64d0)))
 
 (defun %measure-uncached (string size family weight slant)
   (let ((cr (ensure-cairo)))
@@ -274,10 +285,11 @@ disturb the context that measures text."
             (values 0d0 asc desc height)
             (progn
               (cairo-text-extents cr string te)
-              (values (+ (cffi:foreign-slot-value te '(:struct cairo-text-extents) 'x-advance)
-                         (kerning-sum string size family
-                                      (if (and (numberp weight) (>= weight 600)) 1 weight)
-                                      slant))
+              (values (snap-layout-unit
+                       (+ (cffi:foreign-slot-value te '(:struct cairo-text-extents) 'x-advance)
+                          (kerning-sum string size family
+                                       (if (and (numberp weight) (>= weight 600)) 1 weight)
+                                       slant)))
                       asc desc height)))))))
 
 (defun measure-text (string size family weight style)
