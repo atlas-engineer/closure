@@ -3417,6 +3417,23 @@ b</div>"
     (check "2 / 1 makes the auto width twice the height"
            (and box (~ (closure.engine:box-width box) 40d0)))))
 
+(defun test-aspect-ratio-content ()
+  (let* ((html "<div id='flat' style='width:40px;aspect-ratio:2 / 1'></div>
+                <div id='box' style='width:40px;aspect-ratio:2 / 1'><div style='height:40px;margin:0'></div></div>")
+         (root (closure.engine:layout-html html :width 200 :height 120
+                                          :stylesheet "body{margin:0}"))
+         (flat (closure.engine:find-box root "flat"))
+         (box (closure.engine:find-box root "box")))
+    (check "aspect content boxes" (and flat box))
+    (format t "~&  flat ~S grown ~Sx~S~%"
+            (and flat (closure.engine:box-height flat))
+            (and box (closure.engine:box-width box))
+            (and box (closure.engine:box-height box)))
+    (check "an empty ratio box stays at the ratio" (and flat (~ (closure.engine:box-height flat) 20d0)))
+    (check "the grown box keeps its width" (and box (~ (closure.engine:box-width box) 40d0)))
+    (check "taller content grows the box past the ratio"
+           (and box (~ (closure.engine:box-height box) 40d0)))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3886,6 +3903,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-object-position-percent)
   (test-aspect-ratio)
   (test-aspect-ratio-width)
+  (test-aspect-ratio-content)
   (test-wbr)
   (test-address)
   (test-text-indent)
