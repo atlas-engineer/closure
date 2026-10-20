@@ -335,9 +335,12 @@ from the Lisp engine without calling Node or another browser engine.
   inside it. The default image still paints under the border.
 - `background-repeat: space` spreads the image with even gaps. A flush tile
   is continuous, and space leaves a gap before the next image.
+- `background-repeat: round` scales the image so a whole number of tiles
+  fill the box. The second color of a split image arrives sooner than it
+  does in an unscaled tile, and the tile still starts with the first color.
 
 ## Next
 
-1. `background-repeat: round` scales the image so a whole number of tiles
-   fill the box with no gaps. The done condition is not met; pages still
-   need more of the web than this viewport.
+1. `object-position: right` places a replaced image against the right side
+   of its box. The done condition is not met; pages still need more of the
+   web than this viewport.

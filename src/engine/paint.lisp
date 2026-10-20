@@ -318,6 +318,17 @@ and gaps between known stops are split evenly."
           (cairo-restore cr)
           (cairo-pattern-destroy pat))))))
 
+(defun round-tile-size (area size)
+  "Size of one tile so a whole number of them fill AREA, staying near SIZE."
+  (if (or (<= area 0d0) (<= size 0d0))
+      size
+      (let* ((n (max 1 (floor (/ area size))))
+             (larger (/ area n))
+             (smaller (/ area (1+ n))))
+        (if (< (abs (- smaller size)) (abs (- larger size)))
+            smaller
+            larger))))
+
 (defun paint-background-image (cr box)
   "Paint a background-image in the padding box. The default tiles it; no-repeat paints it once."
   (let* ((st (box-style box))
@@ -403,6 +414,17 @@ and gaps between known stops are split evenly."
                           (if (>= ny 2)
                               (setf y0 y tile-y t step-y (/ (- h th) (1- ny)))
                               (setf tile-y nil)))
+                        (when (eq repeat :round)
+                          (setf tw (round-tile-size w tw)
+                                th (round-tile-size h th)
+                                sx (if (> iw 0d0) (/ tw iw) 1d0)
+                                sy (if (> ih 0d0) (/ th ih) 1d0)
+                                x0 x
+                                y0 y
+                                tile-x t
+                                tile-y t
+                                step-x tw
+                                step-y th))
                         (when tile-x
                           (loop while (> x0 x) do (decf x0 step-x)))
                         (when tile-y

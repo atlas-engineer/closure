@@ -3253,6 +3253,32 @@ b</div>"
           (format t "~&  space next image: ~D ~D ~D~%" r g b)
           (check "space still paints the next image" (and (< r 80) (< g 80) (> b 180))))))))
 
+(defun test-background-repeat-round ()
+  (let ((png "/tmp/closure-bg-round.png"))
+    (write-split-png png 8 8 0.8d0 0d0 0d0 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<div id='tile' style='width:12px;height:8px;background-image:url(\"~A\");background-repeat:repeat'></div>
+                <div id='round' style='width:12px;height:8px;background-image:url(\"~A\");background-repeat:round'></div>"
+                         png png))
+           (out "/tmp/closure-engine-bg-round.png")
+           (root (closure.engine:render-html html :width 40 :height 30 :output out
+                                            :stylesheet "body{margin:0}"))
+           (tile (closure.engine:find-box root "tile"))
+           (round (closure.engine:find-box root "round")))
+      (labels ((at (box dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x box) dx))
+                          (round (+ (closure.engine:box-y box) dy)))))
+        (check "round boxes" (and tile round))
+        (multiple-value-bind (r g b) (at tile 3 1)
+          (format t "~&  unscaled: ~D ~D ~D~%" r g b)
+          (check "an unscaled tile keeps the first color there" (and (> r 180) (< g 80) (< b 80))))
+        (multiple-value-bind (r g b) (at round 3 1)
+          (format t "~&  rounded: ~D ~D ~D~%" r g b)
+          (check "round scales the tile so the second color arrives sooner" (and (< r 80) (> b 180))))
+        (multiple-value-bind (r g b) (at round 1 1)
+          (format t "~&  rounded start: ~D ~D ~D~%" r g b)
+          (check "round still starts with the first color" (and (> r 180) (< g 80) (< b 80))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3715,6 +3741,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-origin-border)
   (test-background-image-clip-padding)
   (test-background-repeat-space)
+  (test-background-repeat-round)
   (test-wbr)
   (test-address)
   (test-text-indent)

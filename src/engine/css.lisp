@@ -1038,7 +1038,7 @@
                        (cons :repeating-linear-gradient (gradient-stops inside)))
                       (t (cons :linear-gradient (gradient-stops inside))))))
              (t (url-from-tokens tokens))))
-      ((:background-repeat) (kw '("repeat" "no-repeat" "repeat-x" "repeat-y" "space")))
+      ((:background-repeat) (kw '("repeat" "no-repeat" "repeat-x" "repeat-y" "space" "round")))
       ((:background-position)
        (let ((found nil)
              (rest tokens))
