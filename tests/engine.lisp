@@ -1513,6 +1513,30 @@ b</div>"
           (format t "~&  plain below both: ~D ~D ~D~%" r g b)
           (check "plain text has neither line below" (and (> r 240) (> g 240) (> b 240))))))))
 
+(defun test-underline-and-line-through ()
+  (let* ((html "<span id='b' style='text-decoration:underline line-through'>O</span><span id='p'>O</span>")
+         (out "/tmp/closure-engine-under-strike.png")
+         (root (closure.engine:render-html html :width 120 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (both (closure.engine:find-box root "b"))
+         (plain (closure.engine:find-box root "p")))
+    (labels ((dark (box dy)
+               (when box
+                 (let ((x (floor (+ (closure.engine:box-x box)
+                                    (/ (closure.engine:box-width box) 2d0))))
+                       (y (floor (+ (closure.engine:box-y box)
+                                    (closure.engine::box-baseline box)
+                                    dy))))
+                   (multiple-value-bind (r g b) (png-rgb out x y)
+                     (and (< (+ r g b) 500)))))))
+      (check "underline and strike boxes" (and both plain))
+      (format t "~&  under+strike line ~A under ~A plain-line ~A plain-under ~A~%"
+              (dark both -5) (dark both 2) (dark plain -5) (dark plain 2))
+      (check "the line through the text is drawn" (dark both -5))
+      (check "the underline is drawn" (dark both 2))
+      (check "plain text is not struck" (not (dark plain -5)))
+      (check "plain text is not underlined" (not (dark plain 2))))))
+
 (defun test-outline ()
   (let* ((html "<div id='a' style='margin-top:8px;width:40px;height:20px;outline:4px solid #cc0000'></div>
                 <div id='b' style='width:40px;height:10px;background:#000'></div>")
@@ -3012,6 +3036,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-u-ins)
   (test-overline)
   (test-underline-and-overline)
+  (test-underline-and-line-through)
   (test-text-shadow)
   (test-text-shadow-two)
   (test-linear-gradient)
