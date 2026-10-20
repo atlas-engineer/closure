@@ -288,9 +288,11 @@ from the Lisp engine without calling Node or another browser engine.
   on the solid line's row and dips below it.
 - `text-decoration-style: double` draws two parallel underlines. A gap
   separates the lines, and a solid underline stays a single line.
+- `text-decoration-style: dotted` draws a dotted underline. The solid line
+  stays continuous, and the dotted line leaves gaps.
 
 ## Next
 
-1. `text-decoration-style: dotted` draws a dotted underline instead of a
-   solid one. The done condition is not met; pages still need more of the
-   web than this viewport.
+1. `outline-style: dashed` draws a dashed outline instead of a solid one.
+   The done condition is not met; pages still need more of the web than this
+   viewport.
