@@ -33,6 +33,7 @@
   (background-image nil)
   (background-repeat :repeat)
   (background-position :left)
+  (background-size :auto)
   (object-fit :fill)
   (font-size 16d0)
   (font-weight :normal)
@@ -118,7 +119,7 @@
  "border-top-style" "border-right-style" "border-bottom-style" "border-left-style"
  "border-top-color" "border-right-color" "border-bottom-color" "border-left-color"
  "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
- "color" "background" "background-color" "background-image" "background-repeat" "background-position" "object-fit"
+ "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "object-fit"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
  "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
@@ -912,6 +913,7 @@
                                             :test #'string=))
                             collect (intern (string-upcase (tok-text tk)) :keyword))))
          (if (cdr found) found (car found))))
+      ((:background-size) (kw '("auto" "contain" "cover")))
       ((:object-fit) (kw '("fill" "contain" "cover" "none" "scale-down")))
       ((:list-style :list-style-type)
        (kw '("disc" "circle" "square" "decimal" "none")))
@@ -1791,6 +1793,7 @@
          (:background-image (setf (computed-background-image style) value))
          (:background-repeat (when value (setf (computed-background-repeat style) value)))
          (:background-position (when value (setf (computed-background-position style) value)))
+         (:background-size (when value (setf (computed-background-size style) value)))
          (:object-fit (when value (setf (computed-object-fit style) value)))
          (:font-size
           (setf (computed-font-size style)

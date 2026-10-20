@@ -240,9 +240,11 @@ from the Lisp engine without calling Node or another browser engine.
   The top edge of that box stays empty.
 - `background-position: right bottom` places a background image in the
   bottom-right corner. The other three corners stay empty.
+- `background-size: contain` scales a background image so the whole image
+  fits inside the box. The extra side of the box stays empty.
 
 ## Next
 
-1. `background-size: contain` scales a background image so the whole image
-   fits inside the box. The done condition is not met; pages still need more
-   of the web than this viewport.
+1. `background-size: cover` scales a background image until it covers the
+   box, cropping whatever does not fit. The done condition is not met; pages
+   still need more of the web than this viewport.
