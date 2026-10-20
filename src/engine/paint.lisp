@@ -89,7 +89,8 @@
                      (cond
                        ((or (eq style :groove) (eq style :inset))
                         (values (shade color light) :solid))
-                       ((eq style :ridge) (values (shade color (not light)) :solid))
+                       ((or (eq style :ridge) (eq style :outset))
+                        (values (shade color (not light)) :solid))
                        (t (values color style)))))
             (multiple-value-bind (c s) (tone (computed-btc st) (computed-bts st) nil)
               (side bt c s x y w bt))
