@@ -109,6 +109,13 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
         (cairo-paint cr)
         (cairo-restore cr)))))
 
+(defun background-length (value box-size)
+  "Resolve one background-size component against BOX-SIZE. NIL means auto."
+  (cond ((numberp value) (float value 1d0))
+        ((and (consp value) (eq (car value) :%))
+         (* 0.01d0 (float (cdr value) 1d0) box-size))
+        (t nil)))
+
 (defun paint-background-image (cr box)
   "Paint a background-image in the padding box. The default tiles it; no-repeat paints it once."
   (let* ((st (box-style box))
@@ -140,13 +147,15 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                                 ((eq size :contain) (min (/ w iw) (/ h ih)))
                                 ((eq size :cover) (max (/ w iw) (/ h ih)))
                                 (t 1d0)))
-                   (explicit (and (consp size) (numberp (car size))))
-                   (tw (if explicit (float (car size) 1d0) (* iw scale)))
-                   (th (if explicit
-                           (if (numberp (second size))
-                               (float (second size) 1d0)
-                               (if (> iw 0d0) (* tw (/ ih iw)) ih))
-                           (* ih scale)))
+                   (explicit (consp size))
+                   (tw-spec (and explicit (background-length (first size) w)))
+                   (th-spec (and explicit (background-length (second size) h)))
+                   (tw (cond (tw-spec tw-spec)
+                             ((and th-spec (> ih 0d0)) (* th-spec (/ iw ih)))
+                             (t (* iw scale))))
+                   (th (cond (th-spec th-spec)
+                             ((and tw-spec (> iw 0d0)) (* tw-spec (/ ih iw)))
+                             (t (* ih scale))))
                    (sx (if (> iw 0d0) (/ tw iw) 1d0))
                    (sy (if (> ih 0d0) (/ th ih) 1d0))
                    (x0 (case horizontal

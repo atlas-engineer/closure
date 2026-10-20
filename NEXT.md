@@ -246,9 +246,11 @@ from the Lisp engine without calling Node or another browser engine.
   box. The part that does not fit is cropped.
 - `background-size: 8px 4px` paints a background image at that size. The
   image stops at those edges instead of its intrinsic size.
+- `background-size: 50%` paints a background image at half the box size. The
+  image stops halfway across the box.
 
 ## Next
 
-1. `background-size: 50%` paints a background image at half the box size.
-   The done condition is not met; pages still need more of the web than this
-   viewport.
+1. `background-position: 50%` places a background image halfway across its
+   box. The done condition is not met; pages still need more of the web than
+   this viewport.
