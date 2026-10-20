@@ -696,6 +696,30 @@
           (check "cover crops the part that does not fit"
                  (and (> r 180) (< g 80) (< b 80))))))))
 
+(defun test-background-size-lengths ()
+  (let ((blue "/tmp/closure-engine-bg-size.png")
+        (out "/tmp/closure-engine-bg-size-out.png"))
+    (write-solid-png blue 16 8 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<div id='sized' style='width:24px;height:16px;background-image:url(\"~A\");background-repeat:no-repeat;background-size:8px 4px'></div>"
+                         blue))
+           (root (closure.engine:render-html html :width 40 :height 30 :output out
+                                            :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "sized")))
+      (labels ((at (dx dy)
+                 (png-rgb out
+                          (+ (round (closure.engine:box-x box)) dx)
+                          (+ (round (closure.engine:box-y box)) dy))))
+        (check "sized box" box)
+        (multiple-value-bind (r g b) (at 6 1)
+          (format t "~&  sized inside: ~D ~D ~D~%" r g b)
+          (check "the given size still paints the image" (and (> b 180) (< r 80))))
+        (multiple-value-bind (r g b) (at 10 1)
+          (format t "~&  sized past width: ~D ~D ~D~%" r g b)
+          (check "the image stops at the given width" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at 1 6)
+          (format t "~&  sized past height: ~D ~D ~D~%" r g b)
+          (check "the image stops at the given height" (and (> r 240) (> g 240) (> b 240))))))))
+
 (defun test-background-and-object-fit ()
   (let ((blue "/tmp/closure-engine-bg.png")
         (split "/tmp/closure-engine-split.png")
@@ -2656,6 +2680,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-position-right-bottom)
   (test-background-size-contain)
   (test-background-size-cover)
+  (test-background-size-lengths)
   (test-form-controls)
   (test-external-css)
   (test-lisp-script)

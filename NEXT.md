@@ -244,9 +244,11 @@ from the Lisp engine without calling Node or another browser engine.
   fits inside the box. The extra side of the box stays empty.
 - `background-size: cover` scales a background image until it covers the
   box. The part that does not fit is cropped.
+- `background-size: 8px 4px` paints a background image at that size. The
+  image stops at those edges instead of its intrinsic size.
 
 ## Next
 
-1. `background-size: 8px 4px` paints a background image at that size instead
-   of its intrinsic size. The done condition is not met; pages still need
-   more of the web than this viewport.
+1. `background-size: 50%` paints a background image at half the box size.
+   The done condition is not met; pages still need more of the web than this
+   viewport.

@@ -913,7 +913,13 @@
                                             :test #'string=))
                             collect (intern (string-upcase (tok-text tk)) :keyword))))
          (if (cdr found) found (car found))))
-      ((:background-size) (kw '("auto" "contain" "cover")))
+      ((:background-size)
+       (or (kw '("auto" "contain" "cover"))
+           (multiple-value-bind (a rest) (parse-one-length tokens)
+             (when a
+               (multiple-value-bind (b rest2) (parse-one-length rest)
+                 (declare (ignore rest2))
+                 (list a (or b :auto)))))))
       ((:object-fit) (kw '("fill" "contain" "cover" "none" "scale-down")))
       ((:list-style :list-style-type)
        (kw '("disc" "circle" "square" "decimal" "none")))
@@ -1793,7 +1799,12 @@
          (:background-image (setf (computed-background-image style) value))
          (:background-repeat (when value (setf (computed-background-repeat style) value)))
          (:background-position (when value (setf (computed-background-position style) value)))
-         (:background-size (when value (setf (computed-background-size style) value)))
+         (:background-size
+          (setf (computed-background-size style)
+                (if (consp value)
+                    (list (absolutize (first value) parent-size)
+                          (absolutize (second value) parent-size))
+                    value)))
          (:object-fit (when value (setf (computed-object-fit style) value)))
          (:font-size
           (setf (computed-font-size style)
