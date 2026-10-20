@@ -306,10 +306,12 @@ from the Lisp engine without calling Node or another browser engine.
 - `border-style: ridge` paints the top and left edges lighter than the
   bottom and right. A gray ridge is light on the top and left and dark on
   the bottom and right.
+- `border-style: inset` paints the top and left edges darker than the
+  bottom and right. A gray inset is dark on the top and left and light on
+  the bottom and right.
 
 ## Next
 
-1. `border-style: inset` paints the top and left edges darker than the
-   bottom and right, like a control pressed into the page. The done
-   condition is not met; pages still need more of the web than this
-   viewport.
+1. `border-style: outset` paints the top and left edges lighter than the
+   bottom and right, like a raised control. The done condition is not met;
+   pages still need more of the web than this viewport.
