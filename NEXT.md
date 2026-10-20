@@ -327,9 +327,12 @@ from the Lisp engine without calling Node or another browser engine.
 - `background-origin: content-box` positions a background image from the
   content edge. The padding stays empty, and the image starts where the
   content starts. The default still starts in the padding.
+- `background-origin: border-box` positions a background image from the
+  outer border edge. The corner is the image, and the default still starts
+  inside the border.
 
 ## Next
 
-1. `background-origin: border-box` positions a background image from the
-   outer border edge. The done condition is not met; pages still need more
+1. A `background-image` with `background-clip: padding-box` does not paint
+   under the border. The done condition is not met; pages still need more
    of the web than this viewport.

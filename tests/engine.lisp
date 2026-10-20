@@ -3175,6 +3175,32 @@ b</div>"
           (format t "~&  content origin image: ~D ~D ~D~%" r g b)
           (check "content-box origin starts the image at the content edge" (and (< r 80) (< g 80) (> b 180))))))))
 
+(defun test-background-origin-border ()
+  (let ((png "/tmp/closure-bg-origin-border.png"))
+    (write-solid-png png 4 4 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<div id='pad' style='width:20px;height:20px;border:8px solid rgba(0,0,0,0);background-image:url(\"~A\");background-repeat:no-repeat'></div>
+                <div id='edge' style='width:20px;height:20px;border:8px solid rgba(0,0,0,0);background-image:url(\"~A\");background-repeat:no-repeat;background-origin:border-box'></div>"
+                         png png))
+           (out "/tmp/closure-engine-bg-origin-border.png")
+           (root (closure.engine:render-html html :width 80 :height 120 :output out
+                                            :stylesheet "body{margin:0}"))
+           (pad (closure.engine:find-box root "pad"))
+           (edge (closure.engine:find-box root "edge")))
+      (labels ((at (box dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x box) dx))
+                          (round (+ (closure.engine:box-y box) dy)))))
+        (check "border origin boxes" (and pad edge))
+        (multiple-value-bind (r g b) (at pad 1 1)
+          (format t "~&  default border corner: ~D ~D ~D~%" r g b)
+          (check "the default image starts inside the border" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at edge 1 1)
+          (format t "~&  border origin corner: ~D ~D ~D~%" r g b)
+          (check "border-box origin starts the image at the outer edge" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at pad 9 9)
+          (format t "~&  default inside the border: ~D ~D ~D~%" r g b)
+          (check "the default image still paints inside the border" (and (< r 80) (< g 80) (> b 180))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3634,6 +3660,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-clip-padding)
   (test-background-image-clip-content)
   (test-background-origin-content)
+  (test-background-origin-border)
   (test-wbr)
   (test-address)
   (test-text-indent)
