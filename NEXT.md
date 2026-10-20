@@ -228,8 +228,10 @@ from the Lisp engine without calling Node or another browser engine.
   while a disc leaves that corner empty.
 - `list-style-type: circle` paints a hollow circle. The center stays empty,
   and the ring is drawn around it.
+- `text-decoration: overline` draws a line above the text. Plain text at
+  the same place stays empty.
 
 ## Next
 
-1. `text-decoration: overline` draws a line above the text. The done
+1. `background-repeat: no-repeat` paints a background image once. The done
    condition is not met; pages still need more of the web than this viewport.

@@ -233,20 +233,31 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
         (paint-text-decorations cr box baseline)))))
 
 (defun paint-text-decorations (cr box baseline)
-  "Underline and strike-through from BOX and its ancestors, each in that element's color."
+  "Underline, overline, and strike-through from BOX and its ancestors, each in that element's color."
   (loop for el = (box-element box) then (dom-node-parent el)
         while (dom-element-p el)
         for st = (dom-element-style el)
         for kind = (and st (computed-text-decoration st))
-        when (member kind '(:underline :line-through))
-          do (let ((y (if (eq kind :underline)
-                          (+ baseline (* 0.15d0 (computed-font-size st)))
-                          (- baseline (* 0.30d0 (computed-font-size st))))))
+        when (member kind '(:underline :overline :line-through))
+          do (let ((size (computed-font-size st)))
                (set-color cr (computed-color st))
-               (cairo-set-line-width cr (max 1d0 (* 0.06d0 (computed-font-size st))))
-               (cairo-move-to cr (box-x box) y)
-               (cairo-line-to cr (+ (box-x box) (box-w box)) y)
-               (cairo-stroke cr))))
+               (if (eq kind :overline)
+                   (let ((top (+ 1d0
+                                 (- baseline
+                                    (font-ascent size
+                                                 (computed-font-family st)
+                                                 (computed-font-weight st)
+                                                 (computed-font-style st))))))
+                     (cairo-rectangle cr (box-x box) top (box-w box)
+                                      (max 1d0 (* 0.08d0 size)))
+                     (cairo-fill cr))
+                   (let ((y (if (eq kind :underline)
+                                (+ baseline (* 0.15d0 size))
+                                (- baseline (* 0.30d0 size)))))
+                     (cairo-set-line-width cr (max 1d0 (* 0.06d0 size)))
+                     (cairo-move-to cr (box-x box) y)
+                     (cairo-line-to cr (+ (box-x box) (box-w box)) y)
+                     (cairo-stroke cr))))))
 
 (defun apply-transform (cr box)
   (let ((ops (and (box-style box) (computed-transform (box-style box))))

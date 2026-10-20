@@ -979,6 +979,35 @@ b</div>"
       (check "ins underlines its text" (dark inserted 2))
       (check "plain text is not underlined" (not (dark plain 2))))))
 
+(defun test-overline ()
+  (let* ((html "<span id='o' style='text-decoration:overline'>x</span><span id='p'>x</span>")
+         (out "/tmp/closure-engine-overline.png")
+         (root (closure.engine:render-html html :width 120 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (over (closure.engine:find-box root "o"))
+         (plain (closure.engine:find-box root "p")))
+    (labels ((at (box dy)
+               (when box
+                 (png-rgb out
+                          (floor (+ (closure.engine:box-x box)
+                                    (/ (closure.engine:box-width box) 2d0)))
+                          (floor (+ (closure.engine:box-y box)
+                                    (closure.engine::box-baseline box)
+                                    dy))))))
+      (check "overline boxes" (and over plain))
+      (let* ((ascent (round (closure.engine::font-ascent
+                             16d0
+                             (closure.engine::computed-font-family
+                              (closure.engine::box-style over))
+                             :normal :normal)))
+             (sample (- 1 ascent)))
+          (multiple-value-bind (r g b) (at over sample)
+            (format t "~&  overline: ~D ~D ~D at ~D~%" r g b sample)
+            (check "overline draws above the text" (and (< r 80) (< g 80) (< b 80))))
+          (multiple-value-bind (r g b) (at plain sample)
+            (format t "~&  plain above: ~D ~D ~D~%" r g b)
+            (check "plain text has no overline" (and (> r 240) (> g 240) (> b 240))))))))
+
 (defun test-outline ()
   (let* ((html "<div id='a' style='margin-top:8px;width:40px;height:20px;outline:4px solid #cc0000'></div>
                 <div id='b' style='width:40px;height:10px;background:#000'></div>")
@@ -2466,6 +2495,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-small)
   (test-big)
   (test-u-ins)
+  (test-overline)
   (test-tt)
   (test-nobr)
   (test-text-overflow)
