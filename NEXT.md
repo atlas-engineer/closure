@@ -393,8 +393,12 @@ from the Lisp engine without calling Node or another browser engine.
 - Kerning uses the unfitted pair adjustment, including between a word
   and the space after it. The link in the sample page starts at the same
   place as in a browser. A `<q>` wraps its words in quotes.
+- A `<q>` uses the English quotation marks, so the quoted word is the
+  same width as in a browser. A definition list indents the definition
+  40px under the term.
 
 ## Next
 
-1. The done condition is not met; pages still need more of the web than
-   this viewport.
+1. A subscript line is 26.4px where the browser uses 26.5px, so everything
+   below it sits about a tenth of a pixel high. The done condition is not
+   met; pages still need more of the web than this viewport.

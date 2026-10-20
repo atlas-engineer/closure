@@ -41,7 +41,6 @@ script element after style and layout. Left unset until that engine exists.")
    small { font-size: smaller; }
    big { font-size: larger; }
    mark { background-color: #ffff00; color: black; }
-   q { quotes: '\"' '\"' \"'\" \"'\"; }
    q:before { content: open-quote; }
    q:after { content: close-quote; }
    sub { vertical-align: sub; font-size: smaller; }

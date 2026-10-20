@@ -3753,7 +3753,13 @@ mono two</pre>")
     (setf texts (nreverse texts))
     (format t "~&  nested q texts: ~S~%" texts)
     (check "nested q uses single quotes inside double quotes"
-           (equal texts '("\"" "outer" "'" "inner" "'" "end" "\"")))))
+           (equal texts (list (string (code-char #x201C))
+                              "outer"
+                              (string (code-char #x2018))
+                              "inner"
+                              (string (code-char #x2019))
+                              "end"
+                              (string (code-char #x201D)))))))
 
 (defun test-blockquote ()
   (let* ((root (closure.engine:layout-html
@@ -3791,9 +3797,34 @@ mono two</pre>")
     (check "q wraps the word in quotes"
            (loop for rest on texts
                  thereis (and (cdr rest) (cddr rest)
-                              (string= (first rest) "\"")
+                              (string= (first rest) (string (code-char #x201C)))
                               (string= (second rest) "hello")
-                              (string= (third rest) "\""))))))
+                              (string= (third rest) (string (code-char #x201D))))))
+    (let ((open nil)
+          (mark (string (code-char #x201C))))
+      (labels ((find-open (b)
+                 (when b
+                   (when (and (eq (closure.engine::box-kind b) :text)
+                              (string= (or (closure.engine::box-text b) "") mark))
+                     (setf open b))
+                   (dolist (c (closure.engine::box-children b)) (find-open c)))))
+        (find-open root))
+      (check "open quote is the wide curly mark"
+             (and open (~ (closure.engine:box-width open) 7.1d0 0.15d0))))))
+
+(defun test-dl ()
+  (let* ((root (closure.engine:layout-html
+                "<dl><dt id='t'>Term</dt><dd id='d'>Definition</dd></dl>"
+                :width 400 :height 120
+                :stylesheet "body{margin:0}"))
+         (term (closure.engine:find-box root "t"))
+         (def (closure.engine:find-box root "d")))
+    (check "definition list boxes" (and term def))
+    (check "definition is indented 40px"
+           (and term def (~ (closure.engine:box-x def)
+                            (+ (closure.engine:box-x term) 40d0))))
+    (check "definition sits on the next line"
+           (and term def (> (closure.engine:box-y def) (closure.engine:box-y term))))))
 
 (defun test-hr ()
   (let* ((html "<hr id='r'>")
@@ -4132,6 +4163,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-q)
   (test-blockquote)
   (test-nested-q)
+  (test-dl)
   (test-small)
   (test-big)
   (test-u-ins)

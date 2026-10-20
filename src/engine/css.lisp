@@ -1033,8 +1033,9 @@
              (t (let ((strs (mapcar #'tok-text (remove-if-not (lambda (tk) (eq (tok-kind tk) :string)) tokens))))
                   (when strs (apply #'concatenate 'string strs))))))
       ((:quotes)
-       (cond ((and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "none"))
-              :none)
+       (cond ((and tokens (eq (tok-kind (car tokens)) :ident)
+                   (member (tok-text (car tokens)) '("none" "auto") :test #'string=))
+              (intern (string-upcase (tok-text (car tokens))) :keyword))
              (t (let ((strs (mapcar #'tok-text (remove-if-not (lambda (tk) (eq (tok-kind tk) :string)) tokens))))
                   (when strs strs)))))
       ((:background-image)
@@ -2265,14 +2266,23 @@
             count (let ((st (dom-element-before-style n)))
                     (and st (eq (computed-content st) :open-quote))))))
 
+(defun quote-pairs (style)
+  "Quote strings for STYLE. Auto, the initial value, is the English pair."
+  (let ((raw (and style (computed-quotes style))))
+    (cond ((eq raw :none) nil)
+          ((consp raw) raw)
+          (t (list (string (code-char #x201C))
+                   (string (code-char #x201D))
+                   (string (code-char #x2018))
+                   (string (code-char #x2019)))))))
+
 (defun quote-glyph (element kind style)
   "Open or close glyph for ELEMENT. The last quotes pair repeats."
-  (let* ((pairs (or (and style (consp (computed-quotes style)) (computed-quotes style))
-                    '("\"" "\"" "'" "'")))
+  (let* ((pairs (quote-pairs style))
          (depth (quote-depth element))
-         (pair (min depth (1- (max 1 (floor (length pairs) 2)))))
+         (pair (if pairs (min depth (1- (max 1 (floor (length pairs) 2)))) 0))
          (offset (if (eq kind :close-quote) 1 0)))
-    (or (nth (+ (* pair 2) offset) pairs) "\"")))
+    (or (and pairs (nth (+ (* pair 2) offset) pairs)) "")))
 
 (defun generated-text (style element)
   "Text for a :before or :after style, resolving open-quote and close-quote."
