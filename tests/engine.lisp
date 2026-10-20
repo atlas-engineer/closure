@@ -3331,6 +3331,32 @@ b</div>"
           (format t "~&  bottom edge: ~D ~D ~D~%" r g b)
           (check "bottom places the image against the bottom" (and (< r 80) (< g 80) (> b 180))))))))
 
+(defun test-object-position-left-bottom ()
+  (let ((png "/tmp/closure-object-pos-corner.png"))
+    (write-solid-png png 4 4 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<img id='mid' src='~A' width='20' height='20' style='display:block;object-fit:none'>
+                <img id='corner' src='~A' width='20' height='20' style='display:block;object-fit:none;object-position:left bottom'>"
+                         png png))
+           (out "/tmp/closure-engine-object-pos-corner.png")
+           (root (closure.engine:render-html html :width 40 :height 50 :output out
+                                            :stylesheet "body{margin:0}"))
+           (mid (closure.engine:find-box root "mid"))
+           (corner (closure.engine:find-box root "corner")))
+      (labels ((at (box dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x box) dx))
+                          (round (+ (closure.engine:box-y box) dy)))))
+        (check "corner position boxes" (and mid corner))
+        (multiple-value-bind (r g b) (at mid 9 9)
+          (format t "~&  centered: ~D ~D ~D~%" r g b)
+          (check "the default image sits in the middle" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at corner 9 9)
+          (format t "~&  corner middle: ~D ~D ~D~%" r g b)
+          (check "left bottom leaves the middle empty" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at corner 1 17)
+          (format t "~&  corner: ~D ~D ~D~%" r g b)
+          (check "left bottom places the image in the bottom-left corner" (and (< r 80) (< g 80) (> b 180))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3796,6 +3822,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-repeat-round)
   (test-object-position-right)
   (test-object-position-bottom)
+  (test-object-position-left-bottom)
   (test-wbr)
   (test-address)
   (test-text-indent)
