@@ -338,9 +338,12 @@ from the Lisp engine without calling Node or another browser engine.
 - `background-repeat: round` scales the image so a whole number of tiles
   fill the box. The second color of a split image arrives sooner than it
   does in an unscaled tile, and the tile still starts with the first color.
+- `object-position: right` places a replaced image against the right side
+  of its box. The default stays in the middle, and the right-aligned image
+  leaves that middle empty.
 
 ## Next
 
-1. `object-position: right` places a replaced image against the right side
-   of its box. The done condition is not met; pages still need more of the
+1. `object-position: bottom` places a replaced image against the bottom of
+   its box. The done condition is not met; pages still need more of the
    web than this viewport.

@@ -172,11 +172,27 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                   (+ y (/ (- h dh) 2d0))
                   dw dh)))))
 
-(defun paint-surface-in-box (cr surface x y w h &key (fit :fill))
+(defun object-position-axes (value)
+  "Horizontal and vertical alignment. One value sets the other axis to center."
+  (cond
+    ((null value) (values :center :center))
+    ((keywordp value)
+     (case value
+       ((:top :bottom) (values :center value))
+       (t (values value :center))))
+    ((consp value) (values (first value) (or (second value) :center)))
+    (t (values :center :center))))
+
+(defun paint-surface-in-box (cr surface x y w h &key (fit :fill) (position :center))
   (let ((iw (float (cairo-image-surface-get-width surface) 1d0))
         (ih (float (cairo-image-surface-get-height surface) 1d0)))
     (when (and (> iw 0d0) (> ih 0d0) (> w 0d0) (> h 0d0))
       (multiple-value-bind (dx dy dw dh) (fitted-image-origin fit iw ih x y w h)
+        (unless (null (case fit
+                        (:contain t) (:cover t) (:none t) (:scale-down t)))
+          (multiple-value-bind (hx vy) (object-position-axes position)
+            (setf dx (background-position-offset hx w dw x)
+                  dy (background-position-offset vy h dh y))))
         (cairo-save cr)
         (cairo-rectangle cr x y w h)
         (cairo-clip cr)
@@ -460,7 +476,8 @@ and gaps between known stops are split evenly."
                                  (+ (box-y box) bt pt)
                                  (max 0d0 (- (box-w box) bl br pl pr))
                                  (max 0d0 (- (box-h box) bt bb pt pb))
-                                 :fit (or (computed-object-fit st) :fill)))
+                                 :fit (or (computed-object-fit st) :fill)
+                                 :position (or (computed-object-position st) :center)))
           (t
            (let ((alt (dom-attr el "alt")))
              (when (and alt (plusp (length alt)))

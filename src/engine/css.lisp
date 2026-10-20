@@ -38,6 +38,7 @@
   (background-clip :border-box)
   (background-origin :padding-box)
   (object-fit :fill)
+  (object-position :center)
   (font-size 16d0)
   (font-weight :normal)
   (font-style :normal)
@@ -128,7 +129,7 @@
  "border-top-style" "border-right-style" "border-bottom-style" "border-left-style"
  "border-top-color" "border-right-color" "border-bottom-color" "border-left-color"
  "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
- "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "background-clip" "background-origin" "object-fit"
+ "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "background-clip" "background-origin" "object-fit" "object-position"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
  "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-underline-offset" "text-decoration-thickness" "text-decoration-style" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
@@ -1039,7 +1040,7 @@
                       (t (cons :linear-gradient (gradient-stops inside))))))
              (t (url-from-tokens tokens))))
       ((:background-repeat) (kw '("repeat" "no-repeat" "repeat-x" "repeat-y" "space" "round")))
-      ((:background-position)
+      ((:background-position :object-position)
        (let ((found nil)
              (rest tokens))
          (loop while (and rest (< (length found) 2)) do
@@ -1979,6 +1980,7 @@
          (:background-clip (when value (setf (computed-background-clip style) value)))
          (:background-origin (when value (setf (computed-background-origin style) value)))
          (:object-fit (when value (setf (computed-object-fit style) value)))
+         (:object-position (when value (setf (computed-object-position style) value)))
          (:font-size
           (setf (computed-font-size style)
                 (cond

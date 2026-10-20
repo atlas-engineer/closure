@@ -3279,6 +3279,32 @@ b</div>"
           (format t "~&  rounded start: ~D ~D ~D~%" r g b)
           (check "round still starts with the first color" (and (> r 180) (< g 80) (< b 80))))))))
 
+(defun test-object-position-right ()
+  (let ((png "/tmp/closure-object-pos.png"))
+    (write-solid-png png 4 4 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<img id='mid' src='~A' width='20' height='8' style='display:block;object-fit:none'>
+                <img id='right' src='~A' width='20' height='8' style='display:block;object-fit:none;object-position:right'>"
+                         png png))
+           (out "/tmp/closure-engine-object-pos.png")
+           (root (closure.engine:render-html html :width 40 :height 30 :output out
+                                            :stylesheet "body{margin:0}"))
+           (mid (closure.engine:find-box root "mid"))
+           (right (closure.engine:find-box root "right")))
+      (labels ((at (box dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x box) dx))
+                          (round (+ (closure.engine:box-y box) dy)))))
+        (check "object position boxes" (and mid right))
+        (multiple-value-bind (r g b) (at mid 9 3)
+          (format t "~&  centered: ~D ~D ~D~%" r g b)
+          (check "the default image sits in the middle" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at right 9 3)
+          (format t "~&  right middle: ~D ~D ~D~%" r g b)
+          (check "right leaves the middle empty" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at right 17 3)
+          (format t "~&  right edge: ~D ~D ~D~%" r g b)
+          (check "right places the image against the right side" (and (< r 80) (< g 80) (> b 180))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3742,6 +3768,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-image-clip-padding)
   (test-background-repeat-space)
   (test-background-repeat-round)
+  (test-object-position-right)
   (test-wbr)
   (test-address)
   (test-text-indent)
