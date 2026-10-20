@@ -219,9 +219,11 @@ from the Lisp engine without calling Node or another browser engine.
   caption.
 - `caption-side: bottom` places the caption below the table. The first row
   stays at the top of the table.
+- `empty-cells: hide` leaves an empty table cell without a border or
+  background. The cell keeps its place, and a cell with text still paints.
 
 ## Next
 
-1. `empty-cells: hide` leaves an empty table cell without a border or
-   background. The done condition is not met; pages still need more of the
+1. `list-style-position: inside` puts the marker inside the list item instead
+   of outside it. The done condition is not met; pages still need more of the
    web than this viewport.

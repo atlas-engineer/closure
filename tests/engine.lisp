@@ -1931,6 +1931,43 @@ b</div>"
                 (>= (closure.engine:box-y cap)
                     (- (+ (closure.engine:box-y cell) (closure.engine:box-height cell)) 0.5d0))))))
 
+(defun test-empty-cells ()
+  (let* ((html "<table style='border-spacing:8px;empty-cells:hide'>
+                  <tr>
+                    <td id='empty' style='background:#cc0000;border:4px solid #000;width:20px;height:16px'></td>
+                    <td id='full' style='background:#cc0000;border:4px solid #000;width:20px;height:16px'>X</td>
+                  </tr>
+                </table>")
+         (out "/tmp/closure-empty-cells.png")
+         (root (closure.engine:render-html html :width 160 :height 60 :output out
+                                          :stylesheet "body{margin:0}"))
+         (empty (closure.engine:find-box root "empty"))
+         (full (closure.engine:find-box root "full")))
+    (format t "~&  empty-cells: empty ~A,~A ~Ax~A full ~A~%"
+            (and empty (closure.engine:box-x empty))
+            (and empty (closure.engine:box-y empty))
+            (and empty (closure.engine:box-width empty))
+            (and empty (closure.engine:box-height empty))
+            (and full (closure.engine:box-x full)))
+    (check "empty and filled cells" (and empty full))
+    (check "the empty cell keeps its place"
+           (and empty full (> (closure.engine:box-x full) (closure.engine:box-x empty))
+                (> (closure.engine:box-width empty) 20d0)))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x empty) 6))
+                 (round (+ (closure.engine:box-y empty) 8)))
+      (format t "~&  empty cell pixel: ~D ~D ~D~%" r g b)
+      (check "the empty cell paints no border or background"
+             (and (> r 240) (> g 240) (> b 240))))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x full) 4))
+                 (round (+ (closure.engine:box-y full) 8)))
+      (format t "~&  filled cell pixel: ~D ~D ~D~%" r g b)
+      (check "the filled cell still paints its background"
+             (and (> r 180) (< g 40) (< b 40))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -2350,6 +2387,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-table-valign-middle)
   (test-caption)
   (test-caption-bottom)
+  (test-empty-cells)
   (test-wbr)
   (test-address)
   (test-text-indent)

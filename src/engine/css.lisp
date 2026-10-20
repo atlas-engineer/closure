@@ -52,6 +52,7 @@
   (border-spacing-x 0d0)
   (border-spacing-y 0d0)
   (caption-side :top)
+  (empty-cells :show)
   (vertical-align :baseline)
   (flex-direction :row)
   (flex-wrap :nowrap)
@@ -113,7 +114,7 @@
  "border-top-width" "border-right-width" "border-bottom-width" "border-left-width"
  "border-top-style" "border-right-style" "border-bottom-style" "border-left-style"
  "border-top-color" "border-right-color" "border-bottom-color" "border-left-color"
- "border-radius" "border-collapse" "border-spacing" "caption-side" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
+ "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
  "color" "background" "background-color" "background-image" "object-fit"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
  "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
@@ -852,6 +853,7 @@
       ((:word-break) (kw '("normal" "break-all" "keep-all" "break-word")))
       ((:border-collapse) (kw '("separate" "collapse")))
       ((:caption-side) (kw '("top" "bottom")))
+      ((:empty-cells) (kw '("show" "hide")))
       ((:border-spacing)
        (multiple-value-bind (a rest) (parse-one-length tokens)
          (when a
@@ -1815,6 +1817,7 @@
          (:word-break (when value (setf (computed-word-break style) value)))
          (:border-collapse (when value (setf (computed-border-collapse style) value)))
          (:caption-side (when value (setf (computed-caption-side style) value)))
+         (:empty-cells (when value (setf (computed-empty-cells style) value)))
          (:border-spacing
           (when (consp value)
             (setf (computed-border-spacing-x style) (or (len (first value)) 0d0)
@@ -1891,6 +1894,7 @@
       (setf (computed-word-break s) (computed-word-break parent))
       (setf (computed-border-collapse s) (computed-border-collapse parent))
       (setf (computed-caption-side s) (computed-caption-side parent))
+      (setf (computed-empty-cells s) (computed-empty-cells parent))
       (setf (computed-border-spacing-x s) (computed-border-spacing-x parent))
       (setf (computed-border-spacing-y s) (computed-border-spacing-y parent))
       (setf (computed-visibility s) (computed-visibility parent))
