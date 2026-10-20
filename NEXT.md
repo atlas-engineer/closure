@@ -250,9 +250,11 @@ from the Lisp engine without calling Node or another browser engine.
   image stops halfway across the box.
 - `background-position: 50%` places a background image halfway across its
   box. Both side edges of that box stay empty.
+- `text-shadow: 2px 2px #cc0000` paints a shadow offset from the text. The
+  glyph stays dark, and the shadow sits down and to the right.
 
 ## Next
 
-1. `text-shadow: 2px 2px #cc0000` paints a shadow offset from the text. The
+1. `text-shadow: 2px 2px #cc0000, 6px 6px #0000cc` paints both shadows. The
    done condition is not met; pages still need more of the web than this
    viewport.

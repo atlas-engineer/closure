@@ -85,6 +85,7 @@
   (outline-color nil)
   (outline-offset 0d0)
   (box-shadow nil)
+  (text-shadow nil)
   (transform nil)
   (content :normal)
   (quotes nil)
@@ -121,7 +122,7 @@
  "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
  "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "object-fit"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
- "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
+ "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
  "justify-content" "align-items" "align-content" "align-self" "order" "gap"
  "row-gap" "column-gap"
@@ -888,6 +889,7 @@
       ((:visibility) (kw '("visible" "hidden" "collapse")))
       ((:border-radius :outline-offset) (len))
       ((:box-shadow) (parse-box-shadow tokens))
+      ((:text-shadow) (parse-box-shadow tokens))
       ((:transform) (let ((ops (parse-transform tokens))) (when ops ops)))
       ((:content)
        (cond ((and tokens (eq (tok-kind (car tokens)) :ident)
@@ -1803,6 +1805,13 @@
                                 (third sh)
                                 (fourth sh)))
                         value)))
+         (:text-shadow
+          (setf (computed-text-shadow style)
+                (mapcar (lambda (sh)
+                          (list (or (len (first sh)) 0d0)
+                                (or (len (second sh)) 0d0)
+                                (third sh)))
+                        value)))
          (:box-sizing (setf (computed-box-sizing style) value))
          (:color (when value (setf (computed-color style) value)))
          (:background-color (setf (computed-background style) value))
@@ -1936,6 +1945,7 @@
       (setf (computed-text-indent s) (computed-text-indent parent))
       (setf (computed-letter-spacing s) (computed-letter-spacing parent))
       (setf (computed-word-spacing s) (computed-word-spacing parent))
+      (setf (computed-text-shadow s) (computed-text-shadow parent))
       (setf (computed-white-space s) (computed-white-space parent))
       (setf (computed-overflow-wrap s) (computed-overflow-wrap parent))
       (setf (computed-word-break s) (computed-word-break parent))
