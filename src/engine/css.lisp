@@ -906,12 +906,22 @@
              (t (url-from-tokens tokens))))
       ((:background-repeat) (kw '("repeat" "no-repeat" "repeat-x" "repeat-y")))
       ((:background-position)
-       (let ((found (loop for tk in tokens
-                          when (and (eq (tok-kind tk) :ident)
-                                    (member (tok-text tk)
-                                            '("left" "right" "center" "top" "bottom")
-                                            :test #'string=))
-                            collect (intern (string-upcase (tok-text tk)) :keyword))))
+       (let ((found nil)
+             (rest tokens))
+         (loop while (and rest (< (length found) 2)) do
+           (let ((tk (car rest)))
+             (cond
+               ((and (eq (tok-kind tk) :ident)
+                     (member (tok-text tk)
+                             '("left" "right" "center" "top" "bottom")
+                             :test #'string=))
+                (push (intern (string-upcase (tok-text tk)) :keyword) found)
+                (pop rest))
+               (t
+                (multiple-value-bind (len more) (parse-one-length rest)
+                  (cond (len (push len found) (setf rest more))
+                        (t (pop rest))))))))
+         (setf found (nreverse found))
          (if (cdr found) found (car found))))
       ((:background-size)
        (or (kw '("auto" "contain" "cover"))
@@ -1798,7 +1808,14 @@
          (:background-color (setf (computed-background style) value))
          (:background-image (setf (computed-background-image style) value))
          (:background-repeat (when value (setf (computed-background-repeat style) value)))
-         (:background-position (when value (setf (computed-background-position style) value)))
+         (:background-position
+          (when value
+            (setf (computed-background-position style)
+                  (if (and (consp value) (not (eq (car value) :%)))
+                      (mapcar (lambda (v)
+                                (if (keywordp v) v (absolutize v parent-size)))
+                              value)
+                      (if (keywordp value) value (absolutize value parent-size))))))
          (:background-size
           (setf (computed-background-size style)
                 (if (consp value)

@@ -248,9 +248,11 @@ from the Lisp engine without calling Node or another browser engine.
   image stops at those edges instead of its intrinsic size.
 - `background-size: 50%` paints a background image at half the box size. The
   image stops halfway across the box.
+- `background-position: 50%` places a background image halfway across its
+  box. Both side edges of that box stay empty.
 
 ## Next
 
-1. `background-position: 50%` places a background image halfway across its
-   box. The done condition is not met; pages still need more of the web than
-   this viewport.
+1. `text-shadow: 2px 2px #cc0000` paints a shadow offset from the text. The
+   done condition is not met; pages still need more of the web than this
+   viewport.
