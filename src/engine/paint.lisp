@@ -179,7 +179,9 @@ and gaps between known stops are split evenly."
 (defun paint-background-gradient (cr box)
   "Paint a linear-gradient across the border box. The default runs top to bottom."
   (let* ((st (box-style box))
-         (spec (and st (computed-background-gradient st)))
+         (raw (and st (computed-background-gradient st)))
+         (repeating (and (consp raw) (eq (car raw) :repeat)))
+         (spec (if repeating (cdr raw) raw))
          (dir (cond ((or (keywordp (car spec)) (numberp (car spec))) (car spec))
                     (t :bottom)))
          (stops (if (or (keywordp (car spec)) (numberp (car spec))) (cdr spec) spec)))
@@ -209,14 +211,22 @@ and gaps between known stops are split evenly."
                (at-x (if (eq dir :radial) (second stops) :center))
                (at-y (if (eq dir :radial) (third stops) :center))
                (colors (if (eq dir :radial) (cdddr stops) stops))
+               (raw-offsets (gradient-stop-offsets colors))
+               (period (if repeating (or (car (last raw-offsets)) 1d0) 1d0))
+               (period (if (and repeating (> period 0d0) (< period 1d0)) period 1d0))
                (pat (if (eq dir :radial)
                         (let* ((cx (radial-center at-x (box-x box) (box-w box)))
                                (cy (radial-center at-y (box-y box) (box-h box)))
                                (r (radial-radius extent cx cy (box-x box) (box-y box)
                                                  (box-w box) (box-h box))))
                           (cairo-pattern-create-radial cx cy 0d0 cx cy r))
-                        (cairo-pattern-create-linear x0 y0 x1 y1)))
-               (offsets (gradient-stop-offsets colors)))
+                        (cairo-pattern-create-linear x0 y0
+                                                     (+ x0 (* (- x1 x0) period))
+                                                     (+ y0 (* (- y1 y0) period)))))
+               (offsets (if (< period 1d0)
+                            (mapcar (lambda (o) (/ o period)) raw-offsets)
+                            raw-offsets)))
+          (when repeating (cairo-pattern-set-extend pat 1))
           (loop for color in colors
                 for offset in offsets
                 do (cairo-pattern-add-color-stop-rgba

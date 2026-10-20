@@ -63,6 +63,8 @@
   (cr :pointer) (source :pointer))
 (cffi:defcfun ("cairo_pattern_destroy" cairo-pattern-destroy) :void
   (pattern :pointer))
+(cffi:defcfun ("cairo_pattern_set_extend" cairo-pattern-set-extend) :void
+  (pattern :pointer) (extend :int))
 (cffi:defcfun ("cairo_rectangle" cairo-rectangle) :void
   (cr :pointer) (x :double) (y :double) (w :double) (h :double))
 (cffi:defcfun ("cairo_fill" cairo-fill) :void (cr :pointer))

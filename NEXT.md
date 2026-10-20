@@ -270,9 +270,11 @@ from the Lisp engine without calling Node or another browser engine.
   first.
 - `radial-gradient(circle at 0 0, #cc0000, #0000cc)` puts the first color at
   the top-left corner. The opposite corner is the last color.
+- `repeating-linear-gradient(#cc0000, #0000cc 50%)` paints the blend twice
+  down the box. The second half starts red again and ends blue.
 
 ## Next
 
-1. `repeating-linear-gradient(#cc0000, #0000cc 50%)` paints the blend twice
-   down the box. The done condition is not met; pages still need more of the
-   web than this viewport.
+1. `text-decoration: underline overline` draws both a line under the text
+   and a line above it. The done condition is not met; pages still need more
+   of the web than this viewport.
