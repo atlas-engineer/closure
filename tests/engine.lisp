@@ -1113,8 +1113,8 @@
                                           :stylesheet "body{margin:0} p{margin:0;font-size:16px}"))
          (hello nil) (kind nil) (world nil)
          (bold (closure.engine:find-box root "b"))
-         (bold-adv (closure.engine::text-advance "bold" 16d0 "sans-serif" :bold :normal))
-         (norm-adv (closure.engine::text-advance "bold" 16d0 "sans-serif" :normal :normal)))
+         (bold-adv (closure.engine::text-advance "bold" 16d0 "serif" :bold :normal))
+         (norm-adv (closure.engine::text-advance "bold" 16d0 "serif" :normal :normal)))
     (labels ((walk (b)
                (when b
                  (when (eq (closure.engine::box-kind b) :text)
@@ -1198,7 +1198,7 @@
          (root (closure.engine:render-html html :width 200 :height 40 :output out
                                           :stylesheet "body{margin:0}"))
          (box (closure.engine:find-box root "gone"))
-         (adv (closure.engine::text-advance "missing" 16d0 "sans-serif" :normal :normal)))
+         (adv (closure.engine::text-advance "missing" 16d0 "serif" :normal :normal)))
     (check "broken image box" box)
     (check "alt sizes the box" (and box (~ (closure.engine:box-width box) adv)))
     (check "alt text is stored" (and box (string= (closure.engine::box-text box) "missing")))
@@ -2352,7 +2352,7 @@ b</div>"
            (and down (string= (closure.engine::box-text down) "ab")))
     (check "uppercase is measured as capitals"
            (and up (~ (closure.engine:box-width up)
-                      (closure.engine::text-advance "AB" 16d0 "sans-serif" :normal :normal))))))
+                      (closure.engine::text-advance "AB" 16d0 "serif" :normal :normal))))))
 
 (defun test-word-spacing ()
   (let* ((root (closure.engine:layout-html
@@ -2440,7 +2440,7 @@ b</div>"
            (and italic roman
                 (eq (closure.engine::computed-font-style (closure.engine::box-style roman)) :normal)
                 (~ (closure.engine:box-width italic)
-                   (closure.engine::text-advance "Mail" 16d0 "sans-serif" :normal :italic))))))
+                   (closure.engine::text-advance "Mail" 16d0 "serif" :normal :italic))))))
 
 (defun test-wbr ()
   (let* ((whole (closure.engine:layout-html
@@ -2582,6 +2582,27 @@ b</div>"
                       (<= (+ (closure.engine:box-x tb) (closure.engine:box-width tb))
                           (+ (closure.engine:box-x box) (closure.engine:box-width box) 0.5d0)))
                     parts)))))
+
+(defun test-default-serif ()
+  (labels ((line-count (box)
+             (let ((n 0))
+               (labels ((walk (b)
+                          (when b
+                            (when (eq (closure.engine::box-kind b) :line) (incf n))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk box))
+               n)))
+    (let* ((html "<p id='p' style='width:220px'>Justified words wrap across the line and leave the last line packed at the start of the block.</p>")
+           (root (closure.engine:layout-html html :width 400 :height 200
+                                            :stylesheet "body{margin:0}"))
+           (p (closure.engine:find-box root "p"))
+           (lines (line-count p))
+           (family (and p (closure.engine::computed-font-family
+                           (closure.engine::box-style p)))))
+      (format t "~&  default font: family ~A lines ~D~%" family lines)
+      (check "the initial font is a serif" (equal '("serif") family))
+      (check "the paragraph wraps onto three lines"
+             (and p (= lines 3))))))
 
 (defun test-justify ()
   (labels ((texts (root)
@@ -3957,6 +3978,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-text-overflow)
   (test-overflow-wrap)
   (test-word-break)
+  (test-default-serif)
   (test-justify)
   (test-border-collapse)
   (test-border-spacing)

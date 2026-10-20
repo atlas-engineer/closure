@@ -43,7 +43,7 @@
   (font-size 16d0)
   (font-weight :normal)
   (font-style :normal)
-  (font-family '("sans-serif"))
+  (font-family '("serif"))
   (line-height nil)
   (line-height-mult 1.2d0)
   (text-align :start)
@@ -2105,7 +2105,7 @@
 (defun initial-computed ()
   (make-computed :custom (make-hash-table :test #'equal)
                  :color (color-bytes 0 0 0)
-                 :font-family '("sans-serif")))
+                 :font-family '("serif")))
 
 (defun inherit-computed (parent)
   (let ((s (initial-computed)))

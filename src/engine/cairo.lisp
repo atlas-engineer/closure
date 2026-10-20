@@ -125,6 +125,9 @@
 (defvar *sans-face* nil
   "Concrete family for the generic sans-serif, chosen so bold is a different face.")
 
+(defvar *serif-face* nil
+  "Concrete family for the generic serif. Browsers default to a Times-like face.")
+
 (defvar *resolving-sans* nil)
 
 (defun cairo-family (family)
@@ -135,8 +138,8 @@
                       (string-downcase (symbol-name (car family))))
                      ((symbolp family) (string-downcase (symbol-name family)))
                      (t "sans-serif")))))
-    (cond ((member name '("serif" "times" "times new roman" "georgia") :test #'string=)
-           "Serif")
+    (cond ((member name '("serif" "times") :test #'string=)
+           (if *resolving-sans* "Serif" (resolve-serif-face)))
           ((member name '("monospace" "courier" "courier new" "ui-monospace") :test #'string=)
            "Monospace")
           ((member name '("sans-serif" "sans" "arial" "helvetica" "noto sans") :test #'string=)
@@ -177,6 +180,19 @@
 
 (defun text-advance (string size family weight style)
   (first (measure-text string size family weight style)))
+
+(defun resolve-serif-face ()
+  "Pick a Times-like serif whose bold face is wider than its regular face."
+  (unless *serif-face*
+    (let ((*resolving-sans* t))
+      (setf *serif-face*
+            (or (find-if (lambda (name)
+                           (let ((regular (text-advance "bold" 16d0 name :normal :normal))
+                                 (heavy (text-advance "bold" 16d0 name :bold :normal)))
+                             (> heavy regular)))
+                         '("Times New Roman" "Liberation Serif" "Times"))
+                "Times New Roman"))))
+  *serif-face*)
 
 (defun resolve-sans-face ()
   "Pick a sans family whose bold face is wider than its regular face."

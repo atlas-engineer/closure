@@ -360,6 +360,9 @@ from the Lisp engine without calling Node or another browser engine.
   inside that width. A long caption word widens the table. A specified
   table width still fills that width. A space that does not fit at the end
   of a line is dropped, so it does not become a blank line.
+- The initial font is a Times-like serif. A 220px paragraph wraps onto
+  three lines with the same breaks a browser uses. The sample page also
+  has a bullet list; the items are indented and stacked.
 
 ## Next
 
