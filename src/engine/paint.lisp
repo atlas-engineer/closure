@@ -287,7 +287,7 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                          (progn
                            (cairo-move-to cr ox oy)
                            (cairo-show-text cr text))))))
-          (dolist (sh (computed-text-shadow st))
+          (dolist (sh (reverse (computed-text-shadow st)))
             (destructuring-bind (dx dy color) sh
               (set-color cr (color-or color st))
               (show-at (+ (box-x box) dx) (+ baseline dy))))

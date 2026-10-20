@@ -252,9 +252,11 @@ from the Lisp engine without calling Node or another browser engine.
   box. Both side edges of that box stay empty.
 - `text-shadow: 2px 2px #cc0000` paints a shadow offset from the text. The
   glyph stays dark, and the shadow sits down and to the right.
+- `text-shadow: 2px 2px #cc0000, 6px 6px #0000cc` paints both shadows. The
+  second offset sits further down and to the right.
 
 ## Next
 
-1. `text-shadow: 2px 2px #cc0000, 6px 6px #0000cc` paints both shadows. The
-   done condition is not met; pages still need more of the web than this
-   viewport.
+1. `background: linear-gradient(#cc0000, #0000cc)` paints a vertical blend
+   from red to blue. The done condition is not met; pages still need more of
+   the web than this viewport.
