@@ -673,6 +673,29 @@
           (format t "~&  contain below: ~D ~D ~D~%" r g b)
           (check "contain leaves the extra side empty" (and (> r 240) (> g 240) (> b 240))))))))
 
+(defun test-background-size-cover ()
+  (let ((split "/tmp/closure-engine-bg-cover.png")
+        (out "/tmp/closure-engine-bg-cover-out.png"))
+    (write-split-png split 8 4 0.9d0 0.1d0 0.1d0 0.1d0 0.8d0 0.1d0)
+    (let* ((html (format nil "<div id='cov' style='width:16px;height:16px;background-image:url(\"~A\");background-repeat:no-repeat;background-size:cover'></div>"
+                         split))
+           (root (closure.engine:render-html html :width 40 :height 30 :output out
+                                            :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "cov")))
+      (labels ((at (dx dy)
+                 (png-rgb out
+                          (+ (round (closure.engine:box-x box)) dx)
+                          (+ (round (closure.engine:box-y box)) dy))))
+        (check "cover box" box)
+        (multiple-value-bind (r g b) (at 1 14)
+          (format t "~&  cover bottom: ~D ~D ~D~%" r g b)
+          (check "cover fills the side that contain would leave empty"
+                 (and (> r 180) (< g 80) (< b 80))))
+        (multiple-value-bind (r g b) (at 12 1)
+          (format t "~&  cover far side: ~D ~D ~D~%" r g b)
+          (check "cover crops the part that does not fit"
+                 (and (> r 180) (< g 80) (< b 80))))))))
+
 (defun test-background-and-object-fit ()
   (let ((blue "/tmp/closure-engine-bg.png")
         (split "/tmp/closure-engine-split.png")
@@ -2632,6 +2655,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-position-bottom)
   (test-background-position-right-bottom)
   (test-background-size-contain)
+  (test-background-size-cover)
   (test-form-controls)
   (test-external-css)
   (test-lisp-script)
