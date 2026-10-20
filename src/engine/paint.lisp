@@ -110,12 +110,13 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
         (cairo-restore cr)))))
 
 (defun paint-background-image (cr box)
-  "Tile a background-image across the padding box at its intrinsic size."
+  "Paint a background-image in the padding box. The default tiles it; no-repeat paints it once."
   (let* ((st (box-style box))
          (url (and st (computed-background-image st))))
     (when (and (stringp url) (plusp (length url)))
       (let* ((path (image-pathname url))
-             (surface (and path (load-image-surface path))))
+             (surface (and path (load-image-surface path)))
+             (repeat (or (and st (computed-background-repeat st)) :repeat)))
         (when surface
           (multiple-value-bind (bt br bb bl) (border4 st)
             (let* ((x (+ (box-x box) bl))
@@ -123,15 +124,19 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                    (w (max 0d0 (- (box-w box) bl br)))
                    (h (max 0d0 (- (box-h box) bt bb)))
                    (iw (float (cairo-image-surface-get-width surface) 1d0))
-                   (ih (float (cairo-image-surface-get-height surface) 1d0)))
+                   (ih (float (cairo-image-surface-get-height surface) 1d0))
+                   (tile-x (member repeat '(:repeat :repeat-x)))
+                   (tile-y (member repeat '(:repeat :repeat-y))))
               (when (and (> w 0d0) (> h 0d0) (> iw 0d0) (> ih 0d0))
                 (cairo-save cr)
                 (cairo-rectangle cr x y w h)
                 (cairo-clip cr)
-                (loop for yy = y then (+ yy ih) while (< yy (+ y h)) do
-                  (loop for xx = x then (+ xx iw) while (< xx (+ x w)) do
-                    (cairo-set-source-surface cr surface xx yy)
-                    (cairo-paint cr)))
+                (loop for yy = y then (+ yy ih)
+                      while (and (< yy (+ y h)) (or tile-y (= yy y)))
+                      do (loop for xx = x then (+ xx iw)
+                               while (and (< xx (+ x w)) (or tile-x (= xx x)))
+                               do (cairo-set-source-surface cr surface xx yy)
+                                  (cairo-paint cr)))
                 (cairo-restore cr)))))))))
 
 (defun paint-image (cr box)

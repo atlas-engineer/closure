@@ -230,8 +230,11 @@ from the Lisp engine without calling Node or another browser engine.
   and the ring is drawn around it.
 - `text-decoration: overline` draws a line above the text. Plain text at
   the same place stays empty.
+- `background-repeat: no-repeat` paints a background image once. The default
+  still tiles that image across the box.
 
 ## Next
 
-1. `background-repeat: no-repeat` paints a background image once. The done
-   condition is not met; pages still need more of the web than this viewport.
+1. `background-position: right` places a background image at the right of
+   its box. The done condition is not met; pages still need more of the web
+   than this viewport.

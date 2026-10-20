@@ -31,6 +31,7 @@
   (color '(0d0 0d0 0d0 1d0))
   (background nil)
   (background-image nil)
+  (background-repeat :repeat)
   (object-fit :fill)
   (font-size 16d0)
   (font-weight :normal)
@@ -116,7 +117,7 @@
  "border-top-style" "border-right-style" "border-bottom-style" "border-left-style"
  "border-top-color" "border-right-color" "border-bottom-color" "border-left-color"
  "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
- "color" "background" "background-color" "background-image" "object-fit"
+ "color" "background" "background-color" "background-image" "background-repeat" "object-fit"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
  "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
@@ -901,6 +902,7 @@
        (cond ((and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "none"))
               :none)
              (t (url-from-tokens tokens))))
+      ((:background-repeat) (kw '("repeat" "no-repeat" "repeat-x" "repeat-y")))
       ((:object-fit) (kw '("fill" "contain" "cover" "none" "scale-down")))
       ((:list-style :list-style-type)
        (kw '("disc" "circle" "square" "decimal" "none")))
@@ -1778,6 +1780,7 @@
          (:color (when value (setf (computed-color style) value)))
          (:background-color (setf (computed-background style) value))
          (:background-image (setf (computed-background-image style) value))
+         (:background-repeat (when value (setf (computed-background-repeat style) value)))
          (:object-fit (when value (setf (computed-object-fit style) value)))
          (:font-size
           (setf (computed-font-size style)
