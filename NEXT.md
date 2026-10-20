@@ -346,9 +346,11 @@ from the Lisp engine without calling Node or another browser engine.
   leaves that middle empty.
 - `object-position: left bottom` places a replaced image in the bottom-left
   corner. The middle stays empty, and the corner is the image.
+- `object-position: 100% 0` places a replaced image in the top-right
+  corner. The middle stays empty, and that corner is the image.
 
 ## Next
 
-1. `object-position: 100% 0` places a replaced image in the top-right corner
-   of its box. The done condition is not met; pages still need more of the
-   web than this viewport.
+1. `aspect-ratio: 2 / 1` sets an auto height from the width so the box is
+   twice as wide as it is tall. The done condition is not met; pages still
+   need more of the web than this viewport.
