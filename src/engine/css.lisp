@@ -904,7 +904,7 @@
               :none)
              (t (url-from-tokens tokens))))
       ((:background-repeat) (kw '("repeat" "no-repeat" "repeat-x" "repeat-y")))
-      ((:background-position) (kw '("left" "right" "center")))
+      ((:background-position) (kw '("left" "right" "center" "top" "bottom")))
       ((:object-fit) (kw '("fill" "contain" "cover" "none" "scale-down")))
       ((:list-style :list-style-type)
        (kw '("disc" "circle" "square" "decimal" "none")))

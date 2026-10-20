@@ -131,15 +131,18 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                    (x0 (case pos
                          (:right (- (+ x w) iw))
                          (:center (+ x (/ (- w iw) 2d0)))
-                         (t x))))
+                         (t x)))
+                   (y0 (if (eq pos :bottom) (- (+ y h) ih) y)))
               (when (and (> w 0d0) (> h 0d0) (> iw 0d0) (> ih 0d0))
                 (when tile-x
                   (loop while (> x0 x) do (decf x0 iw)))
+                (when tile-y
+                  (loop while (> y0 y) do (decf y0 ih)))
                 (cairo-save cr)
                 (cairo-rectangle cr x y w h)
                 (cairo-clip cr)
-                (loop for yy = y then (+ yy ih)
-                      while (and (< yy (+ y h)) (or tile-y (= yy y)))
+                (loop for yy = y0 then (+ yy ih)
+                      while (and (< yy (+ y h)) (or tile-y (= yy y0)))
                       do (loop for xx = x0 then (+ xx iw)
                                while (and (< xx (+ x w)) (or tile-x (= xx x0)))
                                do (cairo-set-source-surface cr surface xx yy)
