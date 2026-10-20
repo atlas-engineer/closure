@@ -232,9 +232,11 @@ from the Lisp engine without calling Node or another browser engine.
   the same place stays empty.
 - `background-repeat: no-repeat` paints a background image once. The default
   still tiles that image across the box.
+- `background-position: right` places a background image on the right. The
+  left edge of that box stays empty.
 
 ## Next
 
-1. `background-position: right` places a background image at the right of
+1. `background-position: center` places a background image in the middle of
    its box. The done condition is not met; pages still need more of the web
    than this viewport.
