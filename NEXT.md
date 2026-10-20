@@ -292,9 +292,11 @@ from the Lisp engine without calling Node or another browser engine.
   stays continuous, and the dotted line leaves gaps.
 - `outline-style: dashed` draws a dashed outline. The solid outline stays
   continuous, and the dashed outline leaves gaps. The box width is unchanged.
+- `outline-style: dotted` draws a dotted outline. The solid outline stays
+  continuous, and the dotted outline leaves gaps. The box width is unchanged.
 
 ## Next
 
-1. `outline-style: dotted` draws a dotted outline instead of a solid one.
-   The done condition is not met; pages still need more of the web than this
+1. `outline-style: double` draws two parallel outlines instead of one. The
+   done condition is not met; pages still need more of the web than this
    viewport.

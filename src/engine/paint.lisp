@@ -83,6 +83,13 @@
                (cairo-set-dash cr dash 2 0d0)
                (stroke-rect)
                (cairo-set-dash cr (cffi:null-pointer) 0 0d0)))
+            ((eq style :dotted)
+             (cffi:with-foreign-object (dash :double 2)
+               (setf (cffi:mem-aref dash :double 0) bw
+                     (cffi:mem-aref dash :double 1) bw)
+               (cairo-set-dash cr dash 2 0d0)
+               (stroke-rect)
+               (cairo-set-dash cr (cffi:null-pointer) 0 0d0)))
             (t
              (cairo-set-dash cr (cffi:null-pointer) 0 0d0)
              (stroke-rect))))))))
