@@ -785,23 +785,55 @@
                    (t (pop rest))))))))
     (cons dir (nreverse colors))))
 
+(defun radial-at-value (value)
+  "One radial-gradient center component. A bare number or px length is pixels."
+  (cond ((null value) :center)
+        ((keywordp value) value)
+        ((numberp value) (float value 1d0))
+        ((and (consp value) (eq (car value) :px)) (float (cdr value) 1d0))
+        ((and (consp value) (eq (car value) :%)) value)
+        (t :center)))
+
+(defun read-radial-position (tokens)
+  "One position after at: a keyword, a length, or a percentage."
+  (if (and tokens (eq (tok-kind (car tokens)) :ident)
+           (member (tok-text (car tokens)) '("left" "right" "center" "top" "bottom") :test #'string=))
+      (values (intern (string-upcase (tok-text (car tokens))) :keyword) (cdr tokens))
+      (parse-one-length tokens)))
+
 (defun radial-gradient-spec (tokens)
-  "A radial-gradient centered in the box. The default ends at the farthest corner."
+  "A radial-gradient. The default is centered and ends at the farthest corner."
   (let ((extent :farthest-corner)
+        (at-x :center)
+        (at-y :center)
         (rest tokens))
-    (loop while (and rest (eq (tok-kind (car rest)) :ident)
-                     (member (tok-text (car rest))
-                             '("circle" "ellipse" "closest-side" "farthest-side"
-                               "closest-corner" "farthest-corner" "at" "center")
-                             :test #'string=))
-          do (when (member (tok-text (car rest))
-                           '("closest-side" "farthest-side" "closest-corner" "farthest-corner")
-                           :test #'string=)
-               (setf extent (intern (string-upcase (tok-text (car rest))) :keyword)))
-             (pop rest))
+    (loop while rest do
+      (let ((tk (car rest)))
+        (cond
+          ((and (eq (tok-kind tk) :ident) (string= (tok-text tk) "at"))
+           (pop rest)
+           (multiple-value-bind (x more) (read-radial-position rest)
+             (when x
+               (setf at-x (radial-at-value x))
+               (setf rest more)
+               (multiple-value-bind (y more2) (read-radial-position rest)
+                 (when y
+                   (setf at-y (radial-at-value y))
+                   (setf rest more2))))))
+          ((and (eq (tok-kind tk) :ident)
+                (member (tok-text tk)
+                        '("circle" "ellipse" "closest-side" "farthest-side"
+                          "closest-corner" "farthest-corner" "center")
+                        :test #'string=))
+           (when (member (tok-text tk)
+                         '("closest-side" "farthest-side" "closest-corner" "farthest-corner")
+                         :test #'string=)
+             (setf extent (intern (string-upcase (tok-text tk)) :keyword)))
+           (pop rest))
+          (t (return)))))
     (when (and rest (eq (tok-kind (car rest)) :comma))
       (pop rest))
-    (list* :radial extent (cdr (gradient-stops rest)))))
+    (list* :radial extent at-x at-y (cdr (gradient-stops rest)))))
 
 (defun expand-background (tokens)
   (let ((color nil) (image nil) (gradient nil) (rest tokens))
