@@ -2619,6 +2619,7 @@ b</div>"
 mono two</pre>")
          (root (closure.engine:layout-html html :width 300 :height 80
                                           :stylesheet "body{margin:0} pre{margin:0}"))
+         (pre (closure.engine:find-box root "p"))
          (lines nil))
     (labels ((walk (b)
                (when b
@@ -2630,6 +2631,8 @@ mono two</pre>")
     (setf lines (nreverse lines))
     (format t "~&  pre lines ~D~%" (length lines))
     (check "pre keeps both lines" (= (length lines) 2))
+    (check "each pre line is 17px"
+           (and pre (~ (closure.engine:box-height pre) 34d0)))
     (check "the second pre line starts at the same edge"
            (and (= (length lines) 2)
                 (~ (closure.engine:box-x (first lines))

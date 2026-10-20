@@ -237,8 +237,13 @@ with the browser's Times widths."
   *sans-face*)
 
 (defun font-height (size family weight style)
-  "The font's recommended line spacing. This is the CSS normal line height."
-  (fourth (measure-text "Mg" size family weight style)))
+  "Normal line height. Each of ascent, descent, and line gap rounds to a
+pixel, then they add. That is the spacing browsers use."
+  (let* ((m (measure-text "Mg" size family weight style))
+         (asc (second m))
+         (desc (third m))
+         (gap (max 0d0 (- (fourth m) asc desc))))
+    (float (+ (round asc) (round desc) (round gap)) 1d0)))
 
 (defun font-ascent (size family weight style)
   (second (measure-text "Mg" size family weight style)))

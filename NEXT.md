@@ -366,10 +366,10 @@ from the Lisp engine without calling Node or another browser engine.
 - Text is measured without hinting, so a caption above the cells "One"
   and "Two" wraps onto two lines. An `<hr>` is a two-pixel inset gray rule
   across the content width.
-- The initial line height is the font's own spacing, rounded to a whole
-  pixel. A paragraph line is 18px and a heading line is 37px, so the
-  sample page lines up with a browser. A `<pre>` is 13px monospace and
-  keeps each source line.
+- Normal line height adds the font's ascent, descent, and line gap after
+  each is rounded to a pixel. A paragraph line is 18px, a heading is 37px,
+  and a 13px preformatted line is 17px. The sample page also has a
+  blockquote indented 40px on each side.
 
 ## Next
 
