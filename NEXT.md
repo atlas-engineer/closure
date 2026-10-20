@@ -300,9 +300,12 @@ from the Lisp engine without calling Node or another browser engine.
 - `border-style: double` draws two parallel border edges. A gap separates
   them, and a solid border of the same width fills the band. Both boxes keep
   the same width.
+- `border-style: groove` paints the top and left edges darker than the
+  bottom and right. A gray groove is dark on the top and left and light on
+  the bottom and right.
 
 ## Next
 
-1. `border-style: groove` paints the top and left edges lighter than the
+1. `border-style: ridge` paints the top and left edges lighter than the
    bottom and right edges. The done condition is not met; pages still need
    more of the web than this viewport.
