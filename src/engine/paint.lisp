@@ -70,9 +70,22 @@
                                  (cffi:mem-aref dash :double 1) bw)
                            (cairo-set-dash cr dash 2 0d0)))
                         (t (cairo-set-dash cr (cffi:null-pointer) 0 0d0)))
-                      (cairo-rectangle cr (+ x1 (/ bw 2d0)) (+ y1 (/ bw 2d0))
-                                       (max 0d0 (- ww bw)) (max 0d0 (- hh bw)))
-                      (cairo-stroke cr))))))
+                      (if (eq (computed-border-collapse st) :collapse)
+                          ;; Center the stroke on the cell edge so half of a
+                          ;; shared border is drawn by each neighbor.
+                          (progn
+                            (if (>= ww hh)
+                                (let ((yy (if (= y1 y) y1 (+ y1 hh))))
+                                  (cairo-move-to cr x1 yy)
+                                  (cairo-line-to cr (+ x1 ww) yy))
+                                (let ((xx (if (= x1 x) x1 (+ x1 ww))))
+                                  (cairo-move-to cr xx y1)
+                                  (cairo-line-to cr xx (+ y1 hh))))
+                            (cairo-stroke cr))
+                          (progn
+                            (cairo-rectangle cr (+ x1 (/ bw 2d0)) (+ y1 (/ bw 2d0))
+                                             (max 0d0 (- ww bw)) (max 0d0 (- hh bw)))
+                            (cairo-stroke cr))))))))
           (labels ((shade (color light)
                      (let* ((c (color-or color st))
                             (r (float (or (first c) 0d0) 1d0))

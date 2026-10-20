@@ -379,9 +379,12 @@ from the Lisp engine without calling Node or another browser engine.
   when the file is square. The same square file with only the height stays
   20px wide.
 
+- A collapsed table cell's border box is the content, the padding, and
+  one border. The cell starts half a pixel inside the table, and the next
+  cell starts where the previous one ends. The sample page also has an
+  italic word.
+
 ## Next
 
-1. A collapsed table cell with a 1px border is content plus padding plus
-   that one border, and it starts half a pixel inside the table edge. The
-   done condition is not met; pages still need more of the web than this
-   viewport.
+1. The done condition is not met; pages still need more of the web than
+   this viewport.

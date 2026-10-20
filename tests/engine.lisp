@@ -2749,6 +2749,40 @@ mono two</pre>")
                         (closure.engine:box-width (second single-words)))
                      (- (+ (closure.engine:box-x single) (closure.engine:box-width single)) 40d0)))))))
 
+(defun test-collapsed-cell-half ()
+  (let* ((html "<table id='t' style='border-collapse:collapse'>
+                  <tr><td id='a' style='border:1px solid #000;padding:4px'>One</td></tr>
+                </table>")
+         (root (closure.engine:layout-html html :width 200 :height 60
+                                          :stylesheet "body{margin:0}"))
+         (table (closure.engine:find-box root "t"))
+         (a (closure.engine:find-box root "a"))
+         (text (closure.engine::text-advance "One" 16d0 "serif" :normal :normal)))
+    (format t "~&  half cell ~A,~A ~Ax~A table ~A text ~A~%"
+            (and a (closure.engine:box-x a)) (and a (closure.engine:box-y a))
+            (and a (closure.engine:box-width a)) (and a (closure.engine:box-height a))
+            (and table (closure.engine:box-x table)) text)
+    (check "collapsed half cell" (and table a))
+    (check "the cell starts half a border inside the table"
+           (and table a (~ (- (closure.engine:box-x a) (closure.engine:box-x table)) 0.5d0)
+                (~ (- (closure.engine:box-y a) (closure.engine:box-y table)) 0.5d0)))
+    (check "the cell is content, padding, and one border"
+           (and a (~ (closure.engine:box-width a) (+ text 8d0 1d0))
+                (~ (closure.engine:box-height a) 27d0)))))
+
+(defun test-em ()
+  (let* ((root (closure.engine:layout-html
+                "<p><em id='e'>italic</em><span id='s'>italic</span></p>"
+                :width 200 :height 40
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (em (closure.engine:find-box root "e"))
+         (plain (closure.engine:find-box root "s")))
+    (check "em box" (and em plain))
+    (check "em is italic"
+           (and em (eq (closure.engine::computed-font-style (closure.engine::box-style em)) :italic)))
+    (check "plain text stays roman"
+           (and plain (eq (closure.engine::computed-font-style (closure.engine::box-style plain)) :normal)))))
+
 (defun test-border-collapse ()
   (let* ((html "<table id='t' style='border-collapse:collapse'>
                   <tr>
@@ -2771,14 +2805,14 @@ mono two</pre>")
             (and b (closure.engine:box-x b))
             (and c (closure.engine:box-y c)))
     (check "collapsed cells" (and a b c))
-    (check "adjacent cells share the vertical border"
+    (check "adjacent cells meet at the shared vertical border"
            (and a b
                 (~ (closure.engine:box-x b)
-                   (- (+ (closure.engine:box-x a) (closure.engine:box-width a)) 4d0))))
-    (check "adjacent cells share the horizontal border"
+                   (+ (closure.engine:box-x a) (closure.engine:box-width a)))))
+    (check "adjacent cells meet at the shared horizontal border"
            (and a c
                 (~ (closure.engine:box-y c)
-                   (- (+ (closure.engine:box-y a) (closure.engine:box-height a)) 4d0))))))
+                   (+ (closure.engine:box-y a) (closure.engine:box-height a)))))))
 
 (defun test-border-spacing ()
   (let* ((html "<table style='border-collapse:separate;border-spacing:12px 8px'>
@@ -4123,6 +4157,8 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-normal-line-height)
   (test-default-serif)
   (test-justify)
+  (test-collapsed-cell-half)
+  (test-em)
   (test-border-collapse)
   (test-border-spacing)
   (test-colspan)

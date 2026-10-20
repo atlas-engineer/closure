@@ -1561,6 +1561,19 @@ than the columns it covers shares the extra across those columns."
                 (incf (aref cols (+ start i)) extra)))))))
     cols))
 
+(defun inset-collapsed-cell (box)
+  "Center a collapsed border on the cell edge. Half of each border sits
+outside the border box, so the box is content plus padding plus one border."
+  (let ((st (box-style box)))
+    (when st
+      (multiple-value-bind (bt br bb bl) (border4 st)
+        (let ((hl (/ bl 2d0)) (hr (/ br 2d0))
+              (ht (/ bt 2d0)) (hb (/ bb 2d0)))
+          (incf (box-x box) hl)
+          (decf (box-w box) (+ hl hr))
+          (incf (box-y box) ht)
+          (decf (box-h box) (+ ht hb)))))))
+
 (defun collapsed-shared-width (rows)
   "The widest shared vertical border. Counted in both neighboring cells."
   (let ((share 0d0))
@@ -1704,6 +1717,8 @@ than the columns it covers shares the extra across those columns."
                                     (border-edge (box-style (car cells)) :top))))
                     (dolist (cb cells) (decf (box-y cb) share))
                     (decf yy share)))
+                (when collapse
+                  (dolist (cb cells) (inset-collapsed-cell cb)))
                 (setf kids (append (nreverse cells) kids))
                 (setf prev-row cells)
                 (incf yy (+ rh (cond
