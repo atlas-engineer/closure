@@ -370,6 +370,9 @@ from the Lisp engine without calling Node or another browser engine.
   each is rounded to a pixel. A paragraph line is 18px, a heading is 37px,
   and a 13px preformatted line is 17px. The sample page also has a
   blockquote indented 40px on each side.
+- Kerning tucks pairs such as "Tw" together, and a collapsed table does
+  not count the shared border twice. The sample page shows H<sub>2</sub>O
+  and a superscript.
 
 ## Next
 

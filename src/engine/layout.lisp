@@ -1561,6 +1561,19 @@ than the columns it covers shares the extra across those columns."
                 (incf (aref cols (+ start i)) extra)))))))
     cols))
 
+(defun collapsed-shared-width (rows)
+  "The widest shared vertical border. Counted in both neighboring cells."
+  (let ((share 0d0))
+    (dolist (row rows)
+      (let ((prev nil))
+        (dolist (cell (row-cells row))
+          (when prev
+            (setf share (max share
+                             (max (border-edge (dom-element-style prev) :right)
+                                  (border-edge (dom-element-style cell) :left)))))
+          (setf prev cell))))
+    share))
+
 (defun column-outer-width (cols gap space-x)
   "Content width of the columns plus the gaps or border-spacing around them."
   (let ((n (length cols)))
@@ -1615,7 +1628,12 @@ than the columns it covers shares the extra across those columns."
                           (scale (/ room sum)))
                      (dotimes (i ncols)
                        (setf (aref cols i) (max 1d0 (* (aref cols i) scale)))))))
-                (setf cw (min cw (column-outer-width cols gap space-x))
+                (setf cw (min cw (max 0d0 cap-min
+                                     (- (column-outer-width cols gap space-x)
+                                        (if collapse
+                                            (* (collapsed-shared-width rows)
+                                               (max 0 (1- ncols)))
+                                            0d0))))
                       bw (+ cw bl br pl pr))))
             (let* ((cap-bottom (and cap-el
                                   (dom-element-style cap-el)

@@ -2640,6 +2640,15 @@ mono two</pre>")
                 (> (closure.engine:box-y (second lines))
                    (closure.engine:box-y (first lines)))))))
 
+(defun test-kerning ()
+  (let* ((two (closure.engine::text-advance "Two" 16d0 "serif" :normal :normal))
+         (parts (+ (closure.engine::text-advance "T" 16d0 "serif" :normal :normal)
+                   (closure.engine::text-advance "w" 16d0 "serif" :normal :normal)
+                   (closure.engine::text-advance "o" 16d0 "serif" :normal :normal))))
+    (format t "~&  kern Two ~A parts ~A~%" two parts)
+    (check "Two is tucked tighter than its letters"
+           (< two (- parts 0.5d0)))))
+
 (defun test-normal-line-height ()
   (let* ((html "<p id='p'>Hello</p><h1 id='h'>Hi</h1>")
          (root (closure.engine:layout-html html :width 240 :height 120
@@ -4057,6 +4066,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-overflow-wrap)
   (test-word-break)
   (test-caption-wraps)
+  (test-kerning)
   (test-pre-lines)
   (test-normal-line-height)
   (test-default-serif)

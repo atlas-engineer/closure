@@ -8,6 +8,10 @@
   (:unix (:or "libcairo.so.2" "libcairo.so"))
   (t (:default "libcairo")))
 
+(cffi:define-foreign-library freetype
+  (:unix (:or "libfreetype.so.6" "libfreetype.so"))
+  (t (:default "freetype")))
+
 (cffi:defcfun ("cairo_image_surface_create" cairo-image-surface-create)
     :pointer
   (format :int) (width :int) (height :int))
@@ -91,6 +95,20 @@
   (options :pointer) (style :int))
 (cffi:defcfun ("cairo_set_font_options" cairo-set-font-options) :void
   (cr :pointer) (options :pointer))
+(cffi:defcfun ("cairo_get_scaled_font" cairo-get-scaled-font) :pointer
+  (cr :pointer))
+(cffi:defcfun ("cairo_ft_scaled_font_lock_face" cairo-ft-lock-face) :pointer
+  (scaled :pointer))
+(cffi:defcfun ("cairo_ft_scaled_font_unlock_face" cairo-ft-unlock-face) :void
+  (scaled :pointer))
+(cffi:defcfun ("FT_Get_Char_Index" ft-get-char-index) :unsigned-int
+  (face :pointer) (char :unsigned-long))
+(cffi:defcfun ("FT_Get_Kerning" ft-get-kerning) :int
+  (face :pointer) (left :unsigned-int) (right :unsigned-int) (mode :int) (kerning :pointer))
+
+(cffi:defcstruct ft-vector
+  (x :long)
+  (y :long))
 (cffi:defcfun ("cairo_move_to" cairo-move-to) :void (cr :pointer) (x :double) (y :double))
 (cffi:defcfun ("cairo_line_to" cairo-line-to) :void (cr :pointer) (x :double) (y :double))
 (cffi:defcfun ("cairo_curve_to" cairo-curve-to) :void
@@ -118,10 +136,12 @@
 
 (defvar *cairo* nil)
 (defvar *cairo-surface* nil)
-(defvar *measure-cache* (make-hash-table :test #'equalp))
+(defvar *measure-cache* (make-hash-table :test #'equal)
+  "Case-sensitive. EQUALP would treat W and w as the same advance.")
 
 (defun ensure-cairo ()
   (unless (and *cairo* (not (cffi:null-pointer-p *cairo*)))
+    (cffi:use-foreign-library freetype)
     (cffi:use-foreign-library cairo)
     (setf *cairo-surface* (cairo-image-surface-create 0 8 8))
     (setf *cairo* (cairo-create *cairo-surface*))
@@ -180,6 +200,65 @@ with the browser's Times widths."
   (cairo-select-font-face cr family slant weight)
   (cairo-set-font-size cr (float size 1d0)))
 
+(defvar *kern-cache* (make-hash-table :test #'equal))
+
+(defun resolved-slant (style)
+  (cond ((member style '(:italic :oblique)) 1)
+        ((eql style 1) 1)
+        (t 0)))
+
+(defun resolved-weight (weight)
+  (cond ((member weight '(:bold :bolder)) 1)
+        ((and (numberp weight) (or (eql weight 1) (>= weight 600))) 1)
+        (t 0)))
+
+(defvar *kern-cr* nil)
+
+(defun kern-context ()
+  "A context used only to read kerning, so locking its face cannot
+disturb the context that measures text."
+  (ensure-cairo)
+  (unless (and *kern-cr* (not (cffi:null-pointer-p *kern-cr*)))
+    (setf *kern-cr* (cairo-create *cairo-surface*)))
+  *kern-cr*)
+
+(defun pair-kern (left right size family weight style)
+  "Pixels to add between LEFT and RIGHT. Negative tucks the second glyph in."
+  (let* ((cr (kern-context))
+         (slant (resolved-slant style))
+         (heavy (resolved-weight weight))
+         (key (list (char-code left) (char-code right)
+                    (float size 1d0)
+                    (cairo-family family)
+                    heavy slant)))
+    (or (gethash key *kern-cache*)
+        (setf (gethash key *kern-cache*)
+              (progn
+                (select-cairo-font cr (cairo-family family) slant heavy size)
+                (let* ((scaled (cairo-get-scaled-font cr))
+                       (face (and scaled (not (cffi:null-pointer-p scaled))
+                                  (cairo-ft-lock-face scaled))))
+                  (unwind-protect
+                      (if (or (null face) (cffi:null-pointer-p face))
+                          0d0
+                          (cffi:with-foreign-object (vec '(:struct ft-vector))
+                            (if (zerop (ft-get-kerning face
+                                                       (ft-get-char-index face (char-code left))
+                                                       (ft-get-char-index face (char-code right))
+                                                       0 vec))
+                                (/ (float (cffi:foreign-slot-value vec '(:struct ft-vector) 'x) 1d0)
+                                   64d0)
+                                0d0)))
+                    (when (and face (not (cffi:null-pointer-p face)))
+                      (cairo-ft-unlock-face scaled)))))))))
+
+(defun kerning-sum (text size family weight style)
+  (if (or (null text) (< (length text) 2))
+      0d0
+      (loop for i from 1 below (length text)
+            sum (pair-kern (char text (1- i)) (char text i)
+                           size family weight style))))
+
 (defun %measure-uncached (string size family weight slant)
   (let ((cr (ensure-cairo)))
     (select-cairo-font cr (cairo-family family) slant
@@ -195,7 +274,10 @@ with the browser's Times widths."
             (values 0d0 asc desc height)
             (progn
               (cairo-text-extents cr string te)
-              (values (cffi:foreign-slot-value te '(:struct cairo-text-extents) 'x-advance)
+              (values (+ (cffi:foreign-slot-value te '(:struct cairo-text-extents) 'x-advance)
+                         (kerning-sum string size family
+                                      (if (and (numberp weight) (>= weight 600)) 1 weight)
+                                      slant))
                       asc desc height)))))))
 
 (defun measure-text (string size family weight style)
