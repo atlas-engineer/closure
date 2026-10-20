@@ -461,6 +461,17 @@ and gaps between known stops are split evenly."
                               (cairo-set-dash cr dash 2 0d0)
                               (stroke-line)
                               (cairo-set-dash cr (cffi:null-pointer) 0 0d0)))
+                           ((eq style :wavy)
+                            (let* ((x0 (box-x box))
+                                   (x1 (+ x0 (box-w box)))
+                                   (amp 4d0)
+                                   (period 12d0))
+                              (cairo-move-to cr x0 y)
+                              (loop for x from (+ x0 1d0) to x1 by 1d0
+                                    do (cairo-line-to
+                                        cr x
+                                        (+ y (* amp (sin (* 2d0 pi (/ (- x x0) period)))))))
+                              (cairo-stroke cr)))
                            (t (stroke-line)))))))))))
 
 (defun apply-transform (cr box)

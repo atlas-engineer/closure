@@ -284,9 +284,11 @@ from the Lisp engine without calling Node or another browser engine.
   line covers more rows than the default hairline.
 - `text-decoration-style: dashed` draws a dashed underline. The solid line
   stays continuous, and the dashed line leaves gaps.
+- `text-decoration-style: wavy` draws a wavy underline. The wave leaves gaps
+  on the solid line's row and dips below it.
 
 ## Next
 
-1. `text-decoration-style: wavy` draws a wavy underline instead of a solid
+1. `text-decoration-style: double` draws two parallel underlines instead of
    one. The done condition is not met; pages still need more of the web than
    this viewport.
