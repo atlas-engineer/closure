@@ -258,9 +258,12 @@ from the Lisp engine without calling Node or another browser engine.
   The top of the box is red, the bottom is blue, and the middle mixes them.
 - `linear-gradient(to right, #cc0000, #0000cc)` paints a horizontal blend.
   The left edge is red from top to bottom, and the right edge is blue.
+- `linear-gradient(45deg, #cc0000, #0000cc)` paints the blend on a diagonal.
+  The bottom-left is red, the top-right is blue, and the other corner mixes
+  them.
 
 ## Next
 
-1. `linear-gradient(45deg, #cc0000, #0000cc)` paints the blend along a
-   diagonal. The done condition is not met; pages still need more of the web
-   than this viewport.
+1. `linear-gradient(#cc0000 20%, #0000cc)` keeps the first color across the
+   first fifth of the box before blending. The done condition is not met;
+   pages still need more of the web than this viewport.

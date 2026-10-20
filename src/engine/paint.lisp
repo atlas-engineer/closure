@@ -130,17 +130,29 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
   "Paint a linear-gradient across the border box. The default runs top to bottom."
   (let* ((st (box-style box))
          (spec (and st (computed-background-gradient st)))
-         (dir (if (keywordp (car spec)) (car spec) :bottom))
-         (stops (if (keywordp (car spec)) (cdr spec) spec)))
+         (dir (cond ((or (keywordp (car spec)) (numberp (car spec))) (car spec))
+                    (t :bottom)))
+         (stops (if (or (keywordp (car spec)) (numberp (car spec))) (cdr spec) spec)))
     (when (and stops (> (length stops) 1)
                (> (box-w box) 0d0) (> (box-h box) 0d0))
       (multiple-value-bind (x0 y0 x1 y1)
           (let ((x (box-x box)) (y (box-y box)) (w (box-w box)) (h (box-h box)))
-            (case dir
-              (:right (values x y (+ x w) y))
-              (:left (values (+ x w) y x y))
-              (:top (values x (+ y h) x y))
-              (t (values x y x (+ y h)))))
+            (cond
+              ((numberp dir)
+               (let* ((rad (* dir (/ pi 180d0)))
+                      (dx (sin rad))
+                      (dy (- (cos rad)))
+                      (half (* 0.5d0 (+ (abs (* w dx)) (abs (* h dy)))))
+                      (cx (+ x (* 0.5d0 w)))
+                      (cy (+ y (* 0.5d0 h))))
+                 (values (- cx (* dx half)) (- cy (* dy half))
+                         (+ cx (* dx half)) (+ cy (* dy half)))))
+              (t
+               (case dir
+                 (:right (values x y (+ x w) y))
+                 (:left (values (+ x w) y x y))
+                 (:top (values x (+ y h) x y))
+                 (t (values x y x (+ y h)))))))
         (let ((pat (cairo-pattern-create-linear x0 y0 x1 y1))
               (n (1- (length stops))))
           (loop for color in stops
