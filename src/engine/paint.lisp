@@ -472,6 +472,10 @@ and gaps between known stops are split evenly."
                                         cr x
                                         (+ y (* amp (sin (* 2d0 pi (/ (- x x0) period)))))))
                               (cairo-stroke cr)))
+                           ((eq style :double)
+                            (stroke-line)
+                            (setf y (+ y (max 4d0 (* 3d0 width))))
+                            (stroke-line))
                            (t (stroke-line)))))))))))
 
 (defun apply-transform (cr box)

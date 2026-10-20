@@ -286,9 +286,11 @@ from the Lisp engine without calling Node or another browser engine.
   stays continuous, and the dashed line leaves gaps.
 - `text-decoration-style: wavy` draws a wavy underline. The wave leaves gaps
   on the solid line's row and dips below it.
+- `text-decoration-style: double` draws two parallel underlines. A gap
+  separates the lines, and a solid underline stays a single line.
 
 ## Next
 
-1. `text-decoration-style: double` draws two parallel underlines instead of
-   one. The done condition is not met; pages still need more of the web than
-   this viewport.
+1. `text-decoration-style: dotted` draws a dotted underline instead of a
+   solid one. The done condition is not met; pages still need more of the
+   web than this viewport.
