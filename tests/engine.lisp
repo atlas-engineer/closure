@@ -3227,6 +3227,32 @@ b</div>"
           (format t "~&  clipped inside: ~D ~D ~D~%" r g b)
           (check "padding-box still paints the image inside the border" (and (< r 80) (< g 80) (> b 180))))))))
 
+(defun test-background-repeat-space ()
+  (let ((png "/tmp/closure-bg-space.png"))
+    (write-solid-png png 6 6 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<div id='tile' style='width:20px;height:8px;background-image:url(\"~A\")'></div>
+                <div id='gap' style='width:20px;height:8px;background-image:url(\"~A\");background-repeat:space'></div>"
+                         png png))
+           (out "/tmp/closure-engine-bg-space.png")
+           (root (closure.engine:render-html html :width 40 :height 30 :output out
+                                            :stylesheet "body{margin:0}"))
+           (tile (closure.engine:find-box root "tile"))
+           (gap (closure.engine:find-box root "gap")))
+      (labels ((at (box dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x box) dx))
+                          (round (+ (closure.engine:box-y box) dy)))))
+        (check "space boxes" (and tile gap))
+        (multiple-value-bind (r g b) (at tile 6 1)
+          (format t "~&  flush tile: ~D ~D ~D~%" r g b)
+          (check "the default tiles the image flush" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at gap 6 1)
+          (format t "~&  space gap: ~D ~D ~D~%" r g b)
+          (check "space leaves a gap between images" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at gap 8 1)
+          (format t "~&  space next image: ~D ~D ~D~%" r g b)
+          (check "space still paints the next image" (and (< r 80) (< g 80) (> b 180))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3688,6 +3714,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-origin-content)
   (test-background-origin-border)
   (test-background-image-clip-padding)
+  (test-background-repeat-space)
   (test-wbr)
   (test-address)
   (test-text-indent)

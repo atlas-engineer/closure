@@ -333,9 +333,11 @@ from the Lisp engine without calling Node or another browser engine.
 - A `background-image` with `background-clip: padding-box` does not paint
   under the border. The border area stays empty, and the image still paints
   inside it. The default image still paints under the border.
+- `background-repeat: space` spreads the image with even gaps. A flush tile
+  is continuous, and space leaves a gap before the next image.
 
 ## Next
 
-1. `background-repeat: space` spreads the image with even gaps instead of
-   tiling it flush. The done condition is not met; pages still need more of
-   the web than this viewport.
+1. `background-repeat: round` scales the image so a whole number of tiles
+   fill the box with no gaps. The done condition is not met; pages still
+   need more of the web than this viewport.
