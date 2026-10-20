@@ -86,9 +86,10 @@
                                  a)
                            (list (* r 0.45d0) (* g 0.45d0) (* b 0.45d0) a))))
                    (tone (color style light)
-                     (if (eq style :groove)
-                         (values (shade color light) :solid)
-                         (values color style))))
+                     (cond
+                       ((eq style :groove) (values (shade color light) :solid))
+                       ((eq style :ridge) (values (shade color (not light)) :solid))
+                       (t (values color style)))))
             (multiple-value-bind (c s) (tone (computed-btc st) (computed-bts st) nil)
               (side bt c s x y w bt))
             (multiple-value-bind (c s) (tone (computed-bbc st) (computed-bbs st) t)
