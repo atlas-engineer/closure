@@ -52,6 +52,14 @@
 
 (cffi:defcfun ("cairo_set_source_rgba" cairo-set-source-rgba) :void
   (cr :pointer) (r :double) (g :double) (b :double) (a :double))
+(cffi:defcfun ("cairo_pattern_create_linear" cairo-pattern-create-linear) :pointer
+  (x0 :double) (y0 :double) (x1 :double) (y1 :double))
+(cffi:defcfun ("cairo_pattern_add_color_stop_rgba" cairo-pattern-add-color-stop-rgba) :void
+  (pattern :pointer) (offset :double) (r :double) (g :double) (b :double) (a :double))
+(cffi:defcfun ("cairo_set_source" cairo-set-source) :void
+  (cr :pointer) (source :pointer))
+(cffi:defcfun ("cairo_pattern_destroy" cairo-pattern-destroy) :void
+  (pattern :pointer))
 (cffi:defcfun ("cairo_rectangle" cairo-rectangle) :void
   (cr :pointer) (x :double) (y :double) (w :double) (h :double))
 (cffi:defcfun ("cairo_fill" cairo-fill) :void (cr :pointer))

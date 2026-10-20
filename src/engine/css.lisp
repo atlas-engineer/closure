@@ -31,6 +31,7 @@
   (color '(0d0 0d0 0d0 1d0))
   (background nil)
   (background-image nil)
+  (background-gradient nil)
   (background-repeat :repeat)
   (background-position :left)
   (background-size :auto)
@@ -747,16 +748,38 @@
     ((and tokens (eq (tok-kind (car tokens)) :string))
      (tok-text (car tokens)))))
 
+(defun gradient-stops (tokens)
+  "Colors inside linear-gradient(...), top to bottom. Direction words are skipped."
+  (let ((colors nil)
+        (rest tokens))
+    (loop while rest do
+      (let ((tk (car rest)))
+        (cond
+          ((eq (tok-kind tk) :comma) (pop rest))
+          ((and (eq (tok-kind tk) :ident)
+                (member (tok-text tk) '("to" "top" "bottom" "left" "right") :test #'string=))
+           (pop rest))
+          ((member (tok-kind tk) '(:percentage :dimension :number))
+           (pop rest))
+          (t
+           (multiple-value-bind (c more) (parse-color-tokens rest)
+             (cond ((consp c) (push c colors) (setf rest more))
+                   ((not (eq more rest)) (setf rest more))
+                   (t (pop rest))))))))
+    (nreverse colors)))
+
 (defun expand-background (tokens)
-  (let ((color nil) (image nil) (rest tokens))
+  (let ((color nil) (image nil) (gradient nil) (rest tokens))
     (loop while rest do
       (let ((tk (car rest)))
         (cond
           ((and (eq (tok-kind tk) :function) (member (tok-text tk) '("url" "linear-gradient") :test #'string=))
            (multiple-value-bind (inside more) (take-until-rparen (cdr rest))
-             (when (string= (tok-text tk) "url")
-               (let ((s (find-if (lambda (x) (member (tok-kind x) '(:string :ident))) inside)))
-                 (when s (setf image (tok-text s)))))
+             (cond ((string= (tok-text tk) "url")
+                    (let ((s (find-if (lambda (x) (member (tok-kind x) '(:string :ident))) inside)))
+                      (when s (setf image (tok-text s)))))
+                   ((string= (tok-text tk) "linear-gradient")
+                    (setf gradient (gradient-stops inside))))
              (setf rest more)))
           (t
            (multiple-value-bind (c more) (parse-color-tokens rest)
@@ -769,6 +792,7 @@
                    (setf rest (or more (cdr rest))))
                  (pop rest)))))))
     (append (when image (list (cons :background-image image)))
+            (when gradient (list (cons :background-gradient gradient)))
             (list (cons :background-color color)))))
 
 (defun expand-animation (tokens)
@@ -905,6 +929,11 @@
       ((:background-image)
        (cond ((and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "none"))
               :none)
+             ((and tokens (eq (tok-kind (car tokens)) :function)
+                   (string= (tok-text (car tokens)) "linear-gradient"))
+              (multiple-value-bind (inside more) (take-until-rparen (cdr tokens))
+                (declare (ignore more))
+                (cons :linear-gradient (gradient-stops inside))))
              (t (url-from-tokens tokens))))
       ((:background-repeat) (kw '("repeat" "no-repeat" "repeat-x" "repeat-y")))
       ((:background-position)
@@ -1815,7 +1844,11 @@
          (:box-sizing (setf (computed-box-sizing style) value))
          (:color (when value (setf (computed-color style) value)))
          (:background-color (setf (computed-background style) value))
-         (:background-image (setf (computed-background-image style) value))
+         (:background-image
+          (if (and (consp value) (eq (car value) :linear-gradient))
+              (setf (computed-background-gradient style) (cdr value))
+              (setf (computed-background-image style) value)))
+         (:background-gradient (when value (setf (computed-background-gradient style) value)))
          (:background-repeat (when value (setf (computed-background-repeat style) value)))
          (:background-position
           (when value

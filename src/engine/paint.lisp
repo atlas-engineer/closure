@@ -126,6 +126,29 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
          (* 0.01d0 (float (cdr value) 1d0) box-size))
         (t nil)))
 
+(defun paint-background-gradient (cr box)
+  "Paint a vertical linear-gradient across the border box, top color first."
+  (let* ((st (box-style box))
+         (stops (and st (computed-background-gradient st))))
+    (when (and stops (> (length stops) 1)
+               (> (box-w box) 0d0) (> (box-h box) 0d0))
+      (let ((pat (cairo-pattern-create-linear (box-x box) (box-y box)
+                                              (box-x box) (+ (box-y box) (box-h box))))
+            (n (1- (length stops))))
+        (loop for color in stops
+              for i from 0
+              do (cairo-pattern-add-color-stop-rgba
+                  pat (/ (float i 1d0) n)
+                  (or (first color) 0d0) (or (second color) 0d0)
+                  (or (third color) 0d0) (or (fourth color) 1d0)))
+        (cairo-save cr)
+        (cairo-set-source cr pat)
+        (rounded-rect cr (box-x box) (box-y box) (box-w box) (box-h box)
+                      (or (computed-radius st) 0d0))
+        (cairo-fill cr)
+        (cairo-restore cr)
+        (cairo-pattern-destroy pat)))))
+
 (defun paint-background-image (cr box)
   "Paint a background-image in the padding box. The default tiles it; no-repeat paints it once."
   (let* ((st (box-style box))
@@ -465,6 +488,7 @@ It does not apply when borders are collapsed."
                 (rounded-rect cr (box-x box) (box-y box) (box-w box) (box-h box)
                               (or (and (box-style box) (computed-radius (box-style box))) 0d0))
                 (cairo-fill cr)))
+            (paint-background-gradient cr box)
             (paint-inset-shadow cr box)
             (paint-background-image cr box)
             (paint-border cr box)
