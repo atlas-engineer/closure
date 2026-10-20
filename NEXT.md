@@ -221,9 +221,12 @@ from the Lisp engine without calling Node or another browser engine.
   stays at the top of the table.
 - `empty-cells: hide` leaves an empty table cell without a border or
   background. The cell keeps its place, and a cell with text still paints.
+- `list-style-position: inside` puts the marker inside the list item. The
+  item text starts to the right of that marker, and nothing hangs outside
+  the item.
 
 ## Next
 
-1. `list-style-position: inside` puts the marker inside the list item instead
-   of outside it. The done condition is not met; pages still need more of the
-   web than this viewport.
+1. `list-style-type: square` paints a square marker instead of a disc. The
+   done condition is not met; pages still need more of the web than this
+   viewport.

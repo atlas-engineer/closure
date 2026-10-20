@@ -292,12 +292,20 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                                     (cairo-slant fstyle)
                                     (cairo-weight weight))
             (cairo-set-font-size cr size)
-            (cairo-move-to cr (- (box-x box) adv 6d0)
-                           (+ (box-y box)
-                              (font-ascent size family weight fstyle)))
-            (cairo-show-text cr marker))
-          (progn
-            (cairo-arc cr (- (box-x box) 10d0) (+ (box-y box) 8d0) 2.5d0 0d0 (* 2d0 pi))
+            (let ((tx (if (box-marker-inside box)
+                          (+ (box-x box) (px (computed-pl st) (box-w box))
+                             (used-border-width (computed-bl st) (computed-bls st)))
+                          (- (box-x box) adv 6d0))))
+              (cairo-move-to cr tx
+                             (+ (box-y box)
+                                (font-ascent size family weight fstyle)))
+              (cairo-show-text cr marker)))
+          (let ((cx (if (box-marker-inside box)
+                        (+ (box-x box) 6d0
+                           (px (computed-pl st) (box-w box))
+                           (used-border-width (computed-bl st) (computed-bls st)))
+                        (- (box-x box) 10d0))))
+            (cairo-arc cr cx (+ (box-y box) 8d0) 2.5d0 0d0 (* 2d0 pi))
             (cairo-fill cr))))))
 
 (defun paint-box-shadow (cr box)

@@ -1968,6 +1968,52 @@ b</div>"
       (check "the filled cell still paints its background"
              (and (> r 180) (< g 40) (< b 40))))))
 
+(defun test-list-style-inside ()
+  (labels ((word (root text)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (and (eq (closure.engine::box-kind b) :text)
+                                       (string= (or (closure.engine::box-text b) "") text))
+                              (setf found b))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               found)))
+    (let* ((html "<ul>
+                    <li id='out'>Outside</li>
+                    <li id='in' style='list-style-position:inside'>Inside</li>
+                  </ul>")
+           (outpng "/tmp/closure-list-inside.png")
+           (root (closure.engine:render-html html :width 240 :height 80 :output outpng
+                                            :stylesheet "body{margin:0}"))
+           (outside (closure.engine:find-box root "out"))
+           (inside (closure.engine:find-box root "in"))
+           (out-word (word root "Outside"))
+           (in-word (word root "Inside")))
+      (format t "~&  list inside: out-text ~A in-text ~A item ~A~%"
+              (and out-word (closure.engine:box-x out-word))
+              (and in-word (closure.engine:box-x in-word))
+              (and inside (closure.engine:box-x inside)))
+      (check "inside and outside items" (and outside inside out-word in-word))
+      (check "the inside marker pushes the text in"
+             (and out-word in-word
+                  (> (closure.engine:box-x in-word)
+                     (+ (closure.engine:box-x out-word) 8d0))))
+      (multiple-value-bind (r g b)
+          (png-rgb outpng
+                   (round (- (closure.engine:box-x outside) 8))
+                   (round (+ (closure.engine:box-y outside) 8)))
+        (format t "~&  outside marker pixel: ~D ~D ~D~%" r g b)
+        (check "the outside marker hangs left of the item"
+               (and (< r 200) (< g 200) (< b 200))))
+      (multiple-value-bind (r g b)
+          (png-rgb outpng
+                   (round (- (closure.engine:box-x inside) 8))
+                   (round (+ (closure.engine:box-y inside) 8)))
+        (format t "~&  left of inside item: ~D ~D ~D~%" r g b)
+        (check "the inside marker does not hang outside"
+               (and (> r 240) (> g 240) (> b 240)))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -2388,6 +2434,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-caption)
   (test-caption-bottom)
   (test-empty-cells)
+  (test-list-style-inside)
   (test-wbr)
   (test-address)
   (test-text-indent)
