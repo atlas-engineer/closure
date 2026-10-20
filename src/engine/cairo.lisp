@@ -84,6 +84,13 @@
 (cffi:defcfun ("cairo_select_font_face" cairo-select-font-face) :void
   (cr :pointer) (family :string) (slant :int) (weight :int))
 (cffi:defcfun ("cairo_set_font_size" cairo-set-font-size) :void (cr :pointer) (size :double))
+(cffi:defcfun ("cairo_font_options_create" cairo-font-options-create) :pointer)
+(cffi:defcfun ("cairo_font_options_set_hint_metrics" cairo-font-options-set-hint-metrics) :void
+  (options :pointer) (metrics :int))
+(cffi:defcfun ("cairo_font_options_set_hint_style" cairo-font-options-set-hint-style) :void
+  (options :pointer) (style :int))
+(cffi:defcfun ("cairo_set_font_options" cairo-set-font-options) :void
+  (cr :pointer) (options :pointer))
 (cffi:defcfun ("cairo_move_to" cairo-move-to) :void (cr :pointer) (x :double) (y :double))
 (cffi:defcfun ("cairo_line_to" cairo-line-to) :void (cr :pointer) (x :double) (y :double))
 (cffi:defcfun ("cairo_curve_to" cairo-curve-to) :void
@@ -155,10 +162,29 @@
         ((and (numberp weight) (>= weight 600)) 1)
         (t 0)))
 
+(defvar *font-options* nil)
+
+(defun unhinted-font-options ()
+  "Fractional advances. Hinted metrics round to whole pixels and disagree
+with the browser's Times widths."
+  (ensure-cairo)
+  (unless *font-options*
+    (setf *font-options* (cairo-font-options-create))
+    ;; CAIRO_HINT_METRICS_OFF and CAIRO_HINT_STYLE_NONE.
+    (cairo-font-options-set-hint-metrics *font-options* 1)
+    (cairo-font-options-set-hint-style *font-options* 1))
+  *font-options*)
+
+(defun select-cairo-font (cr family slant weight size)
+  (cairo-set-font-options cr (unhinted-font-options))
+  (cairo-select-font-face cr family slant weight)
+  (cairo-set-font-size cr (float size 1d0)))
+
 (defun %measure-uncached (string size family weight slant)
   (let ((cr (ensure-cairo)))
-    (cairo-select-font-face cr (cairo-family family) slant (if (and (numberp weight) (>= weight 600)) 1 weight))
-    (cairo-set-font-size cr (float size 1d0))
+    (select-cairo-font cr (cairo-family family) slant
+                       (if (and (numberp weight) (>= weight 600)) 1 weight)
+                       size)
     (if (or (null string) (zerop (length string)))
         (values 0d0 (* size 0.8d0) (* size 0.2d0))
         (cffi:with-foreign-objects ((te '(:struct cairo-text-extents))

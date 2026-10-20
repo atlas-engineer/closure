@@ -60,7 +60,7 @@ script element after style and layout. Left unset until that engine exists.")
    td, th { display: table-cell; padding: 1px; }
    img, video, canvas, svg, input, select, textarea, iframe { display: inline-block; }
    video, canvas { width: 300px; height: 150px; }
-   hr { border-top: 1px solid #ccc; margin-top: 0.5em; margin-bottom: 0.5em; }
+   hr { display: block; margin-top: 0.5em; margin-bottom: 0.5em; border: 1px inset #808080; }
    center { text-align: center; }
    button, input, select, textarea { font-family: sans-serif; }
    button { display: inline-block; background: #eee; border: 1px solid #888; padding: 2px 8px; }

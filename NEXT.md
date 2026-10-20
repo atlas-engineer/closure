@@ -363,6 +363,9 @@ from the Lisp engine without calling Node or another browser engine.
 - The initial font is a Times-like serif. A 220px paragraph wraps onto
   three lines with the same breaks a browser uses. The sample page also
   has a bullet list; the items are indented and stacked.
+- Text is measured without hinting, so a caption above the cells "One"
+  and "Two" wraps onto two lines. An `<hr>` is a two-pixel inset gray rule
+  across the content width.
 
 ## Next
 

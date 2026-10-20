@@ -492,8 +492,10 @@
                (check "http height" (and box (~ (closure.engine:box-height box) 7d0)))
                (multiple-value-bind (r g b)
                    (png-rgb "/tmp/closure-http-img.png"
-                            (round (closure.engine:box-x box))
-                            (round (closure.engine:box-y box)))
+                            (round (+ (closure.engine:box-x box)
+                                      (/ (closure.engine:box-width box) 2d0)))
+                            (round (+ (closure.engine:box-y box)
+                                      (/ (closure.engine:box-height box) 2d0))))
                  (format t "~&  http pixel: ~D ~D ~D~%" r g b)
                  (check "http painted blue" (and (> b 180) (< r 80) (< g 120))))))
         (uiop:terminate-process proc)
@@ -2583,6 +2585,34 @@ b</div>"
                           (+ (closure.engine:box-x box) (closure.engine:box-width box) 0.5d0)))
                     parts)))))
 
+(defun test-caption-wraps ()
+  (labels ((line-count (box)
+             (let ((n 0))
+               (labels ((walk (b)
+                          (when b
+                            (when (eq (closure.engine::box-kind b) :line) (incf n))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk box))
+               n)))
+    (let* ((html "<table id='t' style='border-collapse:collapse'>
+                    <caption id='cap'>Top caption</caption>
+                    <tr>
+                      <td style='border:1px solid #000;padding:4px'>One</td>
+                      <td style='border:1px solid #000;padding:4px'>Two</td>
+                    </tr>
+                  </table>")
+           (root (closure.engine:layout-html html :width 400 :height 160
+                                            :stylesheet "body{margin:0}"))
+           (cap (closure.engine:find-box root "cap"))
+           (lines (line-count cap)))
+      (format t "~&  caption wrap: lines ~D height ~A width ~A~%"
+              lines
+              (and cap (closure.engine:box-height cap))
+              (and cap (closure.engine:box-width cap)))
+      (check "caption box" cap)
+      (check "the caption wraps onto two lines above the cells"
+             (= lines 2)))))
+
 (defun test-default-serif ()
   (labels ((line-count (box)
              (let ((n 0))
@@ -3629,17 +3659,24 @@ b</div>"
     (check "hr box" box)
     (check "hr spans the content width"
            (and box (~ (closure.engine:box-width box) 200d0)))
-    (labels ((gray (x y)
-               (and (<= 0 y 39)
-                    (multiple-value-bind (r g b) (png-rgb out x y)
-                      (and (< r 230) (> r 160) (< g 230) (> g 160) (< b 230) (> b 160))))))
-      (let ((y (floor (closure.engine:box-y box))))
-        (format t "~&  hr y ~D~%" y)
-        (check "hr paints the left of the rule" (gray 4 y))
-        (check "hr paints the middle of the rule" (gray 100 y))
-        (check "hr paints the right of the rule" (gray 196 y))
-        (check "hr stays a single line"
-               (and (not (gray 100 (1- y))) (not (gray 100 (1+ y)))))))))
+    (check "hr is the two borders of an inset rule"
+           (and box (~ (closure.engine:box-height box) 2d0)))
+    (labels ((rgb (x y)
+               (and (<= 0 y 39) (multiple-value-list (png-rgb out x y))))
+             (ink (pixel)
+               (and pixel (< (first pixel) 250))))
+      (let* ((y (floor (closure.engine:box-y box)))
+             (top (rgb 100 y))
+             (bot (rgb 100 (1+ y))))
+        (format t "~&  hr y ~D top ~A bottom ~A~%" y top bot)
+        (check "hr paints the left of the rule" (ink (rgb 4 y)))
+        (check "hr paints the middle of the rule" (ink top))
+        (check "hr paints the right of the rule" (ink (rgb 196 y)))
+        (check "the inset top edge is darker than the bottom"
+               (and top bot (< (first top) (first bot))))
+        (check "the rule does not paint past its borders"
+               (and (not (ink (rgb 100 (1- y))))
+                    (not (ink (rgb 100 (+ y 2))))))))))
 
 (defun test-svg ()
   (let* ((html "<svg id='s' width='40' height='20' viewBox='0 0 40 20'>
@@ -3978,6 +4015,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-text-overflow)
   (test-overflow-wrap)
   (test-word-break)
+  (test-caption-wraps)
   (test-default-serif)
   (test-justify)
   (test-border-collapse)
