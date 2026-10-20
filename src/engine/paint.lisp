@@ -422,7 +422,7 @@ and gaps between known stops are split evenly."
         do (dolist (kind kinds)
              (when (member kind '(:underline :overline :line-through))
                (let ((size (computed-font-size st)))
-                 (set-color cr (computed-color st))
+                 (set-color cr (color-or (computed-text-decoration-color st) st))
                  (if (eq kind :overline)
                      (let ((top (+ 1d0
                                    (- baseline

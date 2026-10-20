@@ -48,6 +48,7 @@
   (word-spacing 0d0)
   (text-transform :none)
   (text-decoration :none)
+  (text-decoration-color nil)
   (white-space :normal)
   (text-overflow :clip)
   (overflow-wrap :normal)
@@ -123,7 +124,7 @@
  "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
  "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "object-fit"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
- "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
+ "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
  "justify-content" "align-items" "align-content" "align-self" "order" "gap"
  "row-gap" "column-gap"
@@ -921,7 +922,7 @@
          v))
       ((:border-top-style :border-right-style :border-bottom-style :border-left-style)
        (kw '("none" "hidden" "dotted" "dashed" "solid" "double" "groove" "ridge" "inset" "outset")))
-      ((:border-top-color :border-right-color :border-bottom-color :border-left-color :color :background-color)
+      ((:border-top-color :border-right-color :border-bottom-color :border-left-color :color :background-color :text-decoration-color)
        (multiple-value-bind (c r) (parse-color-tokens tokens)
          (declare (ignore r))
          (or c (when (and tokens (eq (tok-kind (car tokens)) :ident)
@@ -1985,6 +1986,7 @@
                 (let ((v (absolutize value (or (computed-font-size style) 16d0))))
                   (if (numberp v) (float v 1d0) 0d0))))
          (:text-decoration (when value (setf (computed-text-decoration style) value)))
+         (:text-decoration-color (setf (computed-text-decoration-color style) value))
          (:white-space (setf (computed-white-space style) value))
          (:text-overflow (when value (setf (computed-text-overflow style) value)))
          ((:overflow-wrap :word-wrap)

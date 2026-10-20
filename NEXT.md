@@ -276,9 +276,11 @@ from the Lisp engine without calling Node or another browser engine.
   a line above it. Plain text has neither line.
 - `text-decoration: underline line-through` draws both a line under the text
   and a line through it. Plain text has neither line.
+- `text-decoration-color: #cc0000` paints the decoration red. The glyphs stay
+  black, and the red line sits below them.
 
 ## Next
 
-1. `text-decoration-color: #cc0000` paints the decoration red while the
-   glyphs stay black. The done condition is not met; pages still need more
-   of the web than this viewport.
+1. `text-underline-offset: 4px` moves the underline further below the
+   baseline. The done condition is not met; pages still need more of the web
+   than this viewport.

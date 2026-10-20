@@ -1537,6 +1537,27 @@ b</div>"
       (check "plain text is not struck" (not (dark plain -5)))
       (check "plain text is not underlined" (not (dark plain 2))))))
 
+(defun test-text-decoration-color ()
+  (let* ((html "<span id='u' style='text-decoration:underline;text-decoration-color:#cc0000'>O</span>")
+         (out "/tmp/closure-engine-deco-color.png")
+         (root (closure.engine:render-html html :width 80 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (box (closure.engine:find-box root "u"))
+         (red nil)
+         (black nil))
+    (check "colored decoration box" box)
+    (loop for y from 0 below 40 do
+      (loop for x from 0 below 80 do
+        (multiple-value-bind (r g b) (png-rgb out x y)
+          (cond ((and (> r 180) (< g 80) (< b 80)) (push y red))
+                ((and (< r 40) (< g 40) (< b 40)) (push y black))))))
+    (format t "~&  decoration red ~D black ~D~%" (length red) (length black))
+    (check "the decoration is red" red)
+    (check "the glyph stays black" black)
+    (when (and red black)
+      (format t "~&  red y ~D black y ~D~%" (reduce #'min red) (reduce #'min black))
+      (check "the red line sits below the glyph" (> (reduce #'min red) (reduce #'min black))))))
+
 (defun test-outline ()
   (let* ((html "<div id='a' style='margin-top:8px;width:40px;height:20px;outline:4px solid #cc0000'></div>
                 <div id='b' style='width:40px;height:10px;background:#000'></div>")
@@ -3037,6 +3058,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-overline)
   (test-underline-and-overline)
   (test-underline-and-line-through)
+  (test-text-decoration-color)
   (test-text-shadow)
   (test-text-shadow-two)
   (test-linear-gradient)
