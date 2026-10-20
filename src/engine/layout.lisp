@@ -783,13 +783,19 @@ A replaced image does not stretch to the container the way an ordinary block doe
                                            ((member align '(:right :end)) slack)
                                            (t 0d0))))
                    (top (- parent-asc))
-                   (bottom parent-desc))
+                   ;; Line gap sits below the descent, so the strut is the
+                   ;; full line height, not just the glyphs.
+                   (bottom (- lh parent-asc)))
               (incf line-i)
               (dolist (item line)
                 (unless (member (align-kind item) '(:top :bottom :text-top :text-bottom))
-                  (let ((ry (raw-y item)))
+                  (let* ((ry (raw-y item))
+                         (st (or (box-style item) style))
+                         ;; The line box includes the item's line gap, which
+                         ;; sits below the glyphs.
+                         (extent (max (box-h item) (used-line-height st))))
                     (setf top (min top ry)
-                          bottom (max bottom (+ ry (box-h item)))))))
+                          bottom (max bottom (+ ry extent))))))
               (dolist (item line)
                 (case (align-kind item)
                   ((:top :text-top)

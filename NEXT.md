@@ -386,8 +386,12 @@ from the Lisp engine without calling Node or another browser engine.
 - Inline boxes use a pixel ascent and descent. A word is 17px tall and
   `<small>` is 15px. A subscript and a superscript are 15px.
 
+- A line with a subscript includes the subscript's line gap, so the
+  line is 26.4px and the next line starts with Chromium. An image on the
+  baseline makes its line 24px. `<big>` is 21px tall.
+
 ## Next
 
-1. A line that contains a subscript is 26.5px tall, one pixel below the
-   subscript box. The done condition is not met; pages still need more of
-   the web than this viewport.
+1. Kerning is still a fraction of a pixel short of the browser, so a later
+   word can sit about a pixel to the right. The done condition is not met;
+   pages still need more of the web than this viewport.

@@ -1311,7 +1311,14 @@ b</div>"
     (check "sub sits below the baseline"
            (and down ay (> (closure.engine:box-y down) ay)))
     (check "the subscript is lowered about 0.3em"
-           (and p down (~ (- (closure.engine:box-y down) (closure.engine:box-y p)) 10.5d0 1d0)))))
+           (and p down (~ (- (closure.engine:box-y down) (closure.engine:box-y p)) 10.5d0 1d0)))
+    (check "the line extends a pixel below the subscript"
+           (and p down
+                (~ (closure.engine:box-height p)
+                   (+ (- (closure.engine:box-y down) (closure.engine:box-y p))
+                      (closure.engine:box-height down)
+                      1d0)
+                   0.6d0)))))
 
 (defun test-mark ()
   (let* ((html "<mark id='m'>O</mark><mark><b id='b'>O</b></mark><span id='p'>O</span>")
