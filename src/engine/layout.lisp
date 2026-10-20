@@ -1468,7 +1468,11 @@ A replaced image does not stretch to the container the way an ordinary block doe
                  (gap (if collapse 0d0 (if (> space-x 0d0) space-x (computed-column-gap style))))
                  (col-w (max 1d0 (/ (- cw (* gap (max 0 (1- ncols)))) (max 1 ncols))))
                  (cap-el (table-caption el))
+                 (cap-bottom (and cap-el
+                                  (dom-element-style cap-el)
+                                  (eq (computed-caption-side (dom-element-style cap-el)) :bottom)))
                  (cap (when (and cap-el
+                                 (not cap-bottom)
                                  (dom-element-style cap-el)
                                  (not (eq (computed-display (dom-element-style cap-el)) :none)))
                         (layout-block cap-el (+ x ml bl pl) (+ y bt pt) cw nil nil)))
@@ -1545,6 +1549,13 @@ A replaced image does not stretch to the container the way an ordinary block doe
                 (setf (box-h cb)
                       (loop for i from index below (min (+ index rspan) (length row-heights))
                             sum (or (nth i row-heights) 0d0)))))
+            (when (and cap-el cap-bottom
+                       (dom-element-style cap-el)
+                       (not (eq (computed-display (dom-element-style cap-el)) :none)))
+              (let ((placed (layout-block cap-el (+ x ml bl pl) yy cw nil nil)))
+                (when placed
+                  (setf cap placed)
+                  (incf yy (box-h placed)))))
             (when cap (push cap kids))
             (setf (box-x box) (+ x ml)
                   (box-y box) y

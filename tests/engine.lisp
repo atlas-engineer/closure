@@ -1909,6 +1909,28 @@ b</div>"
                 (>= (closure.engine:box-y cell)
                     (- (+ (closure.engine:box-y cap) (closure.engine:box-height cap)) 0.5d0))))))
 
+(defun test-caption-bottom ()
+  (let* ((html "<table id='t'>
+                  <caption id='cap' style='caption-side:bottom'>Title</caption>
+                  <tr><td id='cell'>Cell</td></tr>
+                </table>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (table (closure.engine:find-box root "t"))
+         (cap (closure.engine:find-box root "cap"))
+         (cell (closure.engine:find-box root "cell")))
+    (format t "~&  caption bottom: cell ~A cap ~A table ~A~%"
+            (and cell (closure.engine:box-y cell))
+            (and cap (closure.engine:box-y cap))
+            (and table (closure.engine:box-y table)))
+    (check "bottom caption and table" (and table cap cell))
+    (check "the first row stays at the top"
+           (and table cell (~ (closure.engine:box-y cell) (closure.engine:box-y table))))
+    (check "the caption sits below the row"
+           (and cap cell
+                (>= (closure.engine:box-y cap)
+                    (- (+ (closure.engine:box-y cell) (closure.engine:box-height cell)) 0.5d0))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -2327,6 +2349,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-table-valign)
   (test-table-valign-middle)
   (test-caption)
+  (test-caption-bottom)
   (test-wbr)
   (test-address)
   (test-text-indent)

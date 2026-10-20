@@ -12,8 +12,11 @@ Each pass:
 2. Implement the single highest item under Next that is not done.
 3. Add or extend a test in `tests/engine.lisp`.
 4. Run `(asdf:test-system :closure/engine)` and do not leave it failing.
-5. Move the finished item to Done with one line on what landed.
-6. Leave the next unfinished item at the top of Next.
+5. Render `screenshots/page.html` to a new timestamped PNG in `screenshots/`
+   and keep the older shots.
+6. Move the finished item to Done with one line on what landed.
+7. Leave the next unfinished item at the top of Next.
+8. Commit the pass.
 
 Stop the loop only when the done condition below is met. A finished pass is
 not a reason to stop.
@@ -214,9 +217,11 @@ from the Lisp engine without calling Node or another browser engine.
   the row when the row is taller. The other cell's text stays at the top.
 - A `caption` is placed above its table, and the first row starts below the
   caption.
+- `caption-side: bottom` places the caption below the table. The first row
+  stays at the top of the table.
 
 ## Next
 
-1. `caption-side: bottom` places the caption below the table, and the first
-   row stays at the top. The done condition is not met; pages still need more
-   of the web than this viewport.
+1. `empty-cells: hide` leaves an empty table cell without a border or
+   background. The done condition is not met; pages still need more of the
+   web than this viewport.
