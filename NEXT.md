@@ -396,9 +396,12 @@ from the Lisp engine without calling Node or another browser engine.
 - A `<q>` uses the English quotation marks, so the quoted word is the
   same width as in a browser. A definition list indents the definition
   40px under the term.
+- A subscript drops by the parent size divided by five, plus one pixel,
+  and a superscript rises by the size divided by three, plus one pixel.
+  The subscript line is 26.52px. A figure is indented 40px on each side.
 
 ## Next
 
-1. A subscript line is 26.4px where the browser uses 26.5px, so everything
-   below it sits about a tenth of a pixel high. The done condition is not
-   met; pages still need more of the web than this viewport.
+1. The first table is 73.86px wide where the browser draws 73.88px. The
+   done condition is not met; pages still need more of the web than this
+   viewport.

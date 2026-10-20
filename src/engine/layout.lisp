@@ -543,6 +543,11 @@ A replaced image does not stretch to the container the way an ordinary block doe
                (setf start end)))
     (nreverse parts)))
 
+(defun baseline-shift (em divisor)
+  "Sub and super shift. A browser divides the parent size in 1/64px units,
+then adds one pixel: size/5 for sub, size/3 for super."
+  (float (+ (/ (floor (* em 64d0) divisor) 64d0) 1d0) 1d0))
+
 (defun layout-inline-run (nodes x y width style &key (float-inset 0d0) (float-avoid 0d0) (float-span 0d0))
   (let ((font (computed-font-size style))
         (family (computed-font-family style))
@@ -751,8 +756,8 @@ A replaced image does not stretch to the container the way an ordinary block doe
                (let* ((base (if (plusp (box-baseline item)) (box-baseline item) (box-h item)))
                       (em (computed-font-size style)))
                  (case (align-kind item)
-                   (:super (- (+ base (* 0.35d0 em))))
-                   (:sub (+ (- base) (* 0.3d0 em)))
+                   (:super (- (+ base (baseline-shift em 3))))
+                   (:sub (+ (- base) (baseline-shift em 5)))
                    (:middle (- (* -0.25d0 em) (/ (box-h item) 2d0)))
                    (t (- base))))))
       (feed-inline nodes style nil)

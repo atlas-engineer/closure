@@ -1310,15 +1310,10 @@ b</div>"
            (and up ay (< (closure.engine:box-y up) ay)))
     (check "sub sits below the baseline"
            (and down ay (> (closure.engine:box-y down) ay)))
-    (check "the subscript is lowered about 0.3em"
-           (and p down (~ (- (closure.engine:box-y down) (closure.engine:box-y p)) 10.5d0 1d0)))
-    (check "the line extends a pixel below the subscript"
-           (and p down
-                (~ (closure.engine:box-height p)
-                   (+ (- (closure.engine:box-y down) (closure.engine:box-y p))
-                      (closure.engine:box-height down)
-                      1d0)
-                   0.6d0)))))
+    (check "the subscript is lowered by size/5 plus a pixel"
+           (and p down (~ (- (closure.engine:box-y down) (closure.engine:box-y p)) 10.52d0 0.05d0)))
+    (check "the subscript line matches a browser"
+           (and p (~ (closure.engine:box-height p) 26.52d0 0.02d0)))))
 
 (defun test-mark ()
   (let* ((html "<mark id='m'>O</mark><mark><b id='b'>O</b></mark><span id='p'>O</span>")
@@ -3812,6 +3807,22 @@ mono two</pre>")
       (check "open quote is the wide curly mark"
              (and open (~ (closure.engine:box-width open) 7.1d0 0.15d0))))))
 
+(defun test-figure ()
+  (let* ((root (closure.engine:layout-html
+                "<figure id='f'><figcaption id='c'>Figure</figcaption></figure>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0}"))
+         (fig (closure.engine:find-box root "f"))
+         (cap (closure.engine:find-box root "c")))
+    (check "figure box" (and fig cap))
+    (check "figure is indented 40px"
+           (and fig (~ (closure.engine:box-x fig) 40d0)))
+    (check "figure leaves 40px on the right"
+           (and fig (~ (closure.engine:box-width fig) 320d0)))
+    (check "figcaption fills the figure"
+           (and fig cap (~ (closure.engine:box-x cap) (closure.engine:box-x fig))
+                (~ (closure.engine:box-width cap) (closure.engine:box-width fig))))))
+
 (defun test-dl ()
   (let* ((root (closure.engine:layout-html
                 "<dl><dt id='t'>Term</dt><dd id='d'>Definition</dd></dl>"
@@ -4164,6 +4175,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-blockquote)
   (test-nested-q)
   (test-dl)
+  (test-figure)
   (test-small)
   (test-big)
   (test-u-ins)

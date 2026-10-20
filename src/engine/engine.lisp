@@ -31,6 +31,7 @@ script element after style and layout. Left unset until that engine exists.")
    ul, ol { padding-left: 40px; }
    dd { margin-left: 40px; }
    blockquote { margin-left: 40px; margin-right: 40px; }
+   figure { margin: 1em 40px; }
    ul { list-style-type: disc; }
    ol { list-style-type: decimal; }
    li { display: list-item; }
