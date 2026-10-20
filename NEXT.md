@@ -226,9 +226,10 @@ from the Lisp engine without calling Node or another browser engine.
   the item.
 - `list-style-type: square` paints a square marker. Its corner is filled,
   while a disc leaves that corner empty.
+- `list-style-type: circle` paints a hollow circle. The center stays empty,
+  and the ring is drawn around it.
 
 ## Next
 
-1. `list-style-type: circle` paints a hollow circle instead of a filled disc.
-   The done condition is not met; pages still need more of the web than this
-   viewport.
+1. `text-decoration: overline` draws a line above the text. The done
+   condition is not met; pages still need more of the web than this viewport.

@@ -2036,6 +2036,31 @@ b</div>"
         (format t "~&  square corner: ~D ~D ~D~%" r g b)
         (check "a square fills its corner" (and (< r 80) (< g 80) (< b 80)))))))
 
+(defun test-list-style-circle ()
+  (let* ((html "<ul>
+                  <li id='disc'>Disc</li>
+                  <li id='ring' style='list-style-type:circle'>Circle</li>
+                </ul>")
+         (out "/tmp/closure-list-circle.png")
+         (root (closure.engine:render-html html :width 200 :height 80 :output out
+                                          :stylesheet "body{margin:0}"))
+         (disc (closure.engine:find-box root "disc"))
+         (ring (closure.engine:find-box root "ring")))
+    (labels ((at (item dx dy)
+               (png-rgb out
+                        (round (+ (closure.engine:box-x item) dx))
+                        (round (+ (closure.engine:box-y item) dy)))))
+      (check "disc and circle items" (and disc ring))
+      (multiple-value-bind (r g b) (at disc -10 8)
+        (format t "~&  disc center: ~D ~D ~D~%" r g b)
+        (check "a disc is filled" (and (< r 40) (< g 40) (< b 40))))
+      (multiple-value-bind (r g b) (at ring -10 8)
+        (format t "~&  circle center: ~D ~D ~D~%" r g b)
+        (check "a circle leaves its center empty" (and (> r 240) (> g 240) (> b 240))))
+      (multiple-value-bind (r g b) (at ring -10 6)
+        (format t "~&  circle edge: ~D ~D ~D~%" r g b)
+        (check "a circle draws a ring" (and (< r 220) (< g 220) (< b 220)))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -2458,6 +2483,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-empty-cells)
   (test-list-style-inside)
   (test-list-style-square)
+  (test-list-style-circle)
   (test-wbr)
   (test-address)
   (test-text-indent)
