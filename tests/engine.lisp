@@ -2014,6 +2014,28 @@ b</div>"
         (check "the inside marker does not hang outside"
                (and (> r 240) (> g 240) (> b 240)))))))
 
+(defun test-list-style-square ()
+  (let* ((html "<ul>
+                  <li id='disc'>Disc</li>
+                  <li id='sq' style='list-style-type:square'>Square</li>
+                </ul>")
+         (out "/tmp/closure-list-square.png")
+         (root (closure.engine:render-html html :width 200 :height 80 :output out
+                                          :stylesheet "body{margin:0}"))
+         (disc (closure.engine:find-box root "disc"))
+         (square (closure.engine:find-box root "sq")))
+    (labels ((corner (item)
+               (png-rgb out
+                        (round (- (closure.engine:box-x item) 12))
+                        (round (+ (closure.engine:box-y item) 10)))))
+      (check "disc and square items" (and disc square))
+      (multiple-value-bind (r g b) (corner disc)
+        (format t "~&  disc corner: ~D ~D ~D~%" r g b)
+        (check "a disc leaves its corner empty" (and (> r 200) (> g 200) (> b 200))))
+      (multiple-value-bind (r g b) (corner square)
+        (format t "~&  square corner: ~D ~D ~D~%" r g b)
+        (check "a square fills its corner" (and (< r 80) (< g 80) (< b 80)))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -2435,6 +2457,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-caption-bottom)
   (test-empty-cells)
   (test-list-style-inside)
+  (test-list-style-square)
   (test-wbr)
   (test-address)
   (test-text-indent)

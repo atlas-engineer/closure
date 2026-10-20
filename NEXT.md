@@ -224,9 +224,11 @@ from the Lisp engine without calling Node or another browser engine.
 - `list-style-position: inside` puts the marker inside the list item. The
   item text starts to the right of that marker, and nothing hangs outside
   the item.
+- `list-style-type: square` paints a square marker. Its corner is filled,
+  while a disc leaves that corner empty.
 
 ## Next
 
-1. `list-style-type: square` paints a square marker instead of a disc. The
-   done condition is not met; pages still need more of the web than this
+1. `list-style-type: circle` paints a hollow circle instead of a filled disc.
+   The done condition is not met; pages still need more of the web than this
    viewport.

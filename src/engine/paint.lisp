@@ -300,12 +300,15 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                              (+ (box-y box)
                                 (font-ascent size family weight fstyle)))
               (cairo-show-text cr marker)))
-          (let ((cx (if (box-marker-inside box)
-                        (+ (box-x box) 6d0
-                           (px (computed-pl st) (box-w box))
-                           (used-border-width (computed-bl st) (computed-bls st)))
-                        (- (box-x box) 10d0))))
-            (cairo-arc cr cx (+ (box-y box) 8d0) 2.5d0 0d0 (* 2d0 pi))
+          (let* ((cy (+ (box-y box) 8d0))
+                 (cx (if (box-marker-inside box)
+                         (+ (box-x box) 6d0
+                            (px (computed-pl st) (box-w box))
+                            (used-border-width (computed-bl st) (computed-bls st)))
+                         (- (box-x box) 10d0))))
+            (if (eq marker :square)
+                (cairo-rectangle cr (- cx 2.5d0) (- cy 2.5d0) 5d0 5d0)
+                (cairo-arc cr cx cy 2.5d0 0d0 (* 2d0 pi)))
             (cairo-fill cr))))))
 
 (defun paint-box-shadow (cr box)
