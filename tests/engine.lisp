@@ -3100,6 +3100,29 @@ b</div>"
         (format t "~&  clipped content: ~D ~D ~D~%" r g b)
         (check "content-box still paints the content box" (and (> r 180) (< g 40) (< b 40)))))))
 
+(defun test-background-clip-padding ()
+  (let* ((html "<div id='edge' style='width:40px;height:16px;padding:8px;border:6px dashed #000;background:#cc0000'></div>
+                <div id='clip' style='width:40px;height:16px;padding:8px;border:6px dashed #000;background:#cc0000;background-clip:padding-box'></div>")
+         (out "/tmp/closure-engine-bg-clip-pad.png")
+         (root (closure.engine:render-html html :width 120 :height 140 :output out
+                                          :stylesheet "body{margin:0}"))
+         (edge (closure.engine:find-box root "edge"))
+         (clip (closure.engine:find-box root "clip")))
+    (labels ((at (box dx dy)
+               (png-rgb out
+                        (round (+ (closure.engine:box-x box) dx))
+                        (round (+ (closure.engine:box-y box) dy)))))
+      (check "padding-box clip boxes" (and edge clip))
+      (multiple-value-bind (r g b) (at edge 1 1)
+        (format t "~&  default border corner: ~D ~D ~D~%" r g b)
+        (check "the default background shows in the border area" (and (> r 180) (< g 40) (< b 40))))
+      (multiple-value-bind (r g b) (at clip 1 1)
+        (format t "~&  padding-box border corner: ~D ~D ~D~%" r g b)
+        (check "padding-box leaves the border area empty" (and (> r 240) (> g 240) (> b 240))))
+      (multiple-value-bind (r g b) (at clip 10 10)
+        (format t "~&  padding-box padding: ~D ~D ~D~%" r g b)
+        (check "padding-box still paints the padding" (and (> r 180) (< g 40) (< b 40)))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3556,6 +3579,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-list-style-image)
   (test-list-style-image-none)
   (test-background-clip-content)
+  (test-background-clip-padding)
   (test-wbr)
   (test-address)
   (test-text-indent)

@@ -319,9 +319,11 @@ from the Lisp engine without calling Node or another browser engine.
 - `background-clip: content-box` paints the background inside the content
   box. The padding stays empty, and the content area stays filled. The
   default still fills the padding.
+- `background-clip: padding-box` paints the padding and leaves the border
+  area empty. The default still shows the background in the border area.
 
 ## Next
 
-1. `background-clip: padding-box` paints the padding but leaves the border
-   area empty. The done condition is not met; pages still need more of the
-   web than this viewport.
+1. A `background-image` with `background-clip: content-box` stays inside
+   the content box and does not paint in the padding. The done condition
+   is not met; pages still need more of the web than this viewport.
