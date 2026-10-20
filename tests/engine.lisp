@@ -3026,6 +3026,33 @@ b</div>"
         (format t "~&  circle edge: ~D ~D ~D~%" r g b)
         (check "a circle draws a ring" (and (< r 220) (< g 220) (< b 220)))))))
 
+(defun test-list-style-image ()
+  (let ((png "/tmp/closure-list-marker.png"))
+    (write-solid-png png 4 4 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<ul>
+                  <li id='disc'>Disc</li>
+                  <li id='pic' style='list-style-image:url(\"~A\")'>Picture</li>
+                </ul>" png))
+           (out "/tmp/closure-list-image.png")
+           (root (closure.engine:render-html html :width 200 :height 80 :output out
+                                            :stylesheet "body{margin:0}"))
+           (disc (closure.engine:find-box root "disc"))
+           (pic (closure.engine:find-box root "pic")))
+      (labels ((at (item dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x item) dx))
+                          (round (+ (closure.engine:box-y item) dy)))))
+        (check "image marker boxes" (and disc pic))
+        (multiple-value-bind (r g b) (at pic -10 8)
+          (format t "~&  image center: ~D ~D ~D~%" r g b)
+          (check "the image replaces the disc" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at pic -13 8)
+          (format t "~&  image beside the disc: ~D ~D ~D~%" r g b)
+          (check "the image is wider than a disc" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at disc -13 8)
+          (format t "~&  disc beside its center: ~D ~D ~D~%" r g b)
+          (check "a disc does not use the image" (not (and (< r 80) (< g 80) (> b 180)))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3479,6 +3506,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-list-style-inside)
   (test-list-style-square)
   (test-list-style-circle)
+  (test-list-style-image)
   (test-wbr)
   (test-address)
   (test-text-indent)

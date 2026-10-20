@@ -614,6 +614,7 @@ and gaps between known stops are split evenly."
                             (used-border-width (computed-bl st) (computed-bls st)))
                          (- (box-x box) 10d0))))
             (cond
+              ((paint-list-style-image cr st cx cy))
               ((eq marker :square)
                (cairo-rectangle cr (- cx 2.5d0) (- cy 2.5d0) 5d0 5d0)
                (cairo-fill cr))
@@ -624,6 +625,25 @@ and gaps between known stops are split evenly."
               (t
                (cairo-arc cr cx cy 2.5d0 0d0 (* 2d0 pi))
                (cairo-fill cr))))))))
+
+(defun paint-list-style-image (cr st cx cy)
+  "Paint a list-style-image centered on the marker. Returns T when an image was drawn."
+  (let* ((url (and st (computed-list-style-image st)))
+         (path (and (stringp url) (image-pathname url)))
+         (surface (and path (load-image-surface path))))
+    (when surface
+      (let* ((iw (float (cairo-image-surface-get-width surface) 1d0))
+             (ih (float (cairo-image-surface-get-height surface) 1d0))
+             (side 8d0)
+             (sx (if (> iw 0d0) (/ side iw) 1d0))
+             (sy (if (> ih 0d0) (/ side ih) 1d0)))
+        (cairo-save cr)
+        (cairo-translate cr (- cx (/ side 2d0)) (- cy (/ side 2d0)))
+        (cairo-scale cr sx sy)
+        (cairo-set-source-surface cr surface 0d0 0d0)
+        (cairo-paint cr)
+        (cairo-restore cr)
+        t))))
 
 (defun paint-box-shadow (cr box)
   "Paint solid outer shadows behind the box. They do not change layout."

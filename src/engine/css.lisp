@@ -100,6 +100,7 @@
   (animation-iteration 1)
   (list-style :disc)
   (list-style-position :outside)
+  (list-style-image nil)
   (custom nil)
   (extras nil))
 
@@ -135,7 +136,7 @@
  "grid-column" "grid-row" "grid-column-start" "grid-column-end"
  "grid-row-start" "grid-row-end"
  "top" "right" "bottom" "left" "inset"
- "transform" "content" "quotes" "column-count" "list-style" "list-style-type" "list-style-position"
+ "transform" "content" "quotes" "column-count" "list-style" "list-style-type" "list-style-position" "list-style-image"
  "animation" "animation-name" "animation-duration" "animation-iteration-count")
 
 (defparameter *inherited-properties*
@@ -1065,6 +1066,11 @@
       ((:list-style :list-style-type)
        (kw '("disc" "circle" "square" "decimal" "none")))
       ((:list-style-position) (kw '("outside" "inside")))
+      ((:list-style-image)
+       (cond ((and tokens (eq (tok-kind (car tokens)) :ident)
+                   (string= (tok-text (car tokens)) "none"))
+              :none)
+             (t (url-from-tokens tokens))))
       ((:animation-name)
        (when (and tokens (eq (tok-kind (car tokens)) :ident))
          (if (string= (tok-text (car tokens)) "none") :none (tok-text (car tokens)))))
@@ -2059,6 +2065,7 @@
          (:column-count (setf (computed-column-count style) value))
          ((:list-style :list-style-type) (setf (computed-list-style style) value))
          (:list-style-position (when value (setf (computed-list-style-position style) value)))
+         (:list-style-image (when value (setf (computed-list-style-image style) value)))
          (:animation-name (setf (computed-animation-name style) value))
          (:animation-duration (setf (computed-animation-duration style) (float value 1d0)))
          (:animation-iteration-count (setf (computed-animation-iteration style) value))
@@ -2110,6 +2117,7 @@
       (setf (computed-visibility s) (computed-visibility parent))
       (setf (computed-list-style s) (computed-list-style parent))
       (setf (computed-list-style-position s) (computed-list-style-position parent))
+      (setf (computed-list-style-image s) (computed-list-style-image parent))
       (setf (computed-quotes s) (computed-quotes parent))
       (setf (computed-custom s) (copy-custom (computed-custom parent))))
     s))
