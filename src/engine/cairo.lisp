@@ -328,10 +328,11 @@ pixel, then they add. That is the spacing browsers use."
     (float (+ (round asc) (round desc) (round gap)) 1d0)))
 
 (defun font-ascent (size family weight style)
-  (second (measure-text "Mg" size family weight style)))
+  "Ascent rounded to a pixel, matching the inline box a browser reports."
+  (float (round (second (measure-text "Mg" size family weight style))) 1d0))
 
 (defun font-descent (size family weight style)
-  (third (measure-text "Mg" size family weight style)))
+  (float (round (third (measure-text "Mg" size family weight style))) 1d0))
 
 (defvar *png-surfaces* (make-hash-table :test #'equal)
   "Decoded PNG surfaces keyed by namestring. Cairo decodes the file; layout and paint stay in Lisp.")

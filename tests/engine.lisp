@@ -1413,7 +1413,9 @@ b</div>"
     (check "small uses a smaller font"
            (and small
                 (~ (closure.engine::computed-font-size (closure.engine::box-style small))
-                   (/ 16d0 1.2d0))))))
+                   (/ 16d0 1.2d0))))
+    (check "small text is 15px tall"
+           (and small (~ (closure.engine:box-height small) 15d0)))))
 
 (defun test-big ()
   (let* ((root (closure.engine:layout-html
@@ -2779,7 +2781,8 @@ mono two</pre>")
          (plain (closure.engine:find-box root "s")))
     (check "em box" (and em plain))
     (check "em is italic"
-           (and em (eq (closure.engine::computed-font-style (closure.engine::box-style em)) :italic)))
+           (and em (eq (closure.engine::computed-font-style (closure.engine::box-style em)) :italic)
+                (~ (closure.engine:box-height em) 17d0)))
     (check "plain text stays roman"
            (and plain (eq (closure.engine::computed-font-style (closure.engine::box-style plain)) :normal)))))
 

@@ -383,8 +383,11 @@ from the Lisp engine without calling Node or another browser engine.
   one border. The cell starts half a pixel inside the table, and the next
   cell starts where the previous one ends. The sample page also has an
   italic word.
+- Inline boxes use a pixel ascent and descent. A word is 17px tall and
+  `<small>` is 15px. A subscript and a superscript are 15px.
 
 ## Next
 
-1. The done condition is not met; pages still need more of the web than
-   this viewport.
+1. A line that contains a subscript is 26.5px tall, one pixel below the
+   subscript box. The done condition is not met; pages still need more of
+   the web than this viewport.
