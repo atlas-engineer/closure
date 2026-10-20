@@ -10,6 +10,12 @@
    #:layout-html
    #:find-box
    #:hit-test
+   #:link-href
+   #:follow-link
+   #:submit-form
+   #:paint-window
+   #:run-window
+   #:close-window
    #:box-x
    #:box-y
    #:box-width

@@ -12,6 +12,10 @@
     :pointer
   (format :int) (width :int) (height :int))
 
+(cffi:defcfun ("cairo_xlib_surface_create" cairo-xlib-surface-create) :pointer
+  (display :pointer) (drawable :unsigned-long) (visual :pointer)
+  (width :int) (height :int))
+
 (cffi:defcfun ("cairo_create" cairo-create) :pointer (target :pointer))
 (cffi:defcfun ("cairo_destroy" cairo-destroy) :void (cr :pointer))
 (cffi:defcfun ("cairo_surface_destroy" cairo-surface-destroy) :void (surface :pointer))
@@ -22,6 +26,17 @@
   (surface :pointer))
 (cffi:defcfun ("cairo_image_surface_get_stride" cairo-image-surface-get-stride) :int
   (surface :pointer))
+(cffi:defcfun ("cairo_image_surface_create_from_png" cairo-image-surface-create-from-png)
+    :pointer
+  (filename :string))
+(cffi:defcfun ("cairo_image_surface_get_width" cairo-image-surface-get-width) :int
+  (surface :pointer))
+(cffi:defcfun ("cairo_image_surface_get_height" cairo-image-surface-get-height) :int
+  (surface :pointer))
+(cffi:defcfun ("cairo_surface_status" cairo-surface-status) :int (surface :pointer))
+(cffi:defcfun ("cairo_surface_mark_dirty" cairo-surface-mark-dirty) :void (surface :pointer))
+(cffi:defcfun ("cairo_set_source_surface" cairo-set-source-surface) :void
+  (cr :pointer) (surface :pointer) (x :double) (y :double))
 (cffi:defcfun ("cairo_status" cairo-status) :int (cr :pointer))
 (cffi:defcfun ("cairo_status_to_string" cairo-status-to-string) :string (status :int))
 
@@ -57,6 +72,9 @@
   (cr :pointer) (family :string) (slant :int) (weight :int))
 (cffi:defcfun ("cairo_set_font_size" cairo-set-font-size) :void (cr :pointer) (size :double))
 (cffi:defcfun ("cairo_move_to" cairo-move-to) :void (cr :pointer) (x :double) (y :double))
+(cffi:defcfun ("cairo_line_to" cairo-line-to) :void (cr :pointer) (x :double) (y :double))
+(cffi:defcfun ("cairo_curve_to" cairo-curve-to) :void
+  (cr :pointer) (x1 :double) (y1 :double) (x2 :double) (y2 :double) (x3 :double) (y3 :double))
 (cffi:defcfun ("cairo_show_text" cairo-show-text) :void (cr :pointer) (utf8 :string))
 (cffi:defcfun ("cairo_text_extents" cairo-text-extents) :void
   (cr :pointer) (utf8 :string) (extents :pointer))
@@ -91,6 +109,11 @@
       (error "Cairo did not create a drawing context.")))
   *cairo*)
 
+(defvar *sans-face* nil
+  "Concrete family for the generic sans-serif, chosen so bold is a different face.")
+
+(defvar *resolving-sans* nil)
+
 (defun cairo-family (family)
   (let ((name (string-downcase
                (cond ((stringp family) family)
@@ -104,9 +127,9 @@
           ((member name '("monospace" "courier" "courier new" "ui-monospace") :test #'string=)
            "Monospace")
           ((member name '("sans-serif" "sans" "arial" "helvetica" "noto sans") :test #'string=)
-           "Sans")
+           (if *resolving-sans* "Sans" (resolve-sans-face)))
           ((plusp (length name)) name)
-          (t "Sans"))))
+          (t (if *resolving-sans* "Sans" (resolve-sans-face))))))
 
 (defun cairo-slant (style)
   (if (member style '(:italic :oblique)) 1 0))
@@ -142,8 +165,50 @@
 (defun text-advance (string size family weight style)
   (first (measure-text string size family weight style)))
 
+(defun resolve-sans-face ()
+  "Pick a sans family whose bold face is wider than its regular face."
+  (unless *sans-face*
+    (let ((*resolving-sans* t))
+      (setf *sans-face*
+            (or (find-if (lambda (name)
+                           (let ((regular (text-advance "bold" 16d0 name :normal :normal))
+                                 (heavy (text-advance "bold" 16d0 name :bold :normal)))
+                             (> heavy regular)))
+                         '("DejaVu Sans" "Liberation Sans"))
+                "Sans"))))
+  *sans-face*)
+
 (defun font-ascent (size family weight style)
   (second (measure-text "Mg" size family weight style)))
 
 (defun font-descent (size family weight style)
   (third (measure-text "Mg" size family weight style)))
+
+(defvar *png-surfaces* (make-hash-table :test #'equal)
+  "Decoded PNG surfaces keyed by namestring. Cairo decodes the file; layout and paint stay in Lisp.")
+
+(defun load-png-surface (pathname)
+  "Return a cached Cairo image surface for PATHNAME, or NIL if it is not a readable PNG."
+  (let ((probed (probe-file pathname)))
+    (unless probed
+      (return-from load-png-surface nil))
+    (ensure-cairo)
+    (let* ((name (namestring probed))
+           (cached (gethash name *png-surfaces*)))
+      (when cached
+        (return-from load-png-surface cached))
+      (let ((surface (cairo-image-surface-create-from-png name)))
+        (cond
+          ((or (cffi:null-pointer-p surface)
+               (not (zerop (cairo-surface-status surface))))
+           (unless (cffi:null-pointer-p surface)
+             (cairo-surface-destroy surface))
+           nil)
+          (t (setf (gethash name *png-surfaces*) surface)))))))
+
+(defun png-intrinsic-size (pathname)
+  "Return the pixel width and height of a local PNG, or NIL."
+  (let ((surface (load-png-surface pathname)))
+    (when surface
+      (values (float (cairo-image-surface-get-width surface) 1d0)
+              (float (cairo-image-surface-get-height surface) 1d0)))))

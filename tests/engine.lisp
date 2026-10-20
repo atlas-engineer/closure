@@ -43,6 +43,206 @@
                          (+ (closure.engine:box-x row) 250d0)))
     (check "flex width" (~ (closure.engine:box-width a) 50d0))))
 
+(defun test-flex-wrap ()
+  (let* ((html "<div id='row' style='display:flex;flex-wrap:wrap;width:100px;gap:10px'>
+                  <div id='a' style='width:60px;height:10px'></div>
+                  <div id='b' style='width:60px;height:10px'></div>
+                  <div id='c' style='width:40px;height:10px'></div>
+                  <div id='d' style='width:40px;height:10px'></div>
+                </div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (row (closure.engine:find-box root "row"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (d (closure.engine:find-box root "d")))
+    (format t "~&  flex wrap: a ~A b ~A c ~A d ~A row-h ~A~%"
+            (and a (list (closure.engine:box-x a) (closure.engine:box-y a)))
+            (and b (list (closure.engine:box-x b) (closure.engine:box-y b)))
+            (and c (list (closure.engine:box-x c) (closure.engine:box-y c)))
+            (and d (list (closure.engine:box-x d) (closure.engine:box-y d)))
+            (and row (closure.engine:box-height row)))
+    (check "wrapped flex boxes" (and row a b c d))
+    (check "first item stays on the first line"
+           (and row a (~ (closure.engine:box-x a) (closure.engine:box-x row))
+                (~ (closure.engine:box-y a) (closure.engine:box-y row))))
+    (check "second item wraps to the next line"
+           (and a b (~ (closure.engine:box-x b) (closure.engine:box-x a))
+                (~ (closure.engine:box-y b) (+ (closure.engine:box-y a) 20d0))))
+    (check "later items share a line"
+           (and c d (~ (closure.engine:box-y c) (closure.engine:box-y d))
+                (~ (closure.engine:box-x d) (+ (closure.engine:box-x c) 50d0))))
+    (check "wrapped row grows to fit the lines"
+           (and row (~ (closure.engine:box-height row) 50d0)))))
+
+(defun test-flex-wrap-reverse ()
+  (let* ((html "<div id='row' style='display:flex;flex-wrap:wrap-reverse;width:100px;height:40px'>
+                  <div id='a' style='width:60px;height:10px'></div>
+                  <div id='b' style='width:60px;height:10px'></div>
+                </div>
+                <div id='auto' style='display:flex;flex-wrap:wrap-reverse;width:100px'>
+                  <div id='c' style='width:60px;height:10px'></div>
+                  <div id='d' style='width:60px;height:10px'></div>
+                </div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (row (closure.engine:find-box root "row"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (auto (closure.engine:find-box root "auto"))
+         (c (closure.engine:find-box root "c"))
+         (d (closure.engine:find-box root "d")))
+    (format t "~&  wrap-reverse: a ~A b ~A c ~A d ~A~%"
+            (and a (closure.engine:box-y a))
+            (and b (closure.engine:box-y b))
+            (and c (closure.engine:box-y c))
+            (and d (closure.engine:box-y d)))
+    (check "wrap-reverse boxes" (and row a b auto c d))
+    (check "first line sits at the bottom of the row"
+           (and row a (~ (closure.engine:box-y a)
+                         (+ (closure.engine:box-y row) 30d0))))
+    (check "next line sits above the first"
+           (and a b (~ (closure.engine:box-y b)
+                       (- (closure.engine:box-y a) 10d0))))
+    (check "auto-height first line stays at the cross end"
+           (and auto c (~ (closure.engine:box-height auto) 20d0)
+                (~ (closure.engine:box-y c)
+                   (+ (closure.engine:box-y auto) 10d0))))
+    (check "auto-height next line stays above it"
+           (and c d (~ (closure.engine:box-y d) (closure.engine:box-y auto))))))
+
+(defun test-flex-align-content ()
+  (let* ((html "<div id='row' style='display:flex;flex-wrap:wrap;align-content:center;width:100px;height:40px'>
+                  <div id='a' style='width:60px;height:10px'></div>
+                  <div id='b' style='width:60px;height:10px'></div>
+                </div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (row (closure.engine:find-box root "row"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b")))
+    (format t "~&  align-content: a ~A b ~A row ~A~%"
+            (and a (closure.engine:box-y a))
+            (and b (closure.engine:box-y b))
+            (and row (closure.engine:box-height row)))
+    (check "centered flex lines" (and row a b))
+    (check "the row keeps its height"
+           (and row (~ (closure.engine:box-height row) 40d0)))
+    (check "lines are centered in the extra space"
+           (and row a b
+                (~ (closure.engine:box-y a) (+ (closure.engine:box-y row) 10d0))
+                (~ (closure.engine:box-y b) (+ (closure.engine:box-y a) 10d0))))
+    (check "centered lines stay at the content edge"
+           (and row a (~ (closure.engine:box-x a) (closure.engine:box-x row))))))
+
+(defun test-flex-align-content-end ()
+  (let* ((html "<div id='row' style='display:flex;flex-wrap:wrap;align-content:flex-end;width:100px;height:40px'>
+                  <div id='a' style='width:60px;height:10px'></div>
+                  <div id='b' style='width:60px;height:10px'></div>
+                </div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (row (closure.engine:find-box root "row"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b")))
+    (format t "~&  align-content end: a ~A b ~A row ~A~%"
+            (and a (closure.engine:box-y a))
+            (and b (closure.engine:box-y b))
+            (and row (closure.engine:box-height row)))
+    (check "end-aligned flex lines" (and row a b))
+    (check "the end-aligned row keeps its height"
+           (and row (~ (closure.engine:box-height row) 40d0)))
+    (check "the last line sits on the cross end"
+           (and row b (~ (closure.engine:box-y b)
+                         (+ (closure.engine:box-y row) 30d0))))
+    (check "the first line sits just above it"
+           (and a b (~ (closure.engine:box-y a)
+                       (- (closure.engine:box-y b) 10d0))))
+    (check "end-aligned lines stay at the content edge"
+           (and row a (~ (closure.engine:box-x a) (closure.engine:box-x row))))))
+
+(defun test-flex-align-content-between ()
+  (let* ((html "<div id='row' style='display:flex;flex-wrap:wrap;align-content:space-between;width:100px;height:50px'>
+                  <div id='a' style='width:60px;height:10px'></div>
+                  <div id='b' style='width:60px;height:10px'></div>
+                  <div id='c' style='width:60px;height:10px'></div>
+                </div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (row (closure.engine:find-box root "row"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c")))
+    (format t "~&  align-content between: a ~A b ~A c ~A~%"
+            (and a (closure.engine:box-y a))
+            (and b (closure.engine:box-y b))
+            (and c (closure.engine:box-y c)))
+    (check "spaced flex lines" (and row a b c))
+    (check "the first line stays at the start"
+           (and row a (~ (closure.engine:box-y a) (closure.engine:box-y row))))
+    (check "the spaced last line sits on the cross end"
+           (and row c (~ (closure.engine:box-y c)
+                         (+ (closure.engine:box-y row) 40d0))))
+    (check "the extra space is split between the lines"
+           (and a b c
+                (~ (closure.engine:box-y b) (+ (closure.engine:box-y a) 20d0))
+                (~ (closure.engine:box-y c) (+ (closure.engine:box-y b) 20d0))))))
+
+(defun test-flex-align-content-around ()
+  (let* ((html "<div id='row' style='display:flex;flex-wrap:wrap;align-content:space-around;width:100px;height:40px'>
+                  <div id='a' style='width:60px;height:10px'></div>
+                  <div id='b' style='width:60px;height:10px'></div>
+                </div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (row (closure.engine:find-box root "row"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b")))
+    (format t "~&  align-content around: a ~A b ~A~%"
+            (and a (closure.engine:box-y a))
+            (and b (closure.engine:box-y b)))
+    (check "space-around flex lines" (and row a b))
+    (check "each line has space above it"
+           (and row a (~ (closure.engine:box-y a)
+                         (+ (closure.engine:box-y row) 5d0))))
+    (check "the gap between lines is twice the edge gap"
+           (and a b
+                (~ (- (closure.engine:box-y b)
+                      (+ (closure.engine:box-y a) (closure.engine:box-height a)))
+                   10d0)
+                (~ (- (+ (closure.engine:box-y row) (closure.engine:box-height row))
+                      (+ (closure.engine:box-y b) (closure.engine:box-height b)))
+                   5d0)))))
+
+(defun test-flex-align-content-evenly ()
+  (let* ((html "<div id='row' style='display:flex;flex-wrap:wrap;align-content:space-evenly;width:100px;height:50px'>
+                  <div id='a' style='width:60px;height:10px'></div>
+                  <div id='b' style='width:60px;height:10px'></div>
+                </div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (row (closure.engine:find-box root "row"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (gap (and row a b
+                   (- (closure.engine:box-y a) (closure.engine:box-y row)))))
+    (format t "~&  align-content evenly: a ~A b ~A gap ~A~%"
+            (and a (closure.engine:box-y a))
+            (and b (closure.engine:box-y b))
+            gap)
+    (check "space-evenly flex lines" (and row a b gap))
+    (check "the leading gap matches the gap between lines"
+           (and a b gap
+                (~ (- (closure.engine:box-y b)
+                      (+ (closure.engine:box-y a) (closure.engine:box-height a)))
+                   gap)))
+    (check "the trailing gap matches the others"
+           (and row b gap
+                (~ (- (+ (closure.engine:box-y row) (closure.engine:box-height row))
+                      (+ (closure.engine:box-y b) (closure.engine:box-height b)))
+                   gap)))))
+
 (defun test-grid-and-calc ()
   (let* ((html "<style>:root { --g: 10px; }</style>
                 <div id='g' style='display:grid;width:200px;grid-template-columns:100px 100px'>
@@ -131,11 +331,2045 @@
     (check "js innerHTML text"
            (and b (search "n=14" (closure.engine::dom-text-content (closure.engine::box-element b)))))))
 
+(defun write-solid-png (path w h r g b)
+  (closure.engine::ensure-cairo)
+  (let* ((surface (closure.engine::cairo-image-surface-create 0 w h))
+         (cr (closure.engine::cairo-create surface)))
+    (unwind-protect
+         (progn
+           (closure.engine::cairo-set-source-rgba cr r g b 1d0)
+           (closure.engine::cairo-paint cr)
+           (closure.engine::cairo-surface-flush surface)
+           (closure.engine::cairo-surface-write-to-png surface (namestring path)))
+      (closure.engine::cairo-destroy cr)
+      (closure.engine::cairo-surface-destroy surface))))
+
+(defun test-png-image ()
+  (let* ((swatch "/tmp/closure-engine-swatch.png")
+         (out "/tmp/closure-engine-img.png"))
+    (write-solid-png swatch 8 8 0.8d0 0.1d0 0.1d0)
+    (let* ((html (format nil "<img id='pic' src='~A'>" swatch))
+           (root (closure.engine:layout-html html :width 200 :height 100
+                                            :stylesheet "body{margin:0}"))
+           (pic (closure.engine:find-box root "pic")))
+      (check "img box" pic)
+      (check "intrinsic width" (and pic (~ (closure.engine:box-width pic) 8d0)))
+      (check "intrinsic height" (and pic (~ (closure.engine:box-height pic) 8d0))))
+    (let* ((html (format nil "<img id='attr' src='file://~A' width='30' height='12'>" swatch))
+           (root (closure.engine:layout-html html :width 200 :height 100
+                                            :stylesheet "body{margin:0}"))
+           (attr (closure.engine:find-box root "attr")))
+      (check "attr img" attr)
+      (check "html width" (and attr (~ (closure.engine:box-width attr) 30d0)))
+      (check "html height" (and attr (~ (closure.engine:box-height attr) 12d0))))
+    (let* ((html (format nil "<img id='css' src='~A' style='width:40px;height:10px'>" swatch))
+           (root (closure.engine:render-html html :width 200 :height 80 :output out
+                                            :stylesheet "body{margin:0}"))
+           (css (closure.engine:find-box root "css")))
+      (check "css img" css)
+      (check "css width" (and css (~ (closure.engine:box-width css) 40d0)))
+      (check "css height" (and css (~ (closure.engine:box-height css) 10d0)))
+      (let ((ink (closure.engine::count-ink out)))
+        (format t "~&  img ink pixels: ~D~%" ink)
+        (check "img painted" (> ink 20))))))
+
+(defun write-solid-gif (path w h r g b)
+  (let* ((table (skippy:make-color-table))
+         (index (skippy:add-color (skippy:rgb-color r g b) table))
+         (stream (skippy:make-data-stream :color-table table :width w :height h))
+         (image (skippy:make-image :width w :height h :data-stream stream
+                                   :image-data (skippy:make-image-data w h :initial-element index))))
+    (skippy:add-image image stream)
+    (skippy:output-data-stream stream path)))
+
+(defun write-solid-jpeg (path w h r g b)
+  "Mint a baseline JPEG with pnmtojpeg. The renderer decodes it in Lisp."
+  (let* ((header (format nil "P6~%~D ~D~%255~%" w h))
+         (ppm (make-array (+ (length header) (* w h 3)) :element-type '(unsigned-byte 8))))
+    (loop for ch across header
+          for i from 0
+          do (setf (aref ppm i) (char-code ch)))
+    (loop for i from 0 below (* w h)
+          do (setf (aref ppm (+ (length header) (* i 3))) r
+                   (aref ppm (+ (length header) (* i 3) 1)) g
+                   (aref ppm (+ (length header) (* i 3) 2)) b))
+    (uiop:with-temporary-file (:pathname ppm-path)
+      (with-open-file (out ppm-path :direction :output :element-type '(unsigned-byte 8)
+                                     :if-exists :supersede)
+        (write-sequence ppm out))
+      (uiop:run-program (list "pnmtojpeg" (namestring ppm-path))
+                        :output path
+                        :if-output-exists :supersede))))
+
+(defun png-rgb (path x y)
+  (closure.engine::ensure-cairo)
+  (let ((surface (closure.engine::cairo-image-surface-create-from-png (namestring path))))
+    (unwind-protect
+         (let* ((stride (closure.engine::cairo-image-surface-get-stride surface))
+                (data (closure.engine::cairo-image-surface-get-data surface))
+                (px (cffi:mem-ref data :uint32 (+ (* y stride) (* x 4)))))
+           (values (ldb (byte 8 16) px)
+                   (ldb (byte 8 8) px)
+                   (ldb (byte 8 0) px)))
+      (closure.engine::cairo-surface-destroy surface))))
+
+(defun test-gif-and-jpeg ()
+  (let ((gif "/tmp/closure-engine-green.gif")
+        (jpg "/tmp/closure-engine-red.jpg")
+        (gif-png "/tmp/closure-engine-gif.png"))
+    (write-solid-gif gif 4 6 10 200 20)
+    (write-solid-jpeg jpg 16 16 220 15 15)
+    (let* ((html (format nil "<img id='g' src='~A'>" gif))
+           (root (closure.engine:layout-html html :width 80 :height 40 :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "g")))
+      (check "gif box" box)
+      (check "gif width" (and box (~ (closure.engine:box-width box) 4d0)))
+      (check "gif height" (and box (~ (closure.engine:box-height box) 6d0))))
+    (let* ((html (format nil "<img id='j' src='~A'>" jpg))
+           (root (closure.engine:layout-html html :width 80 :height 40 :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "j")))
+      (check "jpeg box" box)
+      (check "jpeg width" (and box (~ (closure.engine:box-width box) 16d0)))
+      (check "jpeg height" (and box (~ (closure.engine:box-height box) 16d0))))
+    (let* ((html (format nil "<img id='g' src='~A'><img id='j' src='~A'>" gif jpg))
+           (root (closure.engine:render-html html :width 80 :height 40 :output gif-png
+                                            :stylesheet "body{margin:0}"))
+           (g (closure.engine:find-box root "g"))
+           (j (closure.engine:find-box root "j")))
+      (check "gif+jpeg laid out" (and g j))
+      (multiple-value-bind (r g b)
+          (png-rgb gif-png (round (closure.engine:box-x g)) (round (closure.engine:box-y g)))
+        (format t "~&  gif pixel: ~D ~D ~D~%" r g b)
+        (check "gif painted green" (and (> g 150) (< r 80) (< b 80))))
+      (multiple-value-bind (r g b)
+          (png-rgb gif-png
+                   (+ (round (closure.engine:box-x j)) 4)
+                   (+ (round (closure.engine:box-y j)) 4))
+        (format t "~&  jpeg pixel: ~D ~D ~D~%" r g b)
+        (check "jpeg painted red" (and (> r 150) (< g 80) (< b 80)))))))
+
+(defun test-relative-and-http-image ()
+  (let* ((dir "/tmp/closure-rel/")
+         (png (concatenate 'string dir "dot.png")))
+    (ensure-directories-exist dir)
+    (write-solid-png png 5 7 0.1d0 0.2d0 0.9d0)
+    (let* ((html "<img id='r' src='dot.png'>")
+           (root (closure.engine:layout-html html :width 80 :height 40
+                                            :stylesheet "body{margin:0}"
+                                            :base "file:///tmp/closure-rel/index.html"))
+           (box (closure.engine:find-box root "r")))
+      (check "relative img" box)
+      (check "relative width" (and box (~ (closure.engine:box-width box) 5d0)))
+      (check "relative height" (and box (~ (closure.engine:box-height box) 7d0))))
+    (let* ((html "<base href='file:///tmp/closure-rel/'><img id='b' src='dot.png'>")
+           (root (closure.engine:layout-html html :width 80 :height 40
+                                            :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "b")))
+      (check "base href img" box)
+      (check "base href width" (and box (~ (closure.engine:box-width box) 5d0))))
+    (let* ((port 18765)
+           (proc (uiop:launch-program
+                  (list "python3" "-m" "http.server" (princ-to-string port) "--bind" "127.0.0.1")
+                  :directory dir
+                  :output #p"/tmp/closure-http.log"
+                  :error-output :output)))
+      (unwind-protect
+           (progn
+             (loop repeat 50
+                   until (ignore-errors
+                          (drakma:http-request (format nil "http://127.0.0.1:~D/dot.png" port)
+                                               :force-binary t)
+                          t)
+                   do (sleep 0.05))
+             (let* ((html "<img id='h' src='dot.png'>")
+                    (root (closure.engine:render-html
+                           html :width 80 :height 40 :stylesheet "body{margin:0}"
+                           :base (format nil "http://127.0.0.1:~D/index.html" port)
+                           :output "/tmp/closure-http-img.png"))
+                    (box (closure.engine:find-box root "h")))
+               (check "http img" box)
+               (check "http width" (and box (~ (closure.engine:box-width box) 5d0)))
+               (check "http height" (and box (~ (closure.engine:box-height box) 7d0)))
+               (multiple-value-bind (r g b)
+                   (png-rgb "/tmp/closure-http-img.png"
+                            (round (closure.engine:box-x box))
+                            (round (closure.engine:box-y box)))
+                 (format t "~&  http pixel: ~D ~D ~D~%" r g b)
+                 (check "http painted blue" (and (> b 180) (< r 80) (< g 120))))))
+        (uiop:terminate-process proc)
+        (uiop:wait-process proc)))))
+
+(defun write-split-png (path w h r1 g1 b1 r2 g2 b2)
+  "Left half is the first color, right half the second. Channels are 0..1."
+  (closure.engine::ensure-cairo)
+  (let* ((surface (closure.engine::cairo-image-surface-create 0 w h))
+         (cr (closure.engine::cairo-create surface))
+         (mid (floor w 2)))
+    (unwind-protect
+         (progn
+           (closure.engine::cairo-set-source-rgba cr r1 g1 b1 1d0)
+           (closure.engine::cairo-rectangle cr 0d0 0d0 (float mid 1d0) (float h 1d0))
+           (closure.engine::cairo-fill cr)
+           (closure.engine::cairo-set-source-rgba cr r2 g2 b2 1d0)
+           (closure.engine::cairo-rectangle cr (float mid 1d0) 0d0 (float (- w mid) 1d0) (float h 1d0))
+           (closure.engine::cairo-fill cr)
+           (closure.engine::cairo-surface-flush surface)
+           (closure.engine::cairo-surface-write-to-png surface (namestring path)))
+      (closure.engine::cairo-destroy cr)
+      (closure.engine::cairo-surface-destroy surface))))
+
+(defun test-background-and-object-fit ()
+  (let ((blue "/tmp/closure-engine-bg.png")
+        (split "/tmp/closure-engine-split.png")
+        (out "/tmp/closure-engine-fit.png"))
+    (write-solid-png blue 4 4 0.1d0 0.2d0 0.9d0)
+    (write-split-png split 8 4 0.9d0 0.1d0 0.1d0 0.1d0 0.8d0 0.1d0)
+    (let* ((html (format nil "<div id='bg' style='width:20px;height:12px;background-image:url(\"~A\")'></div>" blue))
+           (root (closure.engine:render-html html :width 40 :height 30 :output out
+                                            :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "bg")))
+      (check "background box" box)
+      (multiple-value-bind (r g b)
+          (png-rgb out
+                   (+ (round (closure.engine:box-x box)) 1)
+                   (+ (round (closure.engine:box-y box)) 1))
+        (format t "~&  background pixel: ~D ~D ~D~%" r g b)
+        (check "background image painted" (and (> b 180) (< r 80)))))
+    (let* ((html (format nil "<img id='c' src='~A' style='width:8px;height:8px;object-fit:contain'>" split))
+           (root (closure.engine:render-html html :width 20 :height 20 :output out
+                                            :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "c"))
+           (x (round (closure.engine:box-x box)))
+           (y (round (closure.engine:box-y box))))
+      (check "contain box" box)
+      (multiple-value-bind (r g b) (png-rgb out x y)
+        (format t "~&  contain corner: ~D ~D ~D~%" r g b)
+        (check "contain letterbox" (and (> r 240) (> g 240) (> b 240))))
+      (multiple-value-bind (r g b) (png-rgb out x (+ y 3))
+        (format t "~&  contain left: ~D ~D ~D~%" r g b)
+        (check "contain shows image" (> r 180))))
+    (let* ((html (format nil "<img id='v' src='~A' style='width:8px;height:8px;object-fit:cover'>" split))
+           (root (closure.engine:render-html html :width 20 :height 20 :output out
+                                            :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "v"))
+           (x (round (closure.engine:box-x box)))
+           (y (round (closure.engine:box-y box))))
+      (multiple-value-bind (r g b) (png-rgb out x y)
+        (format t "~&  cover corner: ~D ~D ~D~%" r g b)
+        (check "cover fills corner" (> r 180))))))
+
+(defun text-ys (box)
+  (let ((out nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (closure.engine::box-text b))
+                   (push (cons (closure.engine::box-text b) (closure.engine::box-y b)) out))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk box))
+    out))
+
+(defun test-form-controls ()
+  (let* ((html "<input id='n' value='old'>
+                <button id='b'>OK</button>
+                <select id='s'><option>Red</option><option selected>Blue</option></select>
+                <textarea id='t'>note</textarea>
+                <div id='out'></div>
+                <script>
+                  var n = document.getElementById('n');
+                  n.value = 'Hi';
+                  document.getElementById('out').textContent =
+                    n.value + '/' + document.getElementById('s').value + '/' +
+                    document.getElementById('t').value;
+                  document.getElementById('t').value = 'next';
+                </script>")
+         (out "/tmp/closure-engine-form.png")
+         (root (closure.engine:render-html html :width 400 :height 200 :output out
+                                          :stylesheet "body{margin:0}"))
+         (n (closure.engine:find-box root "n"))
+         (b (closure.engine:find-box root "b"))
+         (s (closure.engine:find-box root "s"))
+         (tt (closure.engine:find-box root "t"))
+         (shown (closure.engine:find-box root "out")))
+    (check "input box" n)
+    (check "input sized" (and n (> (closure.engine:box-width n) 100d0)
+                              (< (closure.engine:box-width n) 180d0)
+                              (> (closure.engine:box-height n) 18d0)
+                              (< (closure.engine:box-height n) 40d0)))
+    (check "button box" b)
+    (check "button shrinks" (and b (< (closure.engine:box-width b) 80d0)
+                                 (> (closure.engine:box-height b) 10d0)))
+    (check "select box" s)
+    (check "textarea box" (and tt (> (closure.engine:box-height tt) 30d0)))
+    (check "script read values" (and shown (search "Hi/Blue/note"
+                                                   (closure.engine::dom-text-content
+                                                    (closure.engine::box-element shown)))))
+    (let ((ink (closure.engine::count-ink out)))
+      (format t "~&  form ink pixels: ~D~%" ink)
+      (check "controls painted" (> ink 40)))))
+
+(defun test-inline-image-baseline ()
+  (let ((png "/tmp/closure-inline-img.png"))
+    (write-solid-png png 8 8 0.8d0 0.1d0 0.1d0)
+    (let* ((html (format nil "<p id='p'>Hi <img id='pic' src='~A' width='12' height='12'> there</p>" png))
+           (root (closure.engine:layout-html html :width 300 :height 80
+                                            :stylesheet "body{margin:0;font-size:16px}"))
+           (pic (closure.engine:find-box root "pic"))
+           (texts nil))
+      (labels ((walk (b)
+                 (when b
+                   (when (and (eq (closure.engine::box-kind b) :text)
+                              (closure.engine::box-text b)
+                              (plusp (length (string-trim '(#\space) (closure.engine::box-text b)))))
+                     (push b texts))
+                   (dolist (c (closure.engine::box-children b)) (walk c)))))
+        (walk root))
+      (let ((hi (find "Hi" texts :key #'closure.engine::box-text :test #'string=))
+            (there (find "there" texts :key #'closure.engine::box-text :test #'string=)))
+        (check "inline image" (and pic hi there))
+        (check "image sits between the words"
+               (and pic hi there
+                    (< (closure.engine:box-x hi) (closure.engine:box-x pic))
+                    (< (closure.engine:box-x pic) (closure.engine:box-x there))))
+        (check "image bottom meets the text baseline"
+               (and pic hi
+                    (~ (+ (closure.engine:box-y pic) (closure.engine:box-height pic))
+                       (+ (closure.engine:box-y hi) (closure.engine::box-baseline hi)))))))))
+
+(defun test-nested-inline ()
+  (let* ((html "<p>Hello <span>kind <b id='b'>bold</b></span> world</p>")
+         (out "/tmp/closure-engine-nested-inline.png")
+         (root (closure.engine:render-html html :width 400 :height 40 :output out
+                                          :stylesheet "body{margin:0} p{margin:0;font-size:16px}"))
+         (hello nil) (kind nil) (world nil)
+         (bold (closure.engine:find-box root "b"))
+         (bold-adv (closure.engine::text-advance "bold" 16d0 "sans-serif" :bold :normal))
+         (norm-adv (closure.engine::text-advance "bold" 16d0 "sans-serif" :normal :normal)))
+    (labels ((walk (b)
+               (when b
+                 (when (eq (closure.engine::box-kind b) :text)
+                   (cond
+                     ((string= (or (closure.engine::box-text b) "") "Hello") (setf hello b))
+                     ((string= (or (closure.engine::box-text b) "") "kind") (setf kind b))
+                     ((string= (or (closure.engine::box-text b) "") "world") (setf world b))))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "nested words are present" (and hello kind bold world))
+    (check "nested words stay in order"
+           (and hello kind bold world
+                (< (closure.engine:box-x hello) (closure.engine:box-x kind))
+                (< (closure.engine:box-x kind) (closure.engine:box-x bold))
+                (< (closure.engine:box-x bold) (closure.engine:box-x world))))
+    (check "bold word uses a bold font"
+           (and bold
+                (eq (closure.engine::computed-font-weight (closure.engine::box-style bold)) :bold)
+                (> bold-adv norm-adv)
+                (~ (closure.engine:box-width bold) bold-adv)))
+    (let ((ink (closure.engine::count-ink out)))
+      (format t "~&  nested inline ink pixels: ~D~%" ink)
+      (check "nested inline text is painted" (> ink 10)))))
+
+(defun test-link-underline ()
+  (let* ((html "<a id='go' href='next.html'>link</a><span id='plain'>link</span>")
+         (out "/tmp/closure-engine-underline.png")
+         (root (closure.engine:render-html html :width 240 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (link (closure.engine:find-box root "go"))
+         (plain (closure.engine:find-box root "plain")))
+    (check "link text box" link)
+    (check "plain text box" plain)
+    (labels ((blue-below (box)
+               (when box
+                 (let ((y0 (floor (+ (closure.engine:box-y box)
+                                     (closure.engine::box-baseline box)
+                                     1d0)))
+                       (x (floor (+ (closure.engine:box-x box) 2d0))))
+                   (loop for y from y0 to (+ y0 4)
+                         thereis (and (< y 40)
+                                      (multiple-value-bind (r g b) (png-rgb out x y)
+                                        (and (> b 180) (> b r) (> b g)))))))))
+      (format t "~&  link underline: ~A plain underline: ~A~%"
+              (blue-below link) (blue-below plain))
+      (check "link is underlined in its color" (blue-below link))
+      (check "plain text is not underlined" (not (blue-below plain))))))
+
+(defun test-link-underline-nested ()
+  (let* ((html "<a href='next.html'>see <b id='b' style='color:#cc0000'>this</b></a>")
+         (out "/tmp/closure-engine-underline-nested.png")
+         (root (closure.engine:render-html html :width 240 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (bold (closure.engine:find-box root "b")))
+    (check "nested link word" bold)
+    (when bold
+      (let ((top (floor (+ (closure.engine:box-y bold) 2d0)))
+            (y0 (floor (+ (closure.engine:box-y bold)
+                          (closure.engine::box-baseline bold)
+                          1d0)))
+            (x (floor (+ (closure.engine:box-x bold) 2d0))))
+        (labels ((at (y)
+                   (png-rgb out x y))
+                 (red (y)
+                   (multiple-value-bind (r g b) (at y)
+                     (and (> r 150) (> r g) (> r b))))
+                 (blue (y)
+                   (multiple-value-bind (r g b) (at y)
+                     (and (> b 180) (> b r) (> b g)))))
+          (format t "~&  nested glyph red: ~A underline blue: ~A~%"
+                  (loop for y from top below y0 thereis (red y))
+                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y))))
+          (check "nested word keeps its own color"
+                 (loop for y from top below y0 thereis (red y)))
+          (check "underline under the nested word stays the link color"
+                 (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
+
+(defun test-image-alt ()
+  (let* ((html "<img id='gone' src='/tmp/closure-does-not-exist.png' alt='missing'>")
+         (out "/tmp/closure-engine-alt.png")
+         (root (closure.engine:render-html html :width 200 :height 40 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "gone"))
+         (adv (closure.engine::text-advance "missing" 16d0 "sans-serif" :normal :normal)))
+    (check "broken image box" box)
+    (check "alt sizes the box" (and box (~ (closure.engine:box-width box) adv)))
+    (check "alt text is stored" (and box (string= (closure.engine::box-text box) "missing")))
+    (let ((ink (closure.engine::count-ink out)))
+      (format t "~&  alt ink pixels: ~D~%" ink)
+      (check "alt text is painted" (> ink 10)))))
+
+(defun test-br ()
+  (let* ((html "<p id='p'>one<br>two</p>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0} p{margin:0}"))
+         (one nil)
+         (two nil))
+    (labels ((walk (b)
+               (when b
+                 (when (eq (closure.engine::box-kind b) :text)
+                   (cond
+                     ((string= (or (closure.engine::box-text b) "") "one") (setf one b))
+                     ((string= (or (closure.engine::box-text b) "") "two") (setf two b))))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "br splits the words" (and one two))
+    (check "br puts the next word below"
+           (and one two (> (closure.engine:box-y two) (+ (closure.engine:box-y one) 4d0))))
+    (check "br starts the next line at the same edge"
+           (and one two (~ (closure.engine:box-x two) (closure.engine:box-x one))))))
+
+(defun test-image-alt-clip ()
+  (let* ((html "<img id='gone' src='/tmp/closure-does-not-exist.png' alt='WWWWWWWWWWWW' width='24' height='16'>")
+         (out "/tmp/closure-engine-alt-clip.png")
+         (root (closure.engine:render-html html :width 200 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (box (closure.engine:find-box root "gone")))
+    (check "sized broken image" box)
+    (check "html width keeps the box" (and box (~ (closure.engine:box-width box) 24d0)))
+    (check "alt ink stays inside the box"
+           (loop for y from 0 below 16
+                 thereis (loop for x from 0 below 24
+                               thereis (multiple-value-bind (r g b) (png-rgb out x y)
+                                         (or (< r 250) (< g 250) (< b 250))))))
+    (multiple-value-bind (r g b) (png-rgb out 40 8)
+      (format t "~&  past alt pixel: ~D ~D ~D~%" r g b)
+      (check "alt does not spill past the box" (and (> r 250) (> g 250) (> b 250))))))
+
+(defun test-inline-image-middle ()
+  (let ((png "/tmp/closure-inline-middle.png"))
+    (write-solid-png png 8 8 0.1d0 0.2d0 0.8d0)
+    (let* ((html (format nil "<p>Hi <img id='mid' src='~A' width='20' height='20' style='vertical-align:middle'> there</p>" png))
+           (root (closure.engine:layout-html html :width 300 :height 80
+                                            :stylesheet "body{margin:0;font-size:16px}"))
+           (pic (closure.engine:find-box root "mid"))
+           (hi nil))
+      (labels ((walk (b)
+                 (when b
+                   (when (and (eq (closure.engine::box-kind b) :text)
+                              (string= (or (closure.engine::box-text b) "") "Hi"))
+                     (setf hi b))
+                   (dolist (c (closure.engine::box-children b)) (walk c)))))
+        (walk root))
+      (check "middle image" (and pic hi))
+      (when (and pic hi)
+        (let* ((baseline (+ (closure.engine:box-y hi) (closure.engine::box-baseline hi)))
+               (center (+ (closure.engine:box-y pic) (/ (closure.engine:box-height pic) 2d0))))
+          (format t "~&  image center ~,1F baseline ~,1F~%" center baseline)
+          (check "middle centers above the baseline"
+                 (~ (- baseline center) 4d0)))))))
+
+(defun test-inline-layout ()
+  (let* ((wrap (closure.engine:layout-html
+                "<div id='w' style='width:20px'>hello world</div>"
+                :width 200 :height 80 :stylesheet "body{margin:0}"))
+         (nowrap (closure.engine:layout-html
+                  "<div id='n' style='width:20px;white-space:nowrap'>hello world</div>"
+                  :width 200 :height 80 :stylesheet "body{margin:0}"))
+         (pre (closure.engine:layout-html
+               "<div id='p' style='white-space:pre'>a
+b</div>"
+               :width 200 :height 80 :stylesheet "body{margin:0}"))
+         (super (closure.engine:layout-html
+                 "<div id='s'>A<span style='vertical-align:super'>2</span></div>"
+                 :width 200 :height 80 :stylesheet "body{margin:0}"))
+         (w (closure.engine:find-box wrap "w"))
+         (n (closure.engine:find-box nowrap "n"))
+         (p (closure.engine:find-box pre "p"))
+         (ys (text-ys super))
+         (ay (cdr (assoc "A" ys :test #'string=)))
+         (two (cdr (assoc "2" ys :test #'string=))))
+    (check "wrap box" w)
+    (check "words wrap" (and w (> (closure.engine:box-height w) 30d0)))
+    (check "nowrap stays one line" (and n (< (closure.engine:box-height n) 28d0)))
+    (check "pre keeps the newline" (and p (> (closure.engine:box-height p) 30d0)))
+    (check "super is above the baseline"
+           (and ay two (< two ay)))))
+
+(defun test-sub-sup ()
+  (let* ((root (closure.engine:layout-html
+                "<p>A<sup id='up'>2</sup><sub id='down'>2</sub></p>"
+                :width 200 :height 80
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (ay (cdr (assoc "A" (text-ys root) :test #'string=)))
+         (up (closure.engine:find-box root "up"))
+         (down (closure.engine:find-box root "down")))
+    (check "sup and sub boxes" (and up down ay))
+    (check "sup sits above the baseline"
+           (and up ay (< (closure.engine:box-y up) ay)))
+    (check "sub sits below the baseline"
+           (and down ay (> (closure.engine:box-y down) ay)))))
+
+(defun test-mark ()
+  (let* ((html "<mark id='m'>O</mark><mark><b id='b'>O</b></mark><span id='p'>O</span>")
+         (out "/tmp/closure-engine-mark.png")
+         (root (closure.engine:render-html html :width 200 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (marked (closure.engine:find-box root "m"))
+         (nested (closure.engine:find-box root "b"))
+         (plain (closure.engine:find-box root "p")))
+    (labels ((yellow (box)
+               (when box
+                 (let ((x (floor (+ (closure.engine:box-x box)
+                                    (/ (closure.engine:box-width box) 2d0))))
+                       (y (floor (+ (closure.engine:box-y box)
+                                    (closure.engine::box-baseline box)
+                                    -7))))
+                   (multiple-value-bind (r g b) (png-rgb out x y)
+                     (and (> r 220) (> g 220) (< b 40)))))))
+      (check "mark boxes" (and marked nested plain))
+      (format t "~&  mark: ~A nested: ~A plain: ~A~%"
+              (yellow marked) (yellow nested) (yellow plain))
+      (check "mark paints yellow behind the text" (yellow marked))
+      (check "mark paints yellow behind nested text" (yellow nested))
+      (check "plain text has no highlight" (not (yellow plain))))))
+
+(defun test-line-through ()
+  (let* ((html "<s id='s'>O</s><del id='d'>O</del><span id='p'>O</span>")
+         (out "/tmp/closure-engine-strike.png")
+         (root (closure.engine:render-html html :width 200 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (struck (closure.engine:find-box root "s"))
+         (deleted (closure.engine:find-box root "d"))
+         (plain (closure.engine:find-box root "p")))
+    (labels ((dark (box dy)
+               (when box
+                 (let ((x (floor (+ (closure.engine:box-x box)
+                                    (/ (closure.engine:box-width box) 2d0))))
+                       (y (floor (+ (closure.engine:box-y box)
+                                    (closure.engine::box-baseline box)
+                                    dy))))
+                   (and (<= 0 y 39)
+                        (multiple-value-bind (r g b) (png-rgb out x y)
+                          (< (+ r g b) 500)))))))
+      (check "strike boxes" (and struck deleted plain))
+      (format t "~&  strike s: ~A del: ~A plain: ~A~%"
+              (dark struck -5) (dark deleted -5) (dark plain -5))
+      (check "s draws a line through the text" (dark struck -5))
+      (check "del draws a line through the text" (dark deleted -5))
+      (check "plain letter is not struck" (not (dark plain -5))))))
+
+(defun test-list-markers ()
+  (let* ((html "<ol><li id='a'>One</li><li id='b'>Two</li></ol>
+                <ul><li id='c'>Dot</li><li id='d'>Dot</li></ul>")
+         (out "/tmp/closure-engine-lists.png")
+         (root (closure.engine:render-html html :width 220 :height 160 :output out
+                                          :stylesheet "body{margin:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (d (closure.engine:find-box root "d")))
+    (check "ordered markers" (and a b
+                                  (string= (closure.engine::box-marker a) "1.")
+                                  (string= (closure.engine::box-marker b) "2.")))
+    (check "bullet marker" (and c d
+                                (eq (closure.engine::box-marker c) :disc)
+                                (eq (closure.engine::box-marker d) :disc)))
+    (labels ((ink (box dx dy)
+               (when box
+                 (let ((x (floor (+ (closure.engine:box-x box) dx)))
+                       (y (floor (+ (closure.engine:box-y box) dy))))
+                   (and (<= 0 x 219) (<= 0 y 159)
+                        (multiple-value-bind (r g b) (png-rgb out x y)
+                          (< (+ r g b) 600))))))
+             (mask (box)
+               (loop for dy from 2 below 16
+                     nconc (loop for dx from -22 below -4
+                                 collect (if (ink box dx dy) 1 0)))))
+      (let ((ma (mask a)) (mb (mask b)) (mc (mask c)) (md (mask d)))
+        (format t "~&  list ink a ~D b ~D c ~D~%"
+                (reduce #'+ ma) (reduce #'+ mb) (reduce #'+ mc))
+        (check "ordered numbers are painted" (and (some #'plusp ma) (some #'plusp mb)))
+        (check "item numbers differ" (not (equal ma mb)))
+        (check "bullets are painted" (some #'plusp mc))
+        (check "bullets match each other" (equal mc md))
+        (check "a number is not a bullet" (not (equal ma mc)))))))
+
+(defun test-small ()
+  (let* ((root (closure.engine:layout-html
+                "<p>A<small id='s'>wide</small><span id='n'>wide</span></p>"
+                :width 300 :height 40
+                :stylesheet "body{margin:0} p{margin:0;font-size:16px}"))
+         (small (closure.engine:find-box root "s"))
+         (normal (closure.engine:find-box root "n")))
+    (check "small and normal words" (and small normal))
+    (check "small is narrower than the same word"
+           (and small normal
+                (< (closure.engine:box-width small) (closure.engine:box-width normal))))
+    (check "small uses a smaller font"
+           (and small
+                (~ (closure.engine::computed-font-size (closure.engine::box-style small))
+                   (/ 16d0 1.2d0))))))
+
+(defun test-big ()
+  (let* ((root (closure.engine:layout-html
+                "<p>A<big id='b'>wide</big><span id='n'>wide</span></p>"
+                :width 400 :height 40
+                :stylesheet "body{margin:0} p{margin:0;font-size:16px}"))
+         (big (closure.engine:find-box root "b"))
+         (normal (closure.engine:find-box root "n")))
+    (check "big and normal words" (and big normal))
+    (check "big is wider than the same word"
+           (and big normal
+                (> (closure.engine:box-width big) (closure.engine:box-width normal))))
+    (check "big uses a larger font"
+           (and big
+                (~ (closure.engine::computed-font-size (closure.engine::box-style big))
+                   (* 16d0 1.2d0))))))
+
+(defun test-u-ins ()
+  (let* ((html "<u id='u'>O</u><ins id='i'>O</ins><span id='p'>O</span>")
+         (out "/tmp/closure-engine-u.png")
+         (root (closure.engine:render-html html :width 200 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (under (closure.engine:find-box root "u"))
+         (inserted (closure.engine:find-box root "i"))
+         (plain (closure.engine:find-box root "p")))
+    (labels ((dark (box dy)
+               (when box
+                 (let ((x (floor (+ (closure.engine:box-x box)
+                                    (/ (closure.engine:box-width box) 2d0))))
+                       (y (floor (+ (closure.engine:box-y box)
+                                    (closure.engine::box-baseline box)
+                                    dy))))
+                   (and (<= 0 y 39)
+                        (multiple-value-bind (r g b) (png-rgb out x y)
+                          (< (+ r g b) 500)))))))
+      (check "underline boxes" (and under inserted plain))
+      (format t "~&  underline u: ~A ins: ~A plain: ~A~%"
+              (dark under 2) (dark inserted 2) (dark plain 2))
+      (check "u underlines its text" (dark under 2))
+      (check "ins underlines its text" (dark inserted 2))
+      (check "plain text is not underlined" (not (dark plain 2))))))
+
+(defun test-outline ()
+  (let* ((html "<div id='a' style='margin-top:8px;width:40px;height:20px;outline:4px solid #cc0000'></div>
+                <div id='b' style='width:40px;height:10px;background:#000'></div>")
+         (out "/tmp/closure-engine-outline.png")
+         (root (closure.engine:render-html html :width 80 :height 60 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "a"))
+         (next (closure.engine:find-box root "b")))
+    (check "outline box" (and box next))
+    (check "outline does not change the width"
+           (and box (~ (closure.engine:box-width box) 40d0)))
+    (check "outline does not change the height"
+           (and box (~ (closure.engine:box-height box) 20d0)))
+    (check "outline does not push the next box"
+           (and box next (~ (closure.engine:box-y next)
+                            (+ (closure.engine:box-y box) (closure.engine:box-height box)))))
+    (when box
+      (multiple-value-bind (r g b)
+          (png-rgb out 8 (floor (- (closure.engine:box-y box) 2d0)))
+        (format t "~&  outline pixel: ~D ~D ~D~%" r g b)
+        (check "outline is painted outside the box"
+               (and (> r 180) (< g 40) (< b 40)))))))
+
+(defun test-float-left ()
+  (let ((png "/tmp/closure-float-left.png"))
+    (write-solid-png png 20 20 0.2d0 0.4d0 0.8d0)
+    (let* ((html (format nil "<img id='pic' src='~A' style='float:left' width='20' height='20'>Hi" png))
+           (root (closure.engine:layout-html html :width 200 :height 40
+                                            :stylesheet "body{margin:0}"))
+           (pic (closure.engine:find-box root "pic"))
+           (hi nil))
+      (labels ((walk (b)
+                 (when b
+                   (when (and (eq (closure.engine::box-kind b) :text)
+                              (string= (or (closure.engine::box-text b) "") "Hi"))
+                     (setf hi b))
+                   (dolist (c (closure.engine::box-children b)) (walk c)))))
+        (walk root))
+      (check "floated image" (and pic hi))
+      (check "float sits at the left"
+             (and pic (~ (closure.engine:box-x pic) 0d0)))
+      (check "text starts to the right of the float"
+             (and pic hi (>= (closure.engine:box-x hi)
+                             (+ (closure.engine:box-x pic) (closure.engine:box-width pic) -0.5d0))))
+      (check "text stays beside the float"
+             (and pic hi (< (closure.engine:box-y hi)
+                            (+ (closure.engine:box-y pic) (closure.engine:box-height pic))))))))
+
+(defun test-float-right ()
+  (let ((png "/tmp/closure-float-right.png"))
+    (write-solid-png png 40 20 0.8d0 0.2d0 0.2d0)
+    (let* ((html (format nil "<div id='box' style='width:200px'><img id='pic' src='~A' style='float:right' width='40' height='20'>Hi</div>" png))
+           (root (closure.engine:layout-html html :width 240 :height 40
+                                            :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "box"))
+           (pic (closure.engine:find-box root "pic"))
+           (hi nil))
+      (labels ((walk (b)
+                 (when b
+                   (when (and (eq (closure.engine::box-kind b) :text)
+                              (string= (or (closure.engine::box-text b) "") "Hi"))
+                     (setf hi b))
+                   (dolist (c (closure.engine::box-children b)) (walk c)))))
+        (walk root))
+      (check "right float and text" (and pic hi box))
+      (check "float sits at the right"
+             (and pic box (~ (closure.engine:box-x pic)
+                             (- (+ (closure.engine:box-x box) (closure.engine:box-width box))
+                                (closure.engine:box-width pic)))))
+      (check "text stays left of the float"
+             (and pic hi (< (+ (closure.engine:box-x hi) (closure.engine:box-width hi))
+                            (+ (closure.engine:box-x pic) 1d0))))
+      (check "text stays beside the right float"
+             (and pic hi (< (closure.engine:box-y hi)
+                            (+ (closure.engine:box-y pic) (closure.engine:box-height pic))))))))
+
+(defun test-clear-both ()
+  (let ((png "/tmp/closure-clear-both.png"))
+    (write-solid-png png 40 30 0.2d0 0.5d0 0.3d0)
+    (let* ((html (format nil "<img id='pic' src='~A' style='float:left' width='40' height='30'><div id='c' style='clear:both'>After</div>" png))
+           (root (closure.engine:layout-html html :width 200 :height 80
+                                            :stylesheet "body{margin:0} div{margin:0}"))
+           (pic (closure.engine:find-box root "pic"))
+           (cleared (closure.engine:find-box root "c")))
+      (check "clear and float" (and pic cleared))
+      (check "cleared block starts below the float"
+             (and pic cleared
+                  (>= (closure.engine:box-y cleared)
+                      (+ (closure.engine:box-y pic) (closure.engine:box-height pic) -0.5d0))))
+      (check "cleared block uses the content edge"
+             (and cleared (~ (closure.engine:box-x cleared) 0d0))))))
+
+(defun test-relative-text ()
+  (let* ((html "<div id='a' style='position:relative;left:12px;top:8px'>Hi</div>")
+         (root (closure.engine:layout-html html :width 200 :height 40
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "a"))
+         (hi nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (string= (or (closure.engine::box-text b) "") "Hi"))
+                   (setf hi b))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "relative text" (and box hi))
+    (check "text moves with the box"
+           (and box hi (~ (closure.engine:box-x hi) (closure.engine:box-x box))
+                (~ (closure.engine:box-y hi) (closure.engine:box-y box))))
+    (check "box and text share the relative shift"
+           (and box (~ (closure.engine:box-x box) 12d0)
+                (~ (closure.engine:box-y box) 8d0)))))
+
+(defun test-parent-child-margin ()
+  (let* ((html "<div id='p'><div id='c' style='margin-top:20px;height:10px'></div></div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (parent (closure.engine:find-box root "p"))
+         (child (closure.engine:find-box root "c")))
+    (check "parent and child" (and parent child))
+    (check "child starts at the parent top"
+           (and parent child (~ (closure.engine:box-y child) (closure.engine:box-y parent))))
+    (check "collapsed margin is outside the parent"
+           (and parent (~ (closure.engine:box-y parent) 20d0)))))
+
+(defun test-parent-child-bottom-margin ()
+  (labels ((measure (html)
+             (let* ((root (closure.engine:layout-html html :width 200 :height 80
+                                                     :stylesheet "body{margin:0}"))
+                    (parent (closure.engine:find-box root "p"))
+                    (next (closure.engine:find-box root "n")))
+               (values (and parent (closure.engine:box-height parent))
+                       (and parent next
+                            (- (closure.engine:box-y next)
+                               (+ (closure.engine:box-y parent)
+                                  (closure.engine:box-height parent))))))))
+    (multiple-value-bind (h gap)
+        (measure "<div id='p'><div id='c' style='margin-bottom:20px;height:10px'></div></div><div id='n' style='height:10px'></div>")
+      (format t "~&  parent bottom: height ~A gap ~A~%" h gap)
+      (check "parent height is the child height" (and h (~ h 10d0)))
+      (check "child bottom margin sits outside the parent" (and gap (~ gap 20d0))))
+    (multiple-value-bind (h gap)
+        (measure "<div id='p' style='margin-bottom:10px'><div id='c' style='margin-bottom:30px;height:10px'></div></div><div id='n' style='height:10px'></div>")
+      (format t "~&  larger bottom: height ~A gap ~A~%" h gap)
+      (check "parent height stays the child height" (and h (~ h 10d0)))
+      (check "the larger bottom margin wins" (and gap (~ gap 30d0))))))
+
+(defun test-margin-separation ()
+  (labels ((place (html)
+             (let* ((root (closure.engine:layout-html html :width 200 :height 80
+                                                     :stylesheet "body{margin:0}"))
+                    (parent (closure.engine:find-box root "p"))
+                    (child (closure.engine:find-box root "c")))
+               (values parent child))))
+    (multiple-value-bind (parent child)
+        (place "<div id='p' style='padding-top:8px'><div id='c' style='margin-top:20px;height:10px'></div></div>")
+      (format t "~&  padding separation: parent ~A child ~A height ~A~%"
+              (and parent (closure.engine:box-y parent))
+              (and child (closure.engine:box-y child))
+              (and parent (closure.engine:box-height parent)))
+      (check "padding keeps the parent at the origin"
+             (and parent (~ (closure.engine:box-y parent) 0d0)))
+      (check "padding keeps the child margin inside"
+             (and parent child
+                  (~ (closure.engine:box-y child)
+                     (+ (closure.engine:box-y parent) 28d0))))
+      (check "padding height includes the child margin"
+             (and parent (~ (closure.engine:box-height parent) 38d0))))
+    (multiple-value-bind (parent child)
+        (place "<div id='p' style='border-top:4px solid #000'><div id='c' style='margin-top:20px;height:10px'></div></div>")
+      (format t "~&  border separation: parent ~A child ~A height ~A~%"
+              (and parent (closure.engine:box-y parent))
+              (and child (closure.engine:box-y child))
+              (and parent (closure.engine:box-height parent)))
+      (check "border keeps the parent at the origin"
+             (and parent (~ (closure.engine:box-y parent) 0d0)))
+      (check "border keeps the child margin inside"
+             (and parent child
+                  (~ (closure.engine:box-y child)
+                     (+ (closure.engine:box-y parent) 24d0))))
+      (check "border height includes the child margin"
+             (and parent (~ (closure.engine:box-height parent) 34d0))))))
+
+(defun test-margin-bottom-separation ()
+  (labels ((measure (html)
+             (let* ((root (closure.engine:layout-html html :width 200 :height 120
+                                                     :stylesheet "body{margin:0}"))
+                    (parent (closure.engine:find-box root "p"))
+                    (next (closure.engine:find-box root "n")))
+               (values (and parent (closure.engine:box-height parent))
+                       (and parent next
+                            (- (closure.engine:box-y next)
+                               (+ (closure.engine:box-y parent)
+                                  (closure.engine:box-height parent))))))))
+    (multiple-value-bind (h gap)
+        (measure "<div id='p' style='padding-bottom:8px'><div id='c' style='margin-bottom:20px;height:10px'></div></div><div id='n' style='height:10px'></div>")
+      (format t "~&  padding bottom separation: height ~A gap ~A~%" h gap)
+      (check "padding-bottom includes the child margin" (and h (~ h 38d0)))
+      (check "padding-bottom leaves no extra gap" (and gap (~ gap 0d0))))
+    (multiple-value-bind (h gap)
+        (measure "<div id='p' style='border-bottom:4px solid #000'><div id='c' style='margin-bottom:20px;height:10px'></div></div><div id='n' style='height:10px'></div>")
+      (format t "~&  border bottom separation: height ~A gap ~A~%" h gap)
+      (check "border-bottom includes the child margin" (and h (~ h 34d0)))
+      (check "border-bottom leaves no extra gap" (and gap (~ gap 0d0))))))
+
+(defun test-margin-collapse ()
+  (labels ((gap (html)
+             (let* ((root (closure.engine:layout-html html :width 200 :height 80
+                                                     :stylesheet "body{margin:0}"))
+                    (a (closure.engine:find-box root "a"))
+                    (b (closure.engine:find-box root "b")))
+               (and a b (- (closure.engine:box-y b)
+                           (+ (closure.engine:box-y a) (closure.engine:box-height a)))))))
+    (let ((equal (gap "<div id='a' style='height:10px;margin-bottom:20px'></div><div id='b' style='height:10px;margin-top:20px'></div>"))
+          (larger (gap "<div id='a' style='height:10px;margin-bottom:10px'></div><div id='b' style='height:10px;margin-top:30px'></div>")))
+      (format t "~&  collapsed gaps: equal ~A larger ~A~%" equal larger)
+      (check "equal margins collapse to 20" (and equal (~ equal 20d0)))
+      (check "the larger margin wins" (and larger (~ larger 30d0))))))
+
+(defun test-margin-left-auto ()
+  (let* ((html "<div id='p' style='width:200px'><div id='c' style='width:40px;height:10px;margin-left:auto'></div></div>")
+         (root (closure.engine:layout-html html :width 300 :height 40
+                                          :stylesheet "body{margin:0}"))
+         (parent (closure.engine:find-box root "p"))
+         (child (closure.engine:find-box root "c")))
+    (check "right-aligned boxes" (and parent child))
+    (check "child keeps its width" (and child (~ (closure.engine:box-width child) 40d0)))
+    (check "margin-left auto sits on the right"
+           (and parent child
+                (~ (+ (closure.engine:box-x child) (closure.engine:box-width child))
+                   (+ (closure.engine:box-x parent) (closure.engine:box-width parent)))))))
+
+(defun test-auto-margin ()
+  (let* ((html "<div id='p' style='width:200px'><div id='c' style='width:40px;height:10px;margin-left:auto;margin-right:auto'></div></div>")
+         (root (closure.engine:layout-html html :width 300 :height 40
+                                          :stylesheet "body{margin:0}"))
+         (parent (closure.engine:find-box root "p"))
+         (child (closure.engine:find-box root "c")))
+    (check "auto margin boxes" (and parent child))
+    (check "child keeps its width" (and child (~ (closure.engine:box-width child) 40d0)))
+    (check "auto margins center the child"
+           (and parent child
+                (~ (closure.engine:box-x child)
+                   (+ (closure.engine:box-x parent)
+                      (/ (- (closure.engine:box-width parent) (closure.engine:box-width child)) 2d0)))))))
+
+(defun test-relative ()
+  (let* ((html "<div id='a' style='position:relative;left:12px;top:8px;width:40px;height:20px'></div>
+                <div id='b' style='width:40px;height:10px'></div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b")))
+    (check "relative boxes" (and a b))
+    (check "relative shifts right" (and a (~ (closure.engine:box-x a) 12d0)))
+    (check "relative shifts down" (and a (~ (closure.engine:box-y a) 8d0)))
+    (check "next box keeps the static place"
+           (and b (~ (closure.engine:box-x b) 0d0)
+                (~ (closure.engine:box-y b) 20d0)))))
+
+(defun test-float-below ()
+  (let ((png "/tmp/closure-float-below.png"))
+    (write-solid-png png 40 10 0.2d0 0.4d0 0.8d0)
+    (let* ((html (format nil "<img id='pic' src='~A' style='float:left' width='40' height='10'>One<br>Two" png))
+           (root (closure.engine:layout-html html :width 200 :height 80
+                                            :stylesheet "body{margin:0}"))
+           (pic (closure.engine:find-box root "pic"))
+           (one nil)
+           (two nil))
+      (labels ((walk (b)
+                 (when b
+                   (when (eq (closure.engine::box-kind b) :text)
+                     (cond
+                       ((string= (or (closure.engine::box-text b) "") "One") (setf one b))
+                       ((string= (or (closure.engine::box-text b) "") "Two") (setf two b))))
+                   (dolist (c (closure.engine::box-children b)) (walk c)))))
+        (walk root))
+      (check "float and both lines" (and pic one two))
+      (check "first line stays beside the float"
+             (and pic one (>= (closure.engine:box-x one)
+                              (+ (closure.engine:box-x pic) (closure.engine:box-width pic) -0.5d0))))
+      (check "next line is below the float"
+             (and pic two (>= (closure.engine:box-y two)
+                              (+ (closure.engine:box-y pic) (closure.engine:box-height pic) -0.5d0))))
+      (check "next line returns to the content edge"
+             (and two (~ (closure.engine:box-x two) 0d0))))))
+
+(defun test-two-shadows ()
+  (let* ((html "<div id='a' style='width:20px;height:12px;background:#fff;box-shadow:20px 0 #cc0000, 0 16px #0000cc'></div>")
+         (out "/tmp/closure-engine-two-shadows.png")
+         (root (closure.engine:render-html html :width 60 :height 40 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "a")))
+    (check "two-shadow box" box)
+    (check "two shadows do not change the box"
+           (and box (~ (closure.engine:box-width box) 20d0)
+                (~ (closure.engine:box-height box) 12d0)))
+    (multiple-value-bind (r g b) (png-rgb out 24 4)
+      (format t "~&  first shadow pixel: ~D ~D ~D~%" r g b)
+      (check "first shadow is painted" (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b) (png-rgb out 4 20)
+      (format t "~&  second shadow pixel: ~D ~D ~D~%" r g b)
+      (check "second shadow is painted" (and (< r 40) (< g 40) (> b 180))))))
+
+(defun test-inset-shadow ()
+  (let* ((html "<div id='a' style='width:40px;height:24px;background:#fff;box-shadow:inset 6px 4px #cc0000'></div>
+                <div id='b' style='width:40px;height:10px;background:#000'></div>")
+         (out "/tmp/closure-engine-inset.png")
+         (root (closure.engine:render-html html :width 80 :height 50 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "a"))
+         (next (closure.engine:find-box root "b")))
+    (check "inset box" (and box next))
+    (check "inset shadow does not change the box"
+           (and box (~ (closure.engine:box-width box) 40d0)
+                (~ (closure.engine:box-height box) 24d0)))
+    (check "inset shadow does not push the next box"
+           (and box next (~ (closure.engine:box-y next)
+                            (+ (closure.engine:box-y box) (closure.engine:box-height box)))))
+    (multiple-value-bind (r g b) (png-rgb out 2 12)
+      (format t "~&  inset edge pixel: ~D ~D ~D~%" r g b)
+      (check "inset shadow paints inside the edge" (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b) (png-rgb out 20 12)
+      (format t "~&  inset center pixel: ~D ~D ~D~%" r g b)
+      (check "inset shadow leaves the center" (and (> r 250) (> g 250) (> b 250))))))
+
+(defun test-box-shadow ()
+  (let* ((html "<div id='a' style='width:30px;height:20px;background:#fff;box-shadow:10px 8px #cc0000'></div>
+                <div id='b' style='width:30px;height:10px;background:#000'></div>")
+         (out "/tmp/closure-engine-shadow.png")
+         (root (closure.engine:render-html html :width 80 :height 50 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "a"))
+         (next (closure.engine:find-box root "b")))
+    (check "shadow box" (and box next))
+    (check "shadow does not change the box"
+           (and box (~ (closure.engine:box-width box) 30d0)
+                (~ (closure.engine:box-height box) 20d0)))
+    (check "shadow does not push the next box"
+           (and box next (~ (closure.engine:box-y next)
+                            (+ (closure.engine:box-y box) (closure.engine:box-height box)))))
+    (multiple-value-bind (r g b) (png-rgb out 36 14)
+      (format t "~&  shadow pixel: ~D ~D ~D~%" r g b)
+      (check "shadow is painted at the offset" (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b) (png-rgb out 4 4)
+      (check "the box covers its own shadow" (and (> r 250) (> g 250) (> b 250))))))
+
+(defun test-outline-offset ()
+  (let* ((html "<div id='a' style='margin-top:16px;width:40px;height:20px;outline:4px solid #cc0000;outline-offset:6px'></div>
+                <div id='b' style='width:40px;height:10px;background:#000'></div>")
+         (out "/tmp/closure-engine-outline-offset.png")
+         (root (closure.engine:render-html html :width 80 :height 80 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "a"))
+         (next (closure.engine:find-box root "b")))
+    (check "offset outline box" (and box next))
+    (check "offset does not change the box"
+           (and box (~ (closure.engine:box-width box) 40d0)
+                (~ (closure.engine:box-height box) 20d0)))
+    (check "offset does not push the next box"
+           (and box next (~ (closure.engine:box-y next)
+                            (+ (closure.engine:box-y box) (closure.engine:box-height box)))))
+    (when box
+      (let ((y (floor (closure.engine:box-y box))))
+        (multiple-value-bind (r g b) (png-rgb out 8 (- y 8))
+          (format t "~&  offset outline pixel: ~D ~D ~D~%" r g b)
+          (check "outline sits outside the offset" (and (> r 180) (< g 40) (< b 40))))
+        (multiple-value-bind (r g b) (png-rgb out 8 (- y 2))
+          (format t "~&  offset gap pixel: ~D ~D ~D~%" r g b)
+          (check "offset leaves a gap at the border" (and (> r 250) (> g 250) (> b 250))))))))
+
+(defun test-visibility-hidden ()
+  (let* ((html "<div id='h' style='visibility:hidden;background:#000;width:40px;height:20px'></div>
+                <div id='v' style='background:#000;width:40px;height:20px'></div>")
+         (out "/tmp/closure-engine-hidden.png")
+         (root (closure.engine:render-html html :width 80 :height 60 :output out
+                                          :stylesheet "body{margin:0}"))
+         (hidden (closure.engine:find-box root "h"))
+         (visible (closure.engine:find-box root "v")))
+    (check "hidden box keeps its size"
+           (and hidden
+                (~ (closure.engine:box-width hidden) 40d0)
+                (~ (closure.engine:box-height hidden) 20d0)))
+    (check "hidden box keeps its place"
+           (and hidden visible (> (closure.engine:box-y visible) (closure.engine:box-y hidden))))
+    (when hidden
+      (multiple-value-bind (r g b) (png-rgb out 4 (floor (+ (closure.engine:box-y hidden) 4d0)))
+        (format t "~&  hidden pixel: ~D ~D ~D~%" r g b)
+        (check "hidden box paints nothing" (and (> r 250) (> g 250) (> b 250)))))
+    (when visible
+      (multiple-value-bind (r g b) (png-rgb out 4 (floor (+ (closure.engine:box-y visible) 4d0)))
+        (format t "~&  visible pixel: ~D ~D ~D~%" r g b)
+        (check "visible box still paints" (and (< r 20) (< g 20) (< b 20)))))))
+
+(defun test-text-transform ()
+  (let* ((root (closure.engine:layout-html
+                "<span id='u' style='text-transform:uppercase'>ab</span><span id='l' style='text-transform:lowercase'>AB</span>"
+                :width 200 :height 40
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (up (closure.engine:find-box root "u"))
+         (down (closure.engine:find-box root "l")))
+    (check "transform boxes" (and up down))
+    (check "uppercase draws capitals"
+           (and up (string= (closure.engine::box-text up) "AB")))
+    (check "lowercase draws small letters"
+           (and down (string= (closure.engine::box-text down) "ab")))
+    (check "uppercase is measured as capitals"
+           (and up (~ (closure.engine:box-width up)
+                      (closure.engine::text-advance "AB" 16d0 "sans-serif" :normal :normal))))))
+
+(defun test-word-spacing ()
+  (let* ((root (closure.engine:layout-html
+                "<p><span>AA BB</span> <span style='word-spacing:10px'>AA BB</span></p>"
+                :width 500 :height 40
+                :stylesheet "body{margin:0} p{margin:0;font-size:16px}"))
+         (gaps nil)
+         (words nil))
+    (labels ((walk (b)
+               (when b
+                 (when (eq (closure.engine::box-kind b) :text)
+                   (cond
+                     ((string= (or (closure.engine::box-text b) "") "AA")
+                      (push (closure.engine:box-width b) words))
+                     ((string= (or (closure.engine::box-text b) "") " ")
+                      (push (cons (or (closure.engine::computed-word-spacing
+                                       (closure.engine::box-style b))
+                                      0d0)
+                                  (closure.engine:box-width b))
+                            gaps))))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (let ((plain (find-if (lambda (g) (~ (car g) 0d0 0.1d0)) gaps))
+          (wide (find-if (lambda (g) (~ (car g) 10d0)) gaps)))
+      (check "word-spacing gaps" (and plain wide (cdr words)))
+      (check "letters stay packed"
+             (and (cdr words) (~ (first words) (second words))))
+      (check "word-spacing widens the gap"
+             (and plain wide (~ (- (cdr wide) (cdr plain)) 10d0))))))
+
+(defun test-letter-spacing ()
+  (let* ((root (closure.engine:layout-html
+                "<span id='a'>MMMM</span><span id='b' style='letter-spacing:4px'>MMMM</span>"
+                :width 400 :height 40
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (plain (closure.engine:find-box root "a"))
+         (spaced (closure.engine:find-box root "b")))
+    (check "letter-spacing boxes" (and plain spaced))
+    (check "letter-spacing widens the word"
+           (and plain spaced
+                (~ (- (closure.engine:box-width spaced) (closure.engine:box-width plain))
+                   12d0)))))
+
+(defun test-text-indent ()
+  (let* ((root (closure.engine:layout-html
+                "<div style='text-indent:24px'>One<br>Two</div>"
+                :width 200 :height 80
+                :stylesheet "body{margin:0}"))
+         (one nil)
+         (two nil))
+    (labels ((walk (b)
+               (when b
+                 (when (eq (closure.engine::box-kind b) :text)
+                   (cond
+                     ((string= (or (closure.engine::box-text b) "") "One") (setf one b))
+                     ((string= (or (closure.engine::box-text b) "") "Two") (setf two b))))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "indented lines" (and one two))
+    (check "first line is indented"
+           (and one (~ (closure.engine:box-x one) 24d0)))
+    (check "following line stays at the content edge"
+           (and two (~ (closure.engine:box-x two) 0d0)))
+    (check "following line is below the first"
+           (and one two (> (closure.engine:box-y two) (closure.engine:box-y one))))))
+
+(defun test-address ()
+  (let* ((root (closure.engine:layout-html
+                "<address>Mail</address><p>Mail</p>"
+                :width 200 :height 80
+                :stylesheet "body{margin:0} address,p{margin:0;font-size:16px}"))
+         (italic nil)
+         (roman nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (string= (or (closure.engine::box-text b) "") "Mail"))
+                   (if (eq (closure.engine::computed-font-style (closure.engine::box-style b)) :italic)
+                       (setf italic b)
+                       (setf roman b)))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "address and paragraph words" (and italic roman))
+    (check "address is italic"
+           (and italic roman
+                (eq (closure.engine::computed-font-style (closure.engine::box-style roman)) :normal)
+                (~ (closure.engine:box-width italic)
+                   (closure.engine::text-advance "Mail" 16d0 "sans-serif" :normal :italic))))))
+
+(defun test-wbr ()
+  (let* ((whole (closure.engine:layout-html
+                 "<div id='w' style='width:40px'>Supercali</div>"
+                 :width 200 :height 80 :stylesheet "body{margin:0}"))
+         (split (closure.engine:layout-html
+                 "<div id='b' style='width:40px'>Super<wbr>cali</div>"
+                 :width 200 :height 80 :stylesheet "body{margin:0}"))
+         (w (closure.engine:find-box whole "w"))
+         (b (closure.engine:find-box split "b")))
+    (check "unbroken word box" w)
+    (check "wbr box" b)
+    (check "a long word stays one line" (and w (< (closure.engine:box-height w) 28d0)))
+    (check "wbr splits the word" (and b (> (closure.engine:box-height b) 30d0)))))
+
+(defun test-nobr ()
+  (let* ((wrap (closure.engine:layout-html
+                "<div id='w' style='width:40px'>hello world</div>"
+                :width 200 :height 80 :stylesheet "body{margin:0}"))
+         (stuck (closure.engine:layout-html
+                 "<div id='n' style='width:40px'><nobr>hello world</nobr></div>"
+                 :width 200 :height 80 :stylesheet "body{margin:0}"))
+         (w (closure.engine:find-box wrap "w"))
+         (n (closure.engine:find-box stuck "n")))
+    (check "wrapping box" w)
+    (check "nobr box" n)
+    (check "plain words wrap" (and w (> (closure.engine:box-height w) 30d0)))
+    (check "nobr stays one line" (and n (< (closure.engine:box-height n) 28d0)))))
+
+(defun test-text-overflow ()
+  (labels ((text-of (root)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (eq (closure.engine::box-kind b) :text)
+                              (push (or (closure.engine::box-text b) "") found))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               (apply #'concatenate 'string (nreverse found)))))
+    (let* ((html "<div id='box' style='width:40px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>HelloWorld</div>")
+           (out "/tmp/closure-ellipsis.png")
+           (root (closure.engine:render-html html :width 80 :height 30 :output out
+                                            :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "box"))
+           (shown (text-of root))
+           (short (text-of (closure.engine:layout-html
+                            "<div style='width:40px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>Hi</div>"
+                            :width 80 :height 30 :stylesheet "body{margin:0}"))))
+      (format t "~&  ellipsis text: ~S short: ~S~%" shown short)
+      (check "ellipsis box" box)
+      (check "the box stays the given width" (and box (~ (closure.engine:box-width box) 40d0)))
+      (check "the overflowing word ends in an ellipsis"
+             (and (search (string #\…) shown)
+                  (not (search "HelloWorld" shown))))
+      (check "a short word is left unchanged" (string= short "Hi"))
+      (let ((ink nil))
+        (loop for x from 2 to 36
+              do (multiple-value-bind (r g b) (png-rgb out x 12)
+                   (declare (ignore g b))
+                   (when (< r 80) (setf ink t))))
+        (check "the clipped line is painted" ink))
+      (multiple-value-bind (r g b) (png-rgb out 55 12)
+        (declare (ignore g b))
+        (check "the line does not paint past the box" (> r 250))))))
+
+(defun test-overflow-wrap ()
+  (labels ((texts (root)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (eq (closure.engine::box-kind b) :text)
+                              (push b found))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               (nreverse found))))
+    (let* ((plain (closure.engine:layout-html
+                   "<div id='p' style='width:40px'>HelloWorld</div>"
+                   :width 120 :height 80 :stylesheet "body{margin:0}"))
+           (broken (closure.engine:layout-html
+                    "<div id='b' style='width:40px;overflow-wrap:break-word'>HelloWorld</div>"
+                    :width 120 :height 80 :stylesheet "body{margin:0}"))
+           (p (closure.engine:find-box plain "p"))
+           (b (closure.engine:find-box broken "b"))
+           (parts (texts broken))
+           (joined (apply #'concatenate 'string
+                          (mapcar (lambda (tb) (or (closure.engine::box-text tb) "")) parts))))
+      (format t "~&  overflow-wrap pieces: ~S height ~A~%"
+              joined (and b (closure.engine:box-height b)))
+      (check "plain and broken boxes" (and p b parts))
+      (check "a long word stays one line by default"
+             (and p (< (closure.engine:box-height p) 28d0)))
+      (check "break-word wraps the long word"
+             (and b (> (closure.engine:box-height b) 30d0)))
+      (check "the pieces still spell the word" (string= joined "HelloWorld"))
+      (check "each piece fits in the box"
+             (every (lambda (tb)
+                      (and (<= (closure.engine:box-width tb)
+                               (+ (closure.engine:box-width b) 0.5d0))
+                           (>= (closure.engine:box-x tb) (- (closure.engine:box-x b) 0.5d0))
+                           (<= (+ (closure.engine:box-x tb) (closure.engine:box-width tb))
+                               (+ (closure.engine:box-x b) (closure.engine:box-width b) 0.5d0))))
+                    parts)))))
+
+(defun test-word-break ()
+  (labels ((texts (root)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (eq (closure.engine::box-kind b) :text)
+                              (push b found))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               (nreverse found))))
+    (let* ((root (closure.engine:layout-html
+                  "<div id='b' style='width:40px;word-break:break-all'>Hi World</div>"
+                  :width 120 :height 80 :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "b"))
+           (parts (texts root))
+           (joined (apply #'concatenate 'string
+                          (mapcar (lambda (tb) (or (closure.engine::box-text tb) "")) parts)))
+           (top (and parts (reduce #'min parts :key #'closure.engine:box-y)))
+           (first-line (apply #'concatenate 'string
+                              (mapcar (lambda (tb) (or (closure.engine::box-text tb) ""))
+                                      (remove-if-not (lambda (tb)
+                                                       (and top (~ (closure.engine:box-y tb) top)))
+                                                     parts)))))
+      (format t "~&  word-break pieces: ~S first: ~S height ~A~%"
+              (mapcar #'closure.engine::box-text parts)
+              first-line
+              (and box (closure.engine:box-height box)))
+      (check "break-all box" (and box parts))
+      (check "break-all wraps onto more than one line"
+             (and box (> (closure.engine:box-height box) 30d0)))
+      (check "the pieces still spell the words" (string= joined "Hi World"))
+      (check "the first line breaks into the next word"
+             (and first-line (search "W" first-line) (> (length first-line) 3)))
+      (check "each break-all piece fits in the box"
+             (every (lambda (tb)
+                      (<= (+ (closure.engine:box-x tb) (closure.engine:box-width tb))
+                          (+ (closure.engine:box-x box) (closure.engine:box-width box) 0.5d0)))
+                    parts)))))
+
+(defun test-justify ()
+  (labels ((texts (root)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (and (eq (closure.engine::box-kind b) :text)
+                                       (plusp (length (or (closure.engine::box-text b) "")))
+                                       (not (string= (closure.engine::box-text b) " ")))
+                              (push b found))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               (nreverse found)))
+           (lines-of (parts)
+             (let ((groups nil))
+               (dolist (tb parts)
+                 (let ((group (find-if (lambda (g)
+                                         (~ (closure.engine:box-y (car g))
+                                            (closure.engine:box-y tb)))
+                                       groups)))
+                   (if group
+                       (setf (cdr (last group)) (list tb))
+                       (push (list tb) groups))))
+               (nreverse groups)))
+           (right-edge (group)
+             (reduce #'max group
+                     :key (lambda (tb)
+                            (+ (closure.engine:box-x tb)
+                               (closure.engine:box-width tb))))))
+    (let* ((root (closure.engine:layout-html
+                  "<div id='p' style='width:140px;text-align:justify'>alpha beta gamma delta epsilon zeta</div>"
+                  :width 200 :height 80 :stylesheet "body{margin:0}"))
+           (box (closure.engine:find-box root "p"))
+           (groups (lines-of (texts root)))
+           (first (car groups))
+           (last-line (car (last groups)))
+           (alone (closure.engine:layout-html
+                   "<div id='s' style='width:300px;text-align:justify'>alpha beta</div>"
+                   :width 320 :height 40 :stylesheet "body{margin:0}"))
+           (single (closure.engine:find-box alone "s"))
+           (single-words (texts alone)))
+      (format t "~&  justify lines ~D first-right ~A last-right ~A box-right ~A~%"
+              (length groups)
+              (and first (right-edge first))
+              (and last-line (right-edge last-line))
+              (and box (+ (closure.engine:box-x box) (closure.engine:box-width box))))
+      (check "justified lines" (and box first last-line (>= (length groups) 2)))
+      (check "a wrapped line reaches the right edge"
+             (and box first
+                  (~ (right-edge first)
+                     (+ (closure.engine:box-x box) (closure.engine:box-width box)))))
+      (check "the last line stays packed at the start"
+             (and box last-line
+                  (~ (closure.engine:box-x (car last-line)) (closure.engine:box-x box))
+                  (< (right-edge last-line)
+                     (- (+ (closure.engine:box-x box) (closure.engine:box-width box)) 20d0))))
+      (check "a single line is not stretched"
+             (and single (>= (length single-words) 2)
+                  (< (+ (closure.engine:box-x (second single-words))
+                        (closure.engine:box-width (second single-words)))
+                     (- (+ (closure.engine:box-x single) (closure.engine:box-width single)) 40d0)))))))
+
+(defun test-border-collapse ()
+  (let* ((html "<table id='t' style='border-collapse:collapse'>
+                  <tr>
+                    <td id='a' style='border:4px solid #000;width:20px;height:10px'></td>
+                    <td id='b' style='border:4px solid #000;width:20px;height:10px'></td>
+                  </tr>
+                  <tr>
+                    <td id='c' style='border:4px solid #000;width:20px;height:10px'></td>
+                    <td id='d' style='border:4px solid #000;width:20px;height:10px'></td>
+                  </tr>
+                </table>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0} table{border-spacing:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c")))
+    (format t "~&  collapse: a ~A,~A ~Ax~A b ~A c ~A~%"
+            (and a (closure.engine:box-x a)) (and a (closure.engine:box-y a))
+            (and a (closure.engine:box-width a)) (and a (closure.engine:box-height a))
+            (and b (closure.engine:box-x b))
+            (and c (closure.engine:box-y c)))
+    (check "collapsed cells" (and a b c))
+    (check "adjacent cells share the vertical border"
+           (and a b
+                (~ (closure.engine:box-x b)
+                   (- (+ (closure.engine:box-x a) (closure.engine:box-width a)) 4d0))))
+    (check "adjacent cells share the horizontal border"
+           (and a c
+                (~ (closure.engine:box-y c)
+                   (- (+ (closure.engine:box-y a) (closure.engine:box-height a)) 4d0))))))
+
+(defun test-border-spacing ()
+  (let* ((html "<table style='border-collapse:separate;border-spacing:12px 8px'>
+                  <tr>
+                    <td id='a' style='border:1px solid #000;width:20px;height:10px'></td>
+                    <td id='b' style='border:1px solid #000;width:20px;height:10px'></td>
+                  </tr>
+                  <tr>
+                    <td id='c' style='border:1px solid #000;width:20px;height:10px'></td>
+                    <td id='d' style='border:1px solid #000;width:20px;height:10px'></td>
+                  </tr>
+                </table>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c")))
+    (format t "~&  spacing: a ~A,~A b ~A c ~A~%"
+            (and a (closure.engine:box-x a)) (and a (closure.engine:box-y a))
+            (and b (closure.engine:box-x b))
+            (and c (closure.engine:box-y c)))
+    (check "spaced cells" (and a b c))
+    (check "horizontal border-spacing separates the cells"
+           (and a b
+                (~ (- (closure.engine:box-x b)
+                      (+ (closure.engine:box-x a) (closure.engine:box-width a)))
+                   12d0)))
+    (check "vertical border-spacing separates the rows"
+           (and a c
+                (~ (- (closure.engine:box-y c)
+                      (+ (closure.engine:box-y a) (closure.engine:box-height a)))
+                   8d0)))))
+
+(defun test-colspan ()
+  (let* ((html "<table id='t' style='width:90px;border-collapse:collapse'>
+                  <tr>
+                    <td id='span' colspan='2'></td>
+                    <td id='after'></td>
+                  </tr>
+                  <tr>
+                    <td id='a'></td>
+                    <td id='b'></td>
+                    <td id='c'></td>
+                  </tr>
+                </table>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (span (closure.engine:find-box root "span"))
+         (after (closure.engine:find-box root "after"))
+         (a (closure.engine:find-box root "a"))
+         (c (closure.engine:find-box root "c")))
+    (format t "~&  colspan: span ~A,~A after ~A a ~A c ~A~%"
+            (and span (closure.engine:box-width span))
+            (and span (closure.engine:box-x span))
+            (and after (closure.engine:box-x after))
+            (and a (closure.engine:box-width a))
+            (and c (closure.engine:box-x c)))
+    (check "spanned cells" (and span after a c))
+    (check "the span covers two columns"
+           (and span a (~ (closure.engine:box-width span)
+                          (* 2d0 (closure.engine:box-width a)))))
+    (check "the cell beside the span starts after it"
+           (and span after
+                (~ (closure.engine:box-x after)
+                   (+ (closure.engine:box-x span) (closure.engine:box-width span)))))
+    (check "the third column lines up under that cell"
+           (and after c (~ (closure.engine:box-x c) (closure.engine:box-x after))))))
+
+(defun test-rowspan ()
+  (let* ((html "<table id='t' style='width:60px;border-collapse:collapse'>
+                  <tr>
+                    <td id='span' rowspan='2'></td>
+                    <td id='b'></td>
+                  </tr>
+                  <tr>
+                    <td id='c'></td>
+                  </tr>
+                </table>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (span (closure.engine:find-box root "span"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c")))
+    (format t "~&  rowspan: span ~A,~A ~Ax~A b ~A c ~A,~A~%"
+            (and span (closure.engine:box-x span)) (and span (closure.engine:box-y span))
+            (and span (closure.engine:box-width span)) (and span (closure.engine:box-height span))
+            (and b (closure.engine:box-x b))
+            (and c (closure.engine:box-x c)) (and c (closure.engine:box-y c)))
+    (check "rowspan cells" (and span b c))
+    (check "the next row starts beside the span"
+           (and b c (~ (closure.engine:box-x c) (closure.engine:box-x b))
+                (> (closure.engine:box-y c) (closure.engine:box-y span))))
+    (check "the span covers both rows"
+           (and span c
+                (~ (+ (closure.engine:box-y span) (closure.engine:box-height span))
+                   (+ (closure.engine:box-y c) (closure.engine:box-height c)))))))
+
+(defun test-table-valign ()
+  (labels ((text-box (root word)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (and (eq (closure.engine::box-kind b) :text)
+                                       (string= (or (closure.engine::box-text b) "") word))
+                              (setf found b))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               found)))
+    (let* ((html "<table style='border-collapse:collapse'>
+                    <tr>
+                      <td id='tall' style='height:40px'>A</td>
+                      <td id='low' style='vertical-align:bottom'>B</td>
+                    </tr>
+                  </table>")
+           (root (closure.engine:layout-html html :width 200 :height 80
+                                            :stylesheet "body{margin:0}"))
+           (tall (closure.engine:find-box root "tall"))
+           (low (closure.engine:find-box root "low"))
+           (a (text-box root "A"))
+           (b (text-box root "B")))
+      (format t "~&  valign: A ~A tall ~A B ~A low ~A~%"
+              (and a (closure.engine:box-y a))
+              (and tall (list (closure.engine:box-y tall) (closure.engine:box-height tall)))
+              (and b (closure.engine:box-y b))
+              (and low (list (closure.engine:box-y low) (closure.engine:box-height low))))
+      (check "valign cells" (and tall low a b))
+      (check "both cells share the row height"
+             (and tall low (~ (closure.engine:box-height low) (closure.engine:box-height tall))
+                  (> (closure.engine:box-height tall) 30d0)))
+      (check "the top cell keeps its text at the top"
+             (and tall a (< (closure.engine:box-y a)
+                            (+ (closure.engine:box-y tall) 16d0))))
+      (check "bottom alignment sits the text on the bottom"
+             (and low b
+                  (~ (+ (closure.engine:box-y b) (closure.engine:box-height b))
+                     (+ (closure.engine:box-y low) (closure.engine:box-height low))
+                     6d0))))))
+
+(defun test-table-valign-middle ()
+  (labels ((text-box (root word)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (and (eq (closure.engine::box-kind b) :text)
+                                       (string= (or (closure.engine::box-text b) "") word))
+                              (setf found b))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               found)))
+    (let* ((html "<table style='border-collapse:collapse'>
+                    <tr>
+                      <td id='tall' style='height:40px'>A</td>
+                      <td id='mid' style='vertical-align:middle'>B</td>
+                    </tr>
+                  </table>")
+           (root (closure.engine:layout-html html :width 200 :height 80
+                                            :stylesheet "body{margin:0}"))
+           (tall (closure.engine:find-box root "tall"))
+           (mid (closure.engine:find-box root "mid"))
+           (a (text-box root "A"))
+           (b (text-box root "B")))
+      (format t "~&  valign middle: A ~A B ~A mid ~A~%"
+              (and a (closure.engine:box-y a))
+              (and b (closure.engine:box-y b))
+              (and mid (list (closure.engine:box-y mid) (closure.engine:box-height mid))))
+      (check "middle valign cells" (and tall mid a b))
+      (check "the top cell keeps its text at the top"
+             (and tall a (< (closure.engine:box-y a)
+                            (+ (closure.engine:box-y tall) 16d0))))
+      (check "middle alignment centers the text"
+             (and mid b
+                  (let ((cell-mid (+ (closure.engine:box-y mid)
+                                     (/ (closure.engine:box-height mid) 2d0)))
+                        (text-mid (+ (closure.engine:box-y b)
+                                     (/ (closure.engine:box-height b) 2d0))))
+                    (~ text-mid cell-mid 4d0)))))))
+
+(defun test-caption ()
+  (let* ((html "<table id='t'>
+                  <caption id='cap'>Title</caption>
+                  <tr><td id='cell'>Cell</td></tr>
+                </table>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (table (closure.engine:find-box root "t"))
+         (cap (closure.engine:find-box root "cap"))
+         (cell (closure.engine:find-box root "cell")))
+    (format t "~&  caption: cap ~A,~A cell ~A table ~A~%"
+            (and cap (closure.engine:box-y cap))
+            (and cap (closure.engine:box-height cap))
+            (and cell (closure.engine:box-y cell))
+            (and table (closure.engine:box-y table)))
+    (check "caption and table" (and table cap cell))
+    (check "the caption sits at the top of the table"
+           (and table cap (~ (closure.engine:box-y cap) (closure.engine:box-y table))))
+    (check "the table starts below the caption"
+           (and cap cell
+                (>= (closure.engine:box-y cell)
+                    (- (+ (closure.engine:box-y cap) (closure.engine:box-height cap)) 0.5d0))))))
+
+(defun test-tt ()
+  (let* ((root (closure.engine:layout-html
+                "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
+                :width 500 :height 40
+                :stylesheet "body{margin:0} p{margin:0;font-size:16px}"))
+         (wide (closure.engine:find-box root "w"))
+         (narrow (closure.engine:find-box root "i"))
+         (prop-w (closure.engine:find-box root "s"))
+         (prop-n (closure.engine:find-box root "n")))
+    (check "tt boxes" (and wide narrow prop-w prop-n))
+    (check "tt is monospace"
+           (and wide
+                (member "monospace"
+                        (closure.engine::computed-font-family (closure.engine::box-style wide))
+                        :test #'string=)))
+    (check "tt gives wide and narrow letters the same advance"
+           (and wide narrow
+                (~ (closure.engine:box-width wide) (closure.engine:box-width narrow) 3d0)))
+    (check "proportional letters keep different advances"
+           (and prop-w prop-n
+                (> (closure.engine:box-width prop-w)
+                   (+ (closure.engine:box-width prop-n) 4d0))))))
+
+(defun test-nested-q ()
+  (let* ((root (closure.engine:layout-html
+                "<p><q>outer <q>inner</q> end</q></p>"
+                :width 400 :height 40
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (texts nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (closure.engine::box-text b)
+                            (not (string= (closure.engine::box-text b) " ")))
+                   (push (closure.engine::box-text b) texts))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (setf texts (nreverse texts))
+    (format t "~&  nested q texts: ~S~%" texts)
+    (check "nested q uses single quotes inside double quotes"
+           (equal texts '("\"" "outer" "'" "inner" "'" "end" "\"")))))
+
+(defun test-blockquote ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'>Plain</p><blockquote id='q'>Quoted</blockquote>"
+                :width 300 :height 80
+                :stylesheet "body{margin:0} p{margin:0} blockquote{margin-top:0;margin-bottom:0}"))
+         (plain (closure.engine:find-box root "p"))
+         (quote (closure.engine:find-box root "q")))
+    (check "blockquote box" (and plain quote))
+    (check "blockquote is indented"
+           (and plain quote (> (closure.engine:box-x quote)
+                               (+ (closure.engine:box-x plain) 20d0))))
+    (check "blockquote indent is 40px"
+           (and quote (~ (closure.engine:box-x quote) 40d0)))))
+
+(defun test-q ()
+  (let* ((root (closure.engine:layout-html
+                "<p>Say <q>hello</q> now</p>"
+                :width 300 :height 40
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (texts nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (closure.engine::box-text b)
+                            (not (string= (closure.engine::box-text b) " ")))
+                   (push (closure.engine::box-text b) texts))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (setf texts (nreverse texts))
+    (format t "~&  q texts: ~S~%" texts)
+    (check "q keeps the surrounding words"
+           (and (member "Say" texts :test #'string=)
+                (member "now" texts :test #'string=)))
+    (check "q wraps the word in quotes"
+           (loop for rest on texts
+                 thereis (and (cdr rest) (cddr rest)
+                              (string= (first rest) "\"")
+                              (string= (second rest) "hello")
+                              (string= (third rest) "\""))))))
+
+(defun test-hr ()
+  (let* ((html "<hr id='r'>")
+         (out "/tmp/closure-engine-hr.png")
+         (root (closure.engine:render-html html :width 200 :height 40 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "r")))
+    (check "hr box" box)
+    (check "hr spans the content width"
+           (and box (~ (closure.engine:box-width box) 200d0)))
+    (labels ((gray (x y)
+               (and (<= 0 y 39)
+                    (multiple-value-bind (r g b) (png-rgb out x y)
+                      (and (< r 230) (> r 160) (< g 230) (> g 160) (< b 230) (> b 160))))))
+      (let ((y (floor (closure.engine:box-y box))))
+        (format t "~&  hr y ~D~%" y)
+        (check "hr paints the left of the rule" (gray 4 y))
+        (check "hr paints the middle of the rule" (gray 100 y))
+        (check "hr paints the right of the rule" (gray 196 y))
+        (check "hr stays a single line"
+               (and (not (gray 100 (1- y))) (not (gray 100 (1+ y)))))))))
+
+(defun test-svg ()
+  (let* ((html "<svg id='s' width='40' height='20' viewBox='0 0 40 20'>
+                  <rect x='0' y='0' width='20' height='20' fill='#cc0000'/>
+                  <path d='M20 0 H40 V20 H20 Z' fill='#00aa00'/>
+                  <circle cx='10' cy='10' r='4' fill='#0000cc'/>
+                </svg>")
+         (out "/tmp/closure-engine-svg.png")
+         (root (closure.engine:render-html html :width 80 :height 40 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "s")))
+    (check "svg box" box)
+    (check "svg width" (and box (~ (closure.engine:box-width box) 40d0)))
+    (check "svg height" (and box (~ (closure.engine:box-height box) 20d0)))
+    (let ((x (round (closure.engine:box-x box)))
+          (y (round (closure.engine:box-y box))))
+      (multiple-value-bind (r g b) (png-rgb out (+ x 30) (+ y 4))
+        (format t "~&  svg path pixel: ~D ~D ~D~%" r g b)
+        (check "svg path painted green" (and (> g 120) (< r 80))))
+      (multiple-value-bind (r g b) (png-rgb out (+ x 10) (+ y 10))
+        (format t "~&  svg circle pixel: ~D ~D ~D~%" r g b)
+        (check "svg circle painted blue" (and (> b 150) (< r 80) (< g 80)))))))
+
+(defun test-location-history ()
+  (let ((dir "/tmp/closure-loc/"))
+    (ensure-directories-exist dir)
+    (with-open-file (out (concatenate 'string dir "next.html")
+                         :direction :output :if-exists :supersede)
+      (write-string "<h1 id='there'>Arrived</h1>" out))
+    (let ((base "file:///tmp/closure-loc/page.html"))
+      (multiple-value-bind (root final departed)
+          (closure.engine:layout-html
+           "<p id='stay'>no</p><script>location.href = 'next.html';</script>"
+           :width 200 :height 40 :stylesheet "body{margin:0}" :base base)
+        (declare (ignore final))
+        (check "redirect landed" (closure.engine:find-box root "there"))
+        (check "departed page was kept" departed)
+        (let* ((from (first departed))
+               (history (closure.engine::browse-history-go
+                         (closure.engine::browse-history-start (first from) (second from))
+                         root base 0d0))
+               (back (closure.engine::browse-history-back history))
+               (previous (closure.engine::browse-history-current back)))
+          (check "back is the page that assigned location.href"
+                 (closure.engine:find-box (first previous) "stay")))))))
+
+(defun test-location-href ()
+  (let ((dir "/tmp/closure-loc/"))
+    (ensure-directories-exist dir)
+    (with-open-file (out (concatenate 'string dir "next.html")
+                         :direction :output :if-exists :supersede)
+      (write-string "<h1 id='there'>Arrived</h1>" out))
+    (let* ((base "file:///tmp/closure-loc/page.html")
+           (read-root (closure.engine:layout-html
+                       "<div id='out'></div><script>document.getElementById('out').textContent = location.href;</script>"
+                       :width 200 :height 40 :stylesheet "body{margin:0}" :base base))
+           (out (closure.engine:find-box read-root "out"))
+           (gone (closure.engine:layout-html
+                  "<p id='stay'>no</p><script>location.href = 'next.html';</script>"
+                  :width 200 :height 40 :stylesheet "body{margin:0}" :base base)))
+      (check "script read location.href"
+             (and out (search "page.html" (closure.engine::dom-text-content
+                                           (closure.engine::box-element out)))))
+      (check "location.href left the old page" (null (closure.engine:find-box gone "stay")))
+      (check "location.href loaded the target" (closure.engine:find-box gone "there")))))
+
+(defun test-document-title ()
+  (let* ((html "<title>Old</title>
+                <div id='out'></div>
+                <script>
+                  document.getElementById('out').textContent = document.title;
+                  document.title = 'New';
+                </script>")
+         (root (closure.engine:layout-html html :width 200 :height 40
+                                          :stylesheet "body{margin:0}"))
+         (out (closure.engine:find-box root "out")))
+    (check "script read the old title"
+           (and out (search "Old" (closure.engine::dom-text-content
+                                   (closure.engine::box-element out)))))
+    (check "script title reaches the window"
+           (search "New" (closure.engine::window-title root "file:///x")))))
+
+(defun test-post-form ()
+  (let* ((port 18766)
+         (script "/tmp/closure-post-server.py")
+         (body-file "/tmp/closure-post-body"))
+    (with-open-file (out script :direction :output :if-exists :supersede)
+      (write-string "from http.server import BaseHTTPRequestHandler, HTTPServer
+class H(BaseHTTPRequestHandler):
+    def do_POST(self):
+        n = int(self.headers.get('Content-Length', '0'))
+        open('/tmp/closure-post-body', 'wb').write(self.rfile.read(n))
+        data = b\"<p id='posted'>ok</p>\"
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+    def log_message(self, fmt, *args):
+        pass
+HTTPServer(('127.0.0.1', 18766), H).serve_forever()
+" out))
+    (let ((proc (uiop:launch-program (list "python3" script)
+                                     :output "/tmp/closure-post.log"
+                                     :error-output :output)))
+      (unwind-protect
+           (progn
+             (loop repeat 50
+                   until (ignore-errors
+                          (drakma:http-request (format nil "http://127.0.0.1:~D/" port)
+                                               :method :post :content "ping=1")
+                          t)
+                   do (sleep 0.05))
+             (let* ((base "http://127.0.0.1:18766/")
+                    (html "<form method='post' action='/take'>
+                             <input name='q' value='hello world'>
+                             <input type='submit' id='send' value='Go'>
+                           </form>")
+                    (root (closure.engine:layout-html html :width 300 :height 80
+                                                     :stylesheet "body{margin:0}" :base base))
+                    (send (closure.engine:find-box root "send")))
+               (check "post button" send)
+               (multiple-value-bind (next url)
+                   (closure.engine:submit-form root
+                                               (+ (closure.engine:box-x send) 1d0)
+                                               (+ (closure.engine:box-y send) 1d0)
+                                               0 base 300 80)
+                 (check "post painted the response"
+                        (and next (closure.engine:find-box next "posted")))
+                 (check "post url has no query" (and url (not (search "q=" url))))
+                 (let ((sent (ignore-errors (uiop:read-file-string body-file))))
+                   (check "post body reached the server"
+                          (and sent (search "q=hello+world" sent)))))))
+        (uiop:terminate-process proc)
+        (ignore-errors (uiop:wait-process proc))))))
+
+(defun test-history ()
+  (let* ((start (closure.engine::browse-history-start :page-a "file:///a"))
+         (gone (closure.engine::browse-history-go start :page-b "file:///b" 12d0))
+         (back (closure.engine::browse-history-back gone))
+         (fwd (closure.engine::browse-history-forward back)))
+    (check "history opens the new page"
+           (eq (first (closure.engine::browse-history-current gone)) :page-b))
+    (check "back returns to the first page"
+           (eq (first (closure.engine::browse-history-current back)) :page-a))
+    (check "back restores the scroll offset"
+           (~ (third (closure.engine::browse-history-current back)) 12d0))
+    (check "back at the start stays put"
+           (eq (closure.engine::browse-history-back back) back))
+    (check "forward returns to the new page"
+           (eq (first (closure.engine::browse-history-current fwd)) :page-b))
+    (check "forward at the end stays put"
+           (eq (closure.engine::browse-history-forward gone) gone))
+    (check "backspace is back" (eq (closure.engine::event-scroll-command :key #xff08) :back))
+    (check "shift-backspace is forward"
+           (eq (closure.engine::event-scroll-command :key #xff08 1) :forward))
+    (check "window title carries the url"
+           (search "file:///b" (closure.engine::window-title nil "file:///b")))
+    (let ((rooted (closure.engine:layout-html
+                   "<title>Hello</title><p id='p'>x</p>"
+                   :width 80 :height 40 :stylesheet "body{margin:0}")))
+      (check "document title wins"
+             (search "Hello" (closure.engine::window-title rooted "file:///x"))))))
+
+(defun test-submit-form ()
+  (let ((dir "/tmp/closure-form/"))
+    (ensure-directories-exist dir)
+    (with-open-file (out (concatenate 'string dir "result.html")
+                         :direction :output :if-exists :supersede)
+      (write-string "<p id='done'>ok</p>" out))
+    (let* ((base "file:///tmp/closure-form/page.html")
+           (html "<form action='result.html'>
+                    <input name='q' value='hello world'>
+                    <input type='checkbox' name='extra'>
+                    <input type='submit' id='send' value='Go'>
+                  </form>")
+           (root (closure.engine:layout-html html :width 300 :height 80
+                                            :stylesheet "body{margin:0}" :base base))
+           (send (closure.engine:find-box root "send")))
+      (check "submit button" send)
+      (multiple-value-bind (next url)
+          (closure.engine:submit-form root
+                                      (+ (closure.engine:box-x send) 1d0)
+                                      (+ (closure.engine:box-y send) 1d0)
+                                      0 base 300 80)
+        (check "get reached the action" (and next (closure.engine:find-box next "done")))
+        (check "query encodes the text field" (and url (search "q=hello+world" url)))
+        (check "unchecked box is omitted" (and url (not (search "extra=" url))))))))
+
+(defun test-follow-link ()
+  (let ((dir "/tmp/closure-nav/"))
+    (ensure-directories-exist dir)
+    (with-open-file (out (concatenate 'string dir "next.html")
+                         :direction :output :if-exists :supersede)
+      (write-string "<h1 id='there'>Arrived</h1>" out))
+    (let* ((base "file:///tmp/closure-nav/page.html")
+           (root (closure.engine:layout-html
+                  "<a id='go' href='next.html'>Go</a>"
+                  :width 200 :height 40 :stylesheet "body{margin:0}" :base base))
+           (go (closure.engine:find-box root "go")))
+      (check "link box" go)
+      (check "link href" (and go (equal (closure.engine:link-href go) "next.html")))
+      (multiple-value-bind (next new-base)
+          (closure.engine:follow-link root
+                                      (+ (closure.engine:box-x go) 1d0)
+                                      (+ (closure.engine:box-y go) 1d0)
+                                      0 base 200 40)
+        (check "followed to next page" (and next (closure.engine:find-box next "there")))
+        (check "base is the target" (and new-base (search "next.html" new-base)))))))
+
+(defun test-window-scroll ()
+  (check "wheel down" (~ (closure.engine::scroll-step 0 :wheel-down 100 500) 48d0))
+  (check "scroll clamps" (~ (closure.engine::scroll-step 380 :wheel-down 100 500) 400d0))
+  (check "page down" (~ (closure.engine::scroll-step 0 :page-down 100 500) 100d0))
+  (check "home" (~ (closure.engine::scroll-step 40 :home 100 500) 0d0))
+  (check "button 4 is wheel up" (eq (closure.engine::event-scroll-command :button 4) :wheel-up))
+  (check "escape quits" (eq (closure.engine::event-scroll-command :key #xff1b) :quit))
+  (let ((root (closure.engine:layout-html "<p>Hi</p>" :width 80 :height 40
+                                         :stylesheet "body{margin:0}")))
+    (check "run-window without a display" (null (closure.engine:run-window root :width 80 :height 40)))))
+
+(defun test-scroll-and-hit ()
+  (let* ((html "<div id='a' style='position:absolute;top:0;left:0;width:20px;height:20px;background:#c00'></div>
+                <div id='b' style='position:absolute;top:100px;left:0;width:20px;height:20px;background:#0c0'></div>")
+         (out "/tmp/closure-engine-scroll.png")
+         (root (closure.engine:render-html html :width 80 :height 30 :scroll-y 100
+                                          :output out :stylesheet "body{margin:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b")))
+    (check "scroll boxes" (and a b))
+    (check "hit at top is a" (eq (closure.engine:hit-test root 5 5) a))
+    (check "scrolled hit is b" (eq (closure.engine:hit-test root 5 5 100) b))
+    (multiple-value-bind (r g bch) (png-rgb out 4 4)
+      (format t "~&  scrolled pixel: ~D ~D ~D~%" r g bch)
+      (check "viewport shows the lower box" (and (> g 150) (< r 80))))
+    (check "no display means no window" (null (closure.engine:paint-window root :width 80 :height 30)))))
+
+(defun test-lisp-script ()
+  (let ((dir "/tmp/closure-js/"))
+    (ensure-directories-exist dir)
+    (with-open-file (out (concatenate 'string dir "set.js")
+                         :direction :output :if-exists :supersede)
+      (write-string "document.getElementById('from').textContent = 'from-file';" out))
+    (let* ((html "<h1 id='from'>no</h1><script src='set.js'></script>")
+           (root (closure.engine:layout-html html :width 200 :height 40
+                                            :stylesheet "body{margin:0}"
+                                            :base "file:///tmp/closure-js/page.html"))
+           (box (closure.engine:find-box root "from")))
+      (check "external script box" box)
+      (check "lisp ran the external script"
+             (and box (search "from-file"
+                              (closure.engine::dom-text-content
+                               (closure.engine::box-element box))))))))
+
+(defun test-external-css ()
+  (let ((dir "/tmp/closure-css/"))
+    (ensure-directories-exist dir)
+    (with-open-file (out (concatenate 'string dir "b.css")
+                         :direction :output :if-exists :supersede)
+      (write-string "#ext { width: 70px; height: 12px; background: #00aa00; }" out))
+    (with-open-file (out (concatenate 'string dir "a.css")
+                         :direction :output :if-exists :supersede)
+      (write-string "@import \"b.css\"; #ext { margin-left: 4px; }" out))
+    (let* ((html "<link rel='stylesheet' href='a.css'><div id='ext'>x</div>")
+           (root (closure.engine:layout-html html :width 200 :height 40
+                                            :stylesheet "body{margin:0}"
+                                            :base "file:///tmp/closure-css/page.html"))
+           (box (closure.engine:find-box root "ext")))
+      (check "linked sheet box" box)
+      (check "imported width" (and box (~ (closure.engine:box-width box) 70d0)))
+      (check "sheet margin" (and box (~ (closure.engine:box-x box) 4d0))))))
+
 (defun run-tests ()
   (format t "~&Closure engine tests~%")
   (test-javascript)
+  (test-png-image)
+  (test-gif-and-jpeg)
+  (test-relative-and-http-image)
+  (test-background-and-object-fit)
+  (test-form-controls)
+  (test-external-css)
+  (test-lisp-script)
+  (test-scroll-and-hit)
+  (test-window-scroll)
+  (test-follow-link)
+  (test-submit-form)
+  (test-history)
+  (test-post-form)
+  (test-document-title)
+  (test-location-href)
+  (test-location-history)
+  (test-inline-layout)
+  (test-sub-sup)
+  (test-mark)
+  (test-line-through)
+  (test-list-markers)
+  (test-hr)
+  (test-q)
+  (test-blockquote)
+  (test-nested-q)
+  (test-small)
+  (test-big)
+  (test-u-ins)
+  (test-tt)
+  (test-nobr)
+  (test-text-overflow)
+  (test-overflow-wrap)
+  (test-word-break)
+  (test-justify)
+  (test-border-collapse)
+  (test-border-spacing)
+  (test-colspan)
+  (test-rowspan)
+  (test-table-valign)
+  (test-table-valign-middle)
+  (test-caption)
+  (test-wbr)
+  (test-address)
+  (test-text-indent)
+  (test-letter-spacing)
+  (test-word-spacing)
+  (test-text-transform)
+  (test-visibility-hidden)
+  (test-outline)
+  (test-outline-offset)
+  (test-box-shadow)
+  (test-inset-shadow)
+  (test-two-shadows)
+  (test-float-left)
+  (test-float-right)
+  (test-clear-both)
+  (test-relative)
+  (test-relative-text)
+  (test-auto-margin)
+  (test-margin-left-auto)
+  (test-margin-collapse)
+  (test-parent-child-margin)
+  (test-parent-child-bottom-margin)
+  (test-margin-separation)
+  (test-margin-bottom-separation)
+  (test-float-below)
+  (test-br)
+  (test-nested-inline)
+  (test-link-underline)
+  (test-link-underline-nested)
+  (test-inline-image-baseline)
+  (test-inline-image-middle)
+  (test-image-alt)
+  (test-image-alt-clip)
+  (test-svg)
   (test-selectors-and-cascade)
   (test-flex)
+  (test-flex-wrap)
+  (test-flex-wrap-reverse)
+  (test-flex-align-content)
+  (test-flex-align-content-end)
+  (test-flex-align-content-between)
+  (test-flex-align-content-around)
+  (test-flex-align-content-evenly)
   (test-grid-and-calc)
   (test-absolute-and-media)
   (test-paint-and-speed)

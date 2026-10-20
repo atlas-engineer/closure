@@ -1,7 +1,13 @@
-;;; Public entry points. JavaScript is intentionally not executed here;
-;;; bind *script-evaluator* when a script engine is added.
+;;; Public entry points. Classic scripts run in the Lisp interpreter.
+;;; Bind *script-evaluator* to replace that interpreter.
 
 (in-package :closure.engine)
+
+(defvar *navigation-depth* 0
+  "How many location.href navigations are already in progress.")
+
+(defvar *navigation-enabled* t
+  "When NIL, location.href is recorded but does not replace the document.")
 
 (defvar *script-evaluator* nil
   "Reserved for the JavaScript engine. When bound to a function, it is
@@ -17,22 +23,36 @@ script element after style and layout. Left unset until that engine exists.")
    blockquote, pre, form, ul, ol, dl, dd, dt, address, fieldset, legend
    { display: block; }
    h1, h2, h3, h4, h5, h6, b, strong, th { font-weight: bold; }
-   em, i, cite, dfn, var { font-style: italic; }
+   em, i, cite, dfn, var, address { font-style: italic; }
    h1 { font-size: 2em; margin-top: 0.67em; margin-bottom: 0.67em; }
    h2 { font-size: 1.5em; margin-top: 0.83em; margin-bottom: 0.83em; }
    h3 { font-size: 1.17em; margin-top: 1em; margin-bottom: 1em; }
    p, ul, ol, dl, blockquote, pre { margin-top: 1em; margin-bottom: 1em; }
    ul, ol { padding-left: 40px; }
    dd { margin-left: 40px; }
+   blockquote { margin-left: 40px; margin-right: 40px; }
    ul { list-style-type: disc; }
    ol { list-style-type: decimal; }
    li { display: list-item; }
-   span, a, b, i, em, strong, code, small, label, mark, time, abbr, cite, dfn,
-   kbd, samp, var, sub, sup, u, s, q, button { display: inline; }
+   span, a, b, i, em, strong, code, small, big, tt, nobr, wbr, label, mark, time, abbr, cite, dfn,
+   kbd, samp, var, sub, sup, u, ins, s, del, q, button { display: inline; }
+   s, del { text-decoration: line-through; }
+   u, ins { text-decoration: underline; }
+   small { font-size: smaller; }
+   big { font-size: larger; }
+   mark { background-color: #ffff00; color: black; }
+   q { quotes: '\"' '\"' \"'\" \"'\"; }
+   q:before { content: open-quote; }
+   q:after { content: close-quote; }
+   sub { vertical-align: sub; font-size: smaller; }
+   sup { vertical-align: super; font-size: smaller; }
    a { color: #0000ee; }
-   code, kbd, samp, pre { font-family: monospace; }
+   a:link { text-decoration: underline; }
+   code, kbd, samp, tt, pre { font-family: monospace; }
    pre { white-space: pre; }
+   nobr { white-space: nowrap; }
    table { display: table; }
+   caption { display: table-caption; text-align: center; }
    thead { display: table-header-group; }
    tbody { display: table-row-group; }
    tfoot { display: table-footer-group; }
@@ -42,7 +62,10 @@ script element after style and layout. Left unset until that engine exists.")
    video, canvas { width: 300px; height: 150px; }
    hr { border-top: 1px solid #ccc; margin-top: 0.5em; margin-bottom: 0.5em; }
    center { text-align: center; }
-   button, input, select, textarea { font-family: sans-serif; }")
+   button, input, select, textarea { font-family: sans-serif; }
+   button { display: inline-block; background: #eee; border: 1px solid #888; padding: 2px 8px; }
+   input, select { background: #fff; border: 1px solid #888; padding: 1px 4px; width: 140px; height: 22px; }
+   textarea { background: #fff; border: 1px solid #888; padding: 2px 4px; width: 160px; height: 48px; }")
 
 (defun collect-rules (sheets)
   (let ((rules nil)
@@ -110,48 +133,138 @@ script element after style and layout. Left unset until that engine exists.")
     (dolist (c (element-children element))
       (note-scripts c))))
 
-(defun layout-html (html &key (width 1024) (height 768) (stylesheet "") (time 0d0))
+(defun layout-html (html &key (width 1024) (height 768) (stylesheet "") (time 0d0) base)
   "Parse HTML, cascade CSS, and lay the document out. Returns the root box."
   (let* ((*viewport-width* (float width 1d0))
          (*viewport-height* (float height 1d0))
          (*root-font-size* 16d0)
-         (doc (import-document (html5-parser:parse-html5 (or html ""))))
+         (source (or html ""))
+         (doc (import-document (html5-parser:parse-html5 source)))
          (html-el (or (find-element doc "html")
                       (first (element-children doc))))
          (sheets (list (parse-stylesheet *ua-css* :origin :ua :width width :height height))))
-    (when (and stylesheet (plusp (length stylesheet)))
-      (setf sheets (append sheets
-                           (list (parse-stylesheet stylesheet :origin :author
-                                                   :width width :height height)))))
-    (let ((style-els nil))
-      (map-elements doc (lambda (el)
-                          (when (string= (dom-element-tag el) "style")
-                            (push el style-els))))
-      (dolist (el (nreverse style-els))
-        (setf sheets (append sheets
-                             (list (parse-stylesheet (dom-text-content el) :origin :author
-                                                     :width width :height height))))))
     (unless html-el
       (return-from layout-html nil))
-    ;; Scripts run before style and layout so DOM writes are visible.
-    (if *script-evaluator*
-        (note-scripts html-el)
-        (js-execute-document doc))
-    (multiple-value-bind (rules frames) (collect-rules sheets)
-      (cascade-tree html-el rules)
-      (apply-animations html-el frames (float time 1d0))
-      (layout-document html-el))))
+    (let ((*document-base* (effective-base doc (or base *document-base*))))
+      (let ((*pending-navigation* nil))
+        (cond
+          (*script-evaluator* (note-scripts html-el))
+          (t (js-execute-document doc)))
+        (when (and *navigation-enabled* *pending-navigation* (< *navigation-depth* 4))
+          (let* ((abs (or (resolve-url *pending-navigation* *document-base*)
+                          *pending-navigation*))
+                 (next-html (fetch-css-text abs))
+                 (from-html source)
+                 (from-base *document-base*))
+            (when (and next-html (plusp (length next-html)))
+              (return-from layout-html
+                (multiple-value-bind (root new-base more)
+                    (let ((*navigation-depth* (1+ *navigation-depth*)))
+                      (layout-html next-html :width width :height height
+                                   :stylesheet stylesheet :time time :base abs))
+                  (let ((from-root (let ((*navigation-enabled* nil))
+                                     (layout-html from-html :width width :height height
+                                                  :stylesheet stylesheet :time time
+                                                  :base from-base))))
+                    (values root new-base
+                            (append (list (list from-root from-base)) more)))))))))
+      (when (and stylesheet (plusp (length stylesheet)))
+        (setf sheets (append sheets
+                             (list (parse-stylesheet stylesheet :origin :author
+                                                     :width width :height height
+                                                     :base *document-base*)))))
+      (let ((authored nil))
+        (map-elements doc (lambda (el)
+                            (cond
+                              ((string= (dom-element-tag el) "style")
+                               (push (list :style (dom-text-content el)) authored))
+                              ((and (string= (dom-element-tag el) "link")
+                                    (search "stylesheet" (or (dom-attr el "rel") "")
+                                            :test #'char-equal))
+                               (push (list :link (dom-attr el "href")) authored)))))
+        (dolist (item (nreverse authored))
+          (let ((text (cond
+                        ((eq (first item) :style) (second item))
+                        ((second item)
+                         (let ((abs (resolve-url (second item) *document-base*)))
+                           (fetch-css-text abs)))
+                        (t ""))))
+            (when (and text (plusp (length text)))
+              (let ((sheet-base (if (eq (first item) :link)
+                                    (url-directory (or (resolve-url (second item) *document-base*)
+                                                       ""))
+                                    *document-base*)))
+                (setf sheets (append sheets
+                                     (list (parse-stylesheet text :origin :author
+                                                             :width width :height height
+                                                             :base sheet-base)))))))))
+      (multiple-value-bind (rules frames) (collect-rules sheets)
+        (cascade-tree html-el rules)
+        (apply-animations html-el frames (float time 1d0))
+        (values (layout-document html-el) *document-base* nil)))))
 
 (defun render-html (html &key (width 1024) (height 768) (stylesheet "")
-                           (output nil) (time 0d0) (scroll-y 0d0))
+                           (output nil) (time 0d0) (scroll-y 0d0) base)
   "Lay HTML out and, when OUTPUT is a pathname, paint it to a PNG with Cairo.
 Returns the root box. Cairo is the cross-platform rasterizer; the same paint
-path targets an image surface here and a window surface on each OS."
-  (let ((root (layout-html html :width width :height height
-                           :stylesheet stylesheet :time time)))
-    (when (and root output)
-      (let* ((doc-h (max height
-                         (ceiling (+ (box-y root) (box-h root) 8))))
-             (png-h (min doc-h 8192)))
-        (paint-png root output width png-h :scroll-y scroll-y)))
-    root))
+path targets an image surface here and a window surface on each OS.
+BASE is the document URL. A <base href> in the document overrides it."
+  (multiple-value-bind (root doc-base)
+      (layout-html html :width width :height height
+                   :stylesheet stylesheet :time time :base base)
+    (let ((*document-base* doc-base))
+      (when (and root output)
+        (let* ((doc-h (max height
+                           (ceiling (+ (box-y root) (box-h root) 8))))
+               (png-h (if (> scroll-y 0d0) height (min doc-h 8192))))
+          (paint-png root output width png-h :scroll-y scroll-y)))
+      root)))
+
+(defun submit-form (root x y scroll base width height)
+  "If X,Y hits a submit control, GET or POST the form and lay out the response.
+Returns the new root and the request URL, or NIL."
+  (let* ((yy (+ (float y 1d0) (float scroll 1d0)))
+         (xx (float x 1d0))
+         (submit nil))
+    (labels ((walk (box)
+               (when (and box
+                          (<= (box-x box) xx (+ (box-x box) (box-w box)))
+                          (<= (box-y box) yy (+ (box-y box) (box-h box)))
+                          (> (box-w box) 0d0) (> (box-h box) 0d0))
+                 (when (submit-control-p (box-element box))
+                   (setf submit (box-element box)))
+                 (dolist (c (box-children box)) (walk c)))))
+      (walk root))
+    (let ((form (and submit (form-ancestor submit))))
+      (when form
+        (multiple-value-bind (method url body) (form-request form submit base)
+          (let ((html (if (eq method :post)
+                          (fetch-post url body)
+                          (fetch-css-text url))))
+          (when (and html (plusp (length html)))
+            (multiple-value-bind (root final departed)
+                (layout-html html :width width :height height :base url)
+              (when root
+                (values root (or final url) departed))))))))))
+
+(defun activate-hit (root x y scroll base width height)
+  (multiple-value-bind (root2 base2 departed) (submit-form root x y scroll base width height)
+    (if root2
+        (values root2 base2 departed)
+        (follow-link root x y scroll base width height))))
+
+(defun follow-link (root x y scroll base width height)
+  "If X,Y hits an anchor, fetch its href in Lisp and lay the target out.
+Returns the new root and the absolute base URL, or NIL."
+  (let* ((hit (hit-test root x y scroll))
+         (href (link-href hit)))
+    (when href
+      (let* ((abs (or (resolve-url href base) href))
+             (html (fetch-css-text abs)))
+        (when (and html (plusp (length html)))
+          (multiple-value-bind (root final departed)
+              (layout-html html :width width :height height :base abs)
+            (when root
+              (values root (or final abs) departed))))))))
+
+(setf *activate-link* #'activate-hit)

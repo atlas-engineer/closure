@@ -31,6 +31,7 @@
   (color '(0d0 0d0 0d0 1d0))
   (background nil)
   (background-image nil)
+  (object-fit :fill)
   (font-size 16d0)
   (font-weight :normal)
   (font-style :normal)
@@ -38,7 +39,19 @@
   (line-height nil)
   (line-height-mult 1.2d0)
   (text-align :start)
+  (text-indent 0d0)
+  (letter-spacing 0d0)
+  (word-spacing 0d0)
+  (text-transform :none)
+  (text-decoration :none)
   (white-space :normal)
+  (text-overflow :clip)
+  (overflow-wrap :normal)
+  (word-break :normal)
+  (border-collapse :separate)
+  (border-spacing-x 0d0)
+  (border-spacing-y 0d0)
+  (vertical-align :baseline)
   (flex-direction :row)
   (flex-wrap :nowrap)
   (justify-content :flex-start)
@@ -62,8 +75,14 @@
   (visibility :visible)
   (overflow :visible)
   (radius 0d0)
+  (outline-width 3d0)
+  (outline-style :none)
+  (outline-color nil)
+  (outline-offset 0d0)
+  (box-shadow nil)
   (transform nil)
   (content :normal)
+  (quotes nil)
   (column-count :auto)
   (animation-name :none)
   (animation-duration 0d0)
@@ -93,10 +112,10 @@
  "border-top-width" "border-right-width" "border-bottom-width" "border-left-width"
  "border-top-style" "border-right-style" "border-bottom-style" "border-left-style"
  "border-top-color" "border-right-color" "border-bottom-color" "border-left-color"
- "border-radius" "box-sizing"
- "color" "background" "background-color" "background-image"
+ "border-radius" "border-collapse" "border-spacing" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
+ "color" "background" "background-color" "background-image" "object-fit"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
- "text-align" "white-space" "opacity" "visibility" "overflow" "z-index"
+ "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
  "justify-content" "align-items" "align-content" "align-self" "order" "gap"
  "row-gap" "column-gap"
@@ -104,12 +123,12 @@
  "grid-column" "grid-row" "grid-column-start" "grid-column-end"
  "grid-row-start" "grid-row-end"
  "top" "right" "bottom" "left" "inset"
- "transform" "content" "column-count" "list-style" "list-style-type"
+ "transform" "content" "quotes" "column-count" "list-style" "list-style-type"
  "animation" "animation-name" "animation-duration" "animation-iteration-count")
 
 (defparameter *inherited-properties*
   '(:color :font-size :font-weight :font-style :font-family
-    :line-height :text-align :white-space :visibility :list-style))
+    :line-height :text-align :text-indent :letter-spacing :word-spacing :text-transform :white-space :visibility :list-style :quotes))
 
 (defparameter *named-colors* (make-hash-table :test #'equal))
 
@@ -532,6 +551,47 @@
     (when (or width style color)
       (list (or width 3d0) (or style :solid) color))))
 
+(defun parse-one-box-shadow (tokens)
+  "Parse one shadow. Returns (values shadow remaining-tokens)."
+  (let ((x nil) (y nil) (lengths 0) (color nil) (inset nil) (rest tokens))
+    (loop while rest do
+      (let ((tk (car rest)))
+        (cond
+          ((eq (tok-kind tk) :comma) (return))
+          ((and (eq (tok-kind tk) :ident) (string= (tok-text tk) "inset"))
+           (setf inset t)
+           (pop rest))
+          ((and (< lengths 3)
+                (member (tok-kind tk) '(:dimension :number :percentage)))
+           (let ((n (parse-length-tok tk)))
+             (case lengths
+               (0 (setf x n))
+               (1 (setf y n)))
+             (incf lengths)
+             (pop rest)))
+          (t
+           (multiple-value-bind (c r) (parse-color-tokens rest)
+             (if c
+                 (progn (setf color c) (setf rest r))
+                 (return)))))))
+    (values (when (and x y)
+              (list x y (or color :currentcolor) inset))
+            rest)))
+
+(defun parse-box-shadow (tokens)
+  "Solid shadows separated by commas. The first one is painted on top."
+  (let ((out nil) (rest tokens))
+    (loop while rest do
+      (multiple-value-bind (sh more) (parse-one-box-shadow rest)
+        (cond
+          (sh
+           (push sh out)
+           (setf rest more)
+           (when (and rest (eq (tok-kind (car rest)) :comma))
+             (pop rest)))
+          (t (return)))))
+    (nreverse out)))
+
 (defun expand-declaration (property raw)
   "Return a list of (LONGHAND . VALUE)."
   (let* ((tokens (css-tokenize (or raw "")))
@@ -560,6 +620,13 @@
              (let ((e (parse-edges tokens #'parse-one-length)))
                (when e
                  (list (cons :row-gap (first e)) (cons :column-gap (second e))))))
+            ((:outline)
+             (let ((side (expand-border-side tokens)))
+               (when side
+                 (destructuring-bind (w st col) side
+                   (list (cons :outline-width w)
+                         (cons :outline-style st)
+                         (cons :outline-color (or col :currentcolor)))))))
             ((:border :border-top :border-right :border-bottom :border-left)
              (let ((side (expand-border-side tokens)))
                (when side
@@ -661,6 +728,18 @@
       (when family (push (cons :font-family family) out))
       out)))
 
+(defun url-from-tokens (tokens)
+  "URL string from url(\"...\") or a bare string."
+  (cond
+    ((and tokens (eq (tok-kind (car tokens)) :function)
+          (string-equal (tok-text (car tokens)) "url"))
+     (multiple-value-bind (inside more) (take-until-rparen (cdr tokens))
+       (declare (ignore more))
+       (let ((s (find-if (lambda (tk) (member (tok-kind tk) '(:string :ident))) inside)))
+         (when s (tok-text s)))))
+    ((and tokens (eq (tok-kind (car tokens)) :string))
+     (tok-text (car tokens)))))
+
 (defun expand-background (tokens)
   (let ((color nil) (image nil) (rest tokens))
     (loop while rest do
@@ -759,7 +838,25 @@
               (cons :mult (tok-number (car tokens))))
              (t (len))))
       ((:text-align) (kw '("start" "end" "left" "right" "center" "justify")))
+      ((:text-transform) (kw '("none" "uppercase" "lowercase" "capitalize")))
+      ((:text-indent) (len))
+      ((:letter-spacing :word-spacing)
+       (if (and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "normal"))
+           0d0
+           (len)))
+      ((:text-decoration) (kw '("none" "underline" "overline" "line-through")))
       ((:white-space) (kw '("normal" "nowrap" "pre" "pre-wrap" "pre-line" "break-spaces")))
+      ((:text-overflow) (kw '("clip" "ellipsis")))
+      ((:overflow-wrap :word-wrap) (kw '("normal" "break-word" "anywhere")))
+      ((:word-break) (kw '("normal" "break-all" "keep-all" "break-word")))
+      ((:border-collapse) (kw '("separate" "collapse")))
+      ((:border-spacing)
+       (multiple-value-bind (a rest) (parse-one-length tokens)
+         (when a
+           (multiple-value-bind (b more) (parse-one-length rest)
+             (declare (ignore more))
+             (list a (or b a))))))
+      ((:vertical-align) (kw '("baseline" "top" "middle" "bottom" "sub" "super" "text-top" "text-bottom")))
       ((:flex-direction) (kw '("row" "row-reverse" "column" "column-reverse")))
       ((:flex-wrap) (kw '("nowrap" "wrap" "wrap-reverse")))
       ((:justify-content)
@@ -781,19 +878,25 @@
       ((:grid-row) (cons :grow (parse-grid-span tokens)))
       ((:overflow) (kw '("visible" "hidden" "clip" "scroll" "auto")))
       ((:visibility) (kw '("visible" "hidden" "collapse")))
-      ((:border-radius) (len))
+      ((:border-radius :outline-offset) (len))
+      ((:box-shadow) (parse-box-shadow tokens))
       ((:transform) (let ((ops (parse-transform tokens))) (when ops ops)))
       ((:content)
        (cond ((and tokens (eq (tok-kind (car tokens)) :ident)
-                   (member (tok-text (car tokens)) '("none" "normal") :test #'string=))
+                   (member (tok-text (car tokens)) '("none" "normal" "open-quote" "close-quote") :test #'string=))
               (intern (string-upcase (tok-text (car tokens))) :keyword))
              (t (let ((strs (mapcar #'tok-text (remove-if-not (lambda (tk) (eq (tok-kind tk) :string)) tokens))))
                   (when strs (apply #'concatenate 'string strs))))))
+      ((:quotes)
+       (cond ((and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "none"))
+              :none)
+             (t (let ((strs (mapcar #'tok-text (remove-if-not (lambda (tk) (eq (tok-kind tk) :string)) tokens))))
+                  (when strs strs)))))
       ((:background-image)
        (cond ((and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "none"))
               :none)
-             (t (let ((s (find-if (lambda (tk) (eq (tok-kind tk) :string)) tokens)))
-                  (when s (tok-text s))))))
+             (t (url-from-tokens tokens))))
+      ((:object-fit) (kw '("fill" "contain" "cover" "none" "scale-down")))
       ((:list-style :list-style-type)
        (kw '("disc" "circle" "square" "decimal" "none")))
       ((:animation-name)
@@ -1305,13 +1408,32 @@
                         (gethash name *known-properties*))))
              t))))))
 
-(defun parse-stylesheet (string &key (origin :author) (width 1024d0) (height 768d0))
+(defun css-import-url (prelude)
+  "The URL from an @import prelude, without quotes."
+  (let ((s (trim-ws (or prelude ""))))
+    (when (zerop (length s))
+      (return-from css-import-url nil))
+    (cond
+      ((and (>= (length s) 4) (string-equal s "url(" :end1 4))
+       (let* ((inner (subseq s 4))
+              (end (position #\) inner))
+              (body (trim-ws (subseq inner 0 (or end (length inner))))))
+         (string-trim '(#\" #\') body)))
+      ((member (char s 0) '(#\" #\'))
+       (let ((q (char s 0)))
+         (subseq s 1 (or (position q s :start 1) (length s)))))
+      (t (let ((sp (position-if #'whitespace-char-p s)))
+           (subseq s 0 (or sp (length s))))))))
+
+(defun parse-stylesheet (string &key (origin :author) (width 1024d0) (height 768d0)
+                                 (order nil) (base *document-base*))
   (let* ((s (or string ""))
          (n (length s))
          (i 0)
-         (order (list 0))
+         (order (or order (list 0)))
          (rules nil)
-         (sheet (make-stylesheet)))
+         (sheet (make-stylesheet))
+         (*document-base* base))
     (labels ((peek () (if (< i n) (char s i) nil))
              (skip ()
                (loop
@@ -1361,7 +1483,8 @@
                        (t (incf i)))))
                  (subseq s start (max start (1- i)))))
              (add-rules (body media)
-               (let ((inner (parse-stylesheet body :origin origin :width width :height height)))
+               (let ((inner (parse-stylesheet body :origin origin :width width :height height
+                                              :order order :base *document-base*)))
                  (dolist (r (stylesheet-rules inner))
                    (setf (css-rule-media r)
                          (if (eq media t)
@@ -1415,6 +1538,22 @@
              (let ((name (string-downcase (subseq s start i)))
                    (prelude (read-until-brace-or-semi)))
                (cond
+                 ((equal name "import")
+                  (let* ((url (css-import-url prelude))
+                         (abs (and url (resolve-url url *document-base*)))
+                         (text (and abs (fetch-css-text abs))))
+                    (when (and text (plusp (length text)))
+                      (let ((inner (parse-stylesheet text :origin origin
+                                                     :width width :height height
+                                                     :order order
+                                                     :base (url-directory abs))))
+                        (dolist (r (stylesheet-rules inner))
+                          (push r rules))
+                        (maphash (lambda (k v)
+                                   (setf (gethash k (stylesheet-keyframes sheet)) v))
+                                 (stylesheet-keyframes inner)))))
+                  (when (eql (peek) #\;) (incf i))
+                  (when (eql (peek) #\{) (read-block)))
                  ((eql (peek) #\;)
                   (incf i))
                  ((eql (peek) #\{)
@@ -1617,10 +1756,23 @@
          (:border-bottom-color (setf (computed-bbc style) value))
          (:border-left-color (setf (computed-blc style) value))
          (:border-radius (setf (computed-radius style) (or (len value) 0d0)))
+         (:outline-width (setf (computed-outline-width style) (or (len value) 3d0)))
+         (:outline-style (when value (setf (computed-outline-style style) value)))
+         (:outline-color (setf (computed-outline-color style) value))
+         (:outline-offset (setf (computed-outline-offset style) (or (len value) 0d0)))
+         (:box-shadow
+          (setf (computed-box-shadow style)
+                (mapcar (lambda (sh)
+                          (list (or (len (first sh)) 0d0)
+                                (or (len (second sh)) 0d0)
+                                (third sh)
+                                (fourth sh)))
+                        value)))
          (:box-sizing (setf (computed-box-sizing style) value))
          (:color (when value (setf (computed-color style) value)))
          (:background-color (setf (computed-background style) value))
          (:background-image (setf (computed-background-image style) value))
+         (:object-fit (when value (setf (computed-object-fit style) value)))
          (:font-size
           (setf (computed-font-size style)
                 (cond
@@ -1640,7 +1792,31 @@
              (setf (computed-line-height style) (len value))
              (setf (computed-line-height-mult style) nil))))
          (:text-align (setf (computed-text-align style) value))
+         (:text-transform (when value (setf (computed-text-transform style) value)))
+         (:text-indent
+          (setf (computed-text-indent style)
+                (let ((v (absolutize value (or (computed-font-size style) 16d0))))
+                  (if (numberp v) (float v 1d0) (or v 0d0)))))
+         (:letter-spacing
+          (setf (computed-letter-spacing style)
+                (let ((v (absolutize value (or (computed-font-size style) 16d0))))
+                  (if (numberp v) (float v 1d0) 0d0))))
+         (:word-spacing
+          (setf (computed-word-spacing style)
+                (let ((v (absolutize value (or (computed-font-size style) 16d0))))
+                  (if (numberp v) (float v 1d0) 0d0))))
+         (:text-decoration (when value (setf (computed-text-decoration style) value)))
          (:white-space (setf (computed-white-space style) value))
+         (:text-overflow (when value (setf (computed-text-overflow style) value)))
+         ((:overflow-wrap :word-wrap)
+          (when value (setf (computed-overflow-wrap style) value)))
+         (:word-break (when value (setf (computed-word-break style) value)))
+         (:border-collapse (when value (setf (computed-border-collapse style) value)))
+         (:border-spacing
+          (when (consp value)
+            (setf (computed-border-spacing-x style) (or (len (first value)) 0d0)
+                  (computed-border-spacing-y style) (or (len (second value)) 0d0))))
+         (:vertical-align (when value (setf (computed-vertical-align style) value)))
          (:flex-direction (setf (computed-flex-direction style) value))
          (:flex-wrap (setf (computed-flex-wrap style) value))
          (:justify-content (setf (computed-justify-content style) value))
@@ -1668,6 +1844,7 @@
          (:overflow (setf (computed-overflow style) value))
          (:transform (setf (computed-transform style) value))
          (:content (setf (computed-content style) value))
+         (:quotes (setf (computed-quotes style) value))
          (:column-count (setf (computed-column-count style) value))
          ((:list-style :list-style-type) (setf (computed-list-style style) value))
          (:animation-name (setf (computed-animation-name style) value))
@@ -1702,9 +1879,19 @@
       (setf (computed-line-height s) (computed-line-height parent))
       (setf (computed-line-height-mult s) (computed-line-height-mult parent))
       (setf (computed-text-align s) (computed-text-align parent))
+      (setf (computed-text-transform s) (computed-text-transform parent))
+      (setf (computed-text-indent s) (computed-text-indent parent))
+      (setf (computed-letter-spacing s) (computed-letter-spacing parent))
+      (setf (computed-word-spacing s) (computed-word-spacing parent))
       (setf (computed-white-space s) (computed-white-space parent))
+      (setf (computed-overflow-wrap s) (computed-overflow-wrap parent))
+      (setf (computed-word-break s) (computed-word-break parent))
+      (setf (computed-border-collapse s) (computed-border-collapse parent))
+      (setf (computed-border-spacing-x s) (computed-border-spacing-x parent))
+      (setf (computed-border-spacing-y s) (computed-border-spacing-y parent))
       (setf (computed-visibility s) (computed-visibility parent))
       (setf (computed-list-style s) (computed-list-style parent))
+      (setf (computed-quotes s) (computed-quotes parent))
       (setf (computed-custom s) (copy-custom (computed-custom parent))))
     s))
 
@@ -1812,9 +1999,31 @@
       (:position (computed-position st))
       (t (and (computed-extras st) (gethash property (computed-extras st)))))))
 
-(defun content-string (style)
+(defun quote-depth (element)
+  "How many open quotes already wrap ELEMENT."
+  (if (not (dom-element-p element))
+      0
+      (loop for n = (dom-node-parent element) then (dom-node-parent n)
+            while (dom-element-p n)
+            count (let ((st (dom-element-before-style n)))
+                    (and st (eq (computed-content st) :open-quote))))))
+
+(defun quote-glyph (element kind style)
+  "Open or close glyph for ELEMENT. The last quotes pair repeats."
+  (let* ((pairs (or (and style (consp (computed-quotes style)) (computed-quotes style))
+                    '("\"" "\"" "'" "'")))
+         (depth (quote-depth element))
+         (pair (min depth (1- (max 1 (floor (length pairs) 2)))))
+         (offset (if (eq kind :close-quote) 1 0)))
+    (or (nth (+ (* pair 2) offset) pairs) "\"")))
+
+(defun generated-text (style element)
+  "Text for a :before or :after style, resolving open-quote and close-quote."
   (let ((c (and style (computed-content style))))
     (cond ((stringp c) c)
-          ((eq c :none) nil)
-          ((eq c :normal) nil)
+          ((member c '(:open-quote :close-quote))
+           (quote-glyph element c style))
           (t nil))))
+
+(defun content-string (style)
+  (generated-text style nil))

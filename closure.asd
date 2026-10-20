@@ -243,14 +243,16 @@
 
 ;;; Layout and paint engine. Cairo is the raster backend. No McCLIM.
 (asdf:defsystem :closure/engine
-  :depends-on (:cl-html5-parser :cffi)
+  :depends-on (:cl-html5-parser :cffi :skippy :drakma)
   :pathname "src/engine/"
   :serial t
   :components ((:file "package")
                (:file "cairo")
+               (:file "image")
                (:file "dom")
                (:file "css")
                (:file "layout")
+               (:file "svg")
                (:file "paint")
                (:file "js")
                (:file "engine"))

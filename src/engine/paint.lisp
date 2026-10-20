@@ -57,6 +57,148 @@
           (side bl (computed-blc st) (computed-bls st) x y bl h)
           (side br (computed-brc st) (computed-brs st) (+ x w (- br)) y br h))))))
 
+(defun paint-outline (cr box)
+  "Draw an outline outside the border box. It does not change layout."
+  (let* ((st (box-style box))
+         (bw (and st (computed-outline-width st)))
+         (style (and st (computed-outline-style st))))
+    (when (and st (numberp bw) (> bw 0d0)
+               (not (member style '(:none :hidden nil)))
+               (> (box-w box) 0d0) (> (box-h box) 0d0))
+      (let ((out (+ (/ bw 2d0) (or (computed-outline-offset st) 0d0))))
+      (set-color cr (color-or (computed-outline-color st) st))
+      (cairo-set-line-width cr bw)
+      (cairo-set-dash cr (cffi:null-pointer) 0 0d0)
+      (cairo-rectangle cr
+                       (- (box-x box) out)
+                       (- (box-y box) out)
+                       (+ (box-w box) (* 2d0 out))
+                       (+ (box-h box) (* 2d0 out)))
+      (cairo-stroke cr)
+      (cairo-set-dash cr (cffi:null-pointer) 0 0d0)))))
+
+(defun fitted-image-origin (fit iw ih x y w h)
+  "Where to draw an image of IW by IH inside the box at X Y W H.
+Returns the destination origin and size. FILL stretches. The others keep aspect ratio."
+  (let* ((sx (/ w iw))
+         (sy (/ h ih))
+         (s (case fit
+              (:contain (min sx sy))
+              (:cover (max sx sy))
+              (:none 1d0)
+              (:scale-down (min 1d0 (min sx sy)))
+              (t nil))))
+    (if (null s)
+        (values x y w h)
+        (let ((dw (* iw s)) (dh (* ih s)))
+          (values (+ x (/ (- w dw) 2d0))
+                  (+ y (/ (- h dh) 2d0))
+                  dw dh)))))
+
+(defun paint-surface-in-box (cr surface x y w h &key (fit :fill))
+  (let ((iw (float (cairo-image-surface-get-width surface) 1d0))
+        (ih (float (cairo-image-surface-get-height surface) 1d0)))
+    (when (and (> iw 0d0) (> ih 0d0) (> w 0d0) (> h 0d0))
+      (multiple-value-bind (dx dy dw dh) (fitted-image-origin fit iw ih x y w h)
+        (cairo-save cr)
+        (cairo-rectangle cr x y w h)
+        (cairo-clip cr)
+        (cairo-translate cr dx dy)
+        (cairo-scale cr (/ dw iw) (/ dh ih))
+        (cairo-set-source-surface cr surface 0d0 0d0)
+        (cairo-paint cr)
+        (cairo-restore cr)))))
+
+(defun paint-background-image (cr box)
+  "Tile a background-image across the padding box at its intrinsic size."
+  (let* ((st (box-style box))
+         (url (and st (computed-background-image st))))
+    (when (and (stringp url) (plusp (length url)))
+      (let* ((path (image-pathname url))
+             (surface (and path (load-image-surface path))))
+        (when surface
+          (multiple-value-bind (bt br bb bl) (border4 st)
+            (let* ((x (+ (box-x box) bl))
+                   (y (+ (box-y box) bt))
+                   (w (max 0d0 (- (box-w box) bl br)))
+                   (h (max 0d0 (- (box-h box) bt bb)))
+                   (iw (float (cairo-image-surface-get-width surface) 1d0))
+                   (ih (float (cairo-image-surface-get-height surface) 1d0)))
+              (when (and (> w 0d0) (> h 0d0) (> iw 0d0) (> ih 0d0))
+                (cairo-save cr)
+                (cairo-rectangle cr x y w h)
+                (cairo-clip cr)
+                (loop for yy = y then (+ yy ih) while (< yy (+ y h)) do
+                  (loop for xx = x then (+ xx iw) while (< xx (+ x w)) do
+                    (cairo-set-source-surface cr surface xx yy)
+                    (cairo-paint cr)))
+                (cairo-restore cr)))))))))
+
+(defun paint-image (cr box)
+  "Paint a replaced image into its content box, honoring object-fit."
+  (let* ((el (box-element box))
+         (path (and el (image-pathname (dom-attr el "src"))))
+         (surface (and path (load-image-surface path)))
+         (st (box-style box)))
+    (when (and el st)
+    (multiple-value-bind (bt br bb bl) (border4 st)
+      (multiple-value-bind (pt pr pb pl) (pad4 st (box-w box))
+        (cond
+          (surface
+           (paint-surface-in-box cr surface
+                                 (+ (box-x box) bl pl)
+                                 (+ (box-y box) bt pt)
+                                 (max 0d0 (- (box-w box) bl br pl pr))
+                                 (max 0d0 (- (box-h box) bt bb pt pb))
+                                 :fit (or (computed-object-fit st) :fill)))
+          (t
+           (let ((alt (dom-attr el "alt")))
+             (when (and alt (plusp (length alt)))
+               (let ((x (+ (box-x box) bl pl))
+                     (y (+ (box-y box) bt pt))
+                     (w (max 0d0 (- (box-w box) bl br pl pr)))
+                     (h (max 0d0 (- (box-h box) bt bb pt pb))))
+                 (cairo-save cr)
+                 (cairo-rectangle cr x y w h)
+                 (cairo-clip cr)
+                 (set-color cr (computed-color st))
+                 (cairo-select-font-face cr
+                                         (cairo-family (computed-font-family st))
+                                         (cairo-slant (computed-font-style st))
+                                         (cairo-weight (computed-font-weight st)))
+                 (cairo-set-font-size cr (computed-font-size st))
+                 (cairo-move-to cr x
+                                (+ y (font-ascent (computed-font-size st)
+                                                  (computed-font-family st)
+                                                  (computed-font-weight st)
+                                                  (computed-font-style st))))
+                 (cairo-show-text cr alt)
+                 (cairo-restore cr)))))))))))
+
+(defun paint-control (cr box)
+  "Draw the value of an input, select, or textarea. Buttons paint their own text."
+  (let* ((el (box-element box))
+         (st (box-style box))
+         (label (and el (control-label el))))
+    (when (and st label (plusp (length label)))
+      (multiple-value-bind (bt br bb bl) (border4 st)
+        (declare (ignore br bb))
+        (multiple-value-bind (pt pr pb pl) (pad4 st (box-w box))
+          (declare (ignore pr pb))
+          (set-color cr (computed-color st))
+          (cairo-select-font-face cr
+                                  (cairo-family (computed-font-family st))
+                                  (cairo-slant (computed-font-style st))
+                                  (cairo-weight (computed-font-weight st)))
+          (cairo-set-font-size cr (computed-font-size st))
+          (cairo-move-to cr (+ (box-x box) bl pl)
+                         (+ (box-y box) bt pt
+                            (font-ascent (computed-font-size st)
+                                         (computed-font-family st)
+                                         (computed-font-weight st)
+                                         (computed-font-style st))))
+          (cairo-show-text cr label))))))
+
 (defun paint-text-box (cr box)
   (let ((st (box-style box))
         (text (box-text box)))
@@ -67,14 +209,44 @@
                               (cairo-slant (computed-font-style st))
                               (cairo-weight (computed-font-weight st)))
       (cairo-set-font-size cr (computed-font-size st))
-      (cairo-move-to cr (box-x box)
-                     (+ (box-y box)
-                        (or (box-baseline box)
-                            (font-ascent (computed-font-size st)
-                                         (computed-font-family st)
-                                         (computed-font-weight st)
-                                         (computed-font-style st)))))
-      (cairo-show-text cr text))))
+      (let ((baseline (+ (box-y box)
+                          (or (box-baseline box)
+                              (font-ascent (computed-font-size st)
+                                           (computed-font-family st)
+                                           (computed-font-weight st)
+                                           (computed-font-style st))))))
+        (let ((spacing (computed-letter-spacing st)))
+          (if (and (numberp spacing) (not (zerop spacing)) (> (length text) 1))
+              (let ((x (box-x box)))
+                (loop for i from 0 below (length text)
+                      for ch = (subseq text i (1+ i))
+                      for adv = (text-advance ch (computed-font-size st)
+                                              (computed-font-family st)
+                                              (computed-font-weight st)
+                                              (computed-font-style st))
+                      do (cairo-move-to cr x baseline)
+                         (cairo-show-text cr ch)
+                         (incf x (+ adv (if (< i (1- (length text))) spacing 0d0)))))
+              (progn
+                (cairo-move-to cr (box-x box) baseline)
+                (cairo-show-text cr text))))
+        (paint-text-decorations cr box baseline)))))
+
+(defun paint-text-decorations (cr box baseline)
+  "Underline and strike-through from BOX and its ancestors, each in that element's color."
+  (loop for el = (box-element box) then (dom-node-parent el)
+        while (dom-element-p el)
+        for st = (dom-element-style el)
+        for kind = (and st (computed-text-decoration st))
+        when (member kind '(:underline :line-through))
+          do (let ((y (if (eq kind :underline)
+                          (+ baseline (* 0.15d0 (computed-font-size st)))
+                          (- baseline (* 0.30d0 (computed-font-size st))))))
+               (set-color cr (computed-color st))
+               (cairo-set-line-width cr (max 1d0 (* 0.06d0 (computed-font-size st))))
+               (cairo-move-to cr (box-x box) y)
+               (cairo-line-to cr (+ (box-x box) (box-w box)) y)
+               (cairo-stroke cr))))
 
 (defun apply-transform (cr box)
   (let ((ops (and (box-style box) (computed-transform (box-style box))))
@@ -92,6 +264,75 @@
           (:rotate (cairo-rotate cr (float (second op) 1d0)))))
       (cairo-translate cr (- ox) (- oy)))))
 
+(defun background-style (box)
+  "Style whose background fills BOX. Nested inline text uses an ancestor's."
+  (or (and (box-style box) (computed-background (box-style box)) (box-style box))
+      (and (eq (box-kind box) :text)
+           (loop for el = (and (box-element box) (dom-node-parent (box-element box)))
+                   then (dom-node-parent el)
+                 while (and (dom-element-p el)
+                            (dom-element-style el)
+                            (eq (computed-display (dom-element-style el)) :inline))
+                 when (computed-background (dom-element-style el))
+                   return (dom-element-style el)))))
+
+(defun paint-marker (cr box)
+  "Paint a list marker. Decimal markers are the item number; others are a bullet."
+  (let ((marker (box-marker box))
+        (st (box-style box)))
+    (when (and marker st (not (eq marker :none)))
+      (set-color cr (computed-color st))
+      (if (stringp marker)
+          (let* ((size (computed-font-size st))
+                 (family (computed-font-family st))
+                 (weight (computed-font-weight st))
+                 (fstyle (computed-font-style st))
+                 (adv (text-advance marker size family weight fstyle)))
+            (cairo-select-font-face cr (cairo-family family)
+                                    (cairo-slant fstyle)
+                                    (cairo-weight weight))
+            (cairo-set-font-size cr size)
+            (cairo-move-to cr (- (box-x box) adv 6d0)
+                           (+ (box-y box)
+                              (font-ascent size family weight fstyle)))
+            (cairo-show-text cr marker))
+          (progn
+            (cairo-arc cr (- (box-x box) 10d0) (+ (box-y box) 8d0) 2.5d0 0d0 (* 2d0 pi))
+            (cairo-fill cr))))))
+
+(defun paint-box-shadow (cr box)
+  "Paint solid outer shadows behind the box. They do not change layout."
+  (let ((shadows (and (box-style box) (computed-box-shadow (box-style box)))))
+    (dolist (sh (reverse shadows))
+      (destructuring-bind (dx dy color inset) sh
+        (when (and (not inset) (> (box-w box) 0d0) (> (box-h box) 0d0))
+          (set-color cr (color-or color (box-style box)))
+          (cairo-rectangle cr (+ (box-x box) dx) (+ (box-y box) dy)
+                           (box-w box) (box-h box))
+          (cairo-fill cr))))))
+
+(defun paint-inset-shadow (cr box)
+  "Paint solid inset shadows inside the box edge."
+  (let ((shadows (and (box-style box) (computed-box-shadow (box-style box))))
+        (x (box-x box)) (y (box-y box)) (w (box-w box)) (h (box-h box)))
+    (when (and (> w 0d0) (> h 0d0))
+      (dolist (sh (reverse shadows))
+        (destructuring-bind (dx dy color inset) sh
+          (when inset
+            (set-color cr (color-or color (box-style box)))
+            (when (> dx 0d0)
+              (cairo-rectangle cr x y (min dx w) h)
+              (cairo-fill cr))
+            (when (< dx 0d0)
+              (cairo-rectangle cr (+ x w dx) y (min (- dx) w) h)
+              (cairo-fill cr))
+            (when (> dy 0d0)
+              (cairo-rectangle cr x y w (min dy h))
+              (cairo-fill cr))
+            (when (< dy 0d0)
+              (cairo-rectangle cr x (+ y h dy) w (min (- dy) h))
+              (cairo-fill cr))))))))
+
 (defun paint-box (cr box &optional (scroll-y 0d0))
   (when (and box (or (null (box-style box))
                      (not (eq (computed-visibility (box-style box)) :hidden))))
@@ -105,26 +346,28 @@
       (apply-transform cr box)
       (let ((opacity (if (box-style box) (computed-opacity (box-style box)) 1d0)))
         (when (< opacity 1d0) (cairo-push-group cr))
-        (when (and (box-style box) (computed-background (box-style box))
-                   (> (box-w box) 0d0) (> (box-h box) 0d0))
-          (set-color cr (color-or (computed-background (box-style box)) (box-style box)))
-          (rounded-rect cr (box-x box) (box-y box) (box-w box) (box-h box)
-                        (or (computed-radius (box-style box)) 0d0))
-          (cairo-fill cr))
+        (paint-box-shadow cr box)
+        (let ((bg (background-style box)))
+          (when (and bg (> (box-w box) 0d0) (> (box-h box) 0d0))
+            (set-color cr (color-or (computed-background bg) bg))
+            (rounded-rect cr (box-x box) (box-y box) (box-w box) (box-h box)
+                          (or (and (box-style box) (computed-radius (box-style box))) 0d0))
+            (cairo-fill cr)))
+        (paint-inset-shadow cr box)
+        (paint-background-image cr box)
         (paint-border cr box)
-        (when (and (box-marker box) (not (eq (box-marker box) :none)))
-          (set-color cr (computed-color (box-style box)))
-          (if (eq (box-marker box) :decimal)
-              (progn
-                (cairo-set-font-size cr (computed-font-size (box-style box)))
-                (cairo-move-to cr (- (box-x box) 16d0) (+ (box-y box) (computed-font-size (box-style box))))
-                (cairo-show-text cr "•"))
-              (progn
-                (cairo-arc cr (- (box-x box) 10d0) (+ (box-y box) 8d0) 2.5d0 0d0 (* 2d0 pi))
-                (cairo-fill cr))))
+        (paint-outline cr box)
+        (paint-marker cr box)
         (if (eq (box-kind box) :text)
             (paint-text-box cr box)
             (progn
+              (when (and (box-tag box) (string= (box-tag box) "img"))
+                (paint-image cr box))
+              (when (and (box-tag box) (string= (box-tag box) "svg"))
+                (paint-svg cr box))
+              (when (and (box-tag box)
+                         (member (box-tag box) '("input" "select" "textarea") :test #'string=))
+                (paint-control cr box))
               (when (and (box-style box)
                          (member (computed-overflow (box-style box)) '(:hidden :clip :scroll :auto)))
                 (cairo-rectangle cr (box-x box) (box-y box) (box-w box) (box-h box))
@@ -136,6 +379,16 @@
           (cairo-paint-with-alpha cr opacity)))
       (cairo-restore cr))))
 
+(defun paint-cr (cr root width height &key (scroll-y 0d0))
+  "Paint ROOT into an existing Cairo context. PNG and windows both use this."
+  (cairo-set-source-rgba cr 1d0 1d0 1d0 1d0)
+  (cairo-paint cr)
+  (cairo-rectangle cr 0d0 0d0 (float width 1d0) (float height 1d0))
+  (cairo-clip cr)
+  (when (> scroll-y 0d0)
+    (cairo-translate cr 0d0 (- (float scroll-y 1d0))))
+  (paint-box cr root scroll-y))
+
 (defun paint-png (root pathname width height &key (scroll-y 0d0))
   (ensure-cairo)
   (let* ((w (max 1 (round width)))
@@ -144,9 +397,7 @@
          (cr (cairo-create surface)))
     (unwind-protect
          (progn
-           (cairo-set-source-rgba cr 1d0 1d0 1d0 1d0)
-           (cairo-paint cr)
-           (paint-box cr root scroll-y)
+           (paint-cr cr root w h :scroll-y scroll-y)
            (cairo-surface-flush surface)
            (let ((status (cairo-surface-write-to-png surface (namestring pathname))))
              (unless (zerop status)
@@ -155,12 +406,266 @@
       (cairo-surface-destroy surface)))
   pathname)
 
+(cffi:define-foreign-library x11
+  (:unix (:or "libX11.so.6" "libX11.so"))
+  (t (:default "X11")))
+
+(cffi:defcfun ("XOpenDisplay" x-open-display) :pointer (name :pointer))
+(cffi:defcfun ("XCloseDisplay" x-close-display) :int (display :pointer))
+(cffi:defcfun ("XDefaultRootWindow" x-default-root-window) :unsigned-long (display :pointer))
+(cffi:defcfun ("XDefaultScreen" x-default-screen) :int (display :pointer))
+(cffi:defcfun ("XDefaultVisual" x-default-visual) :pointer (display :pointer) (screen :int))
+(cffi:defcfun ("XCreateSimpleWindow" x-create-simple-window) :unsigned-long
+  (display :pointer) (parent :unsigned-long) (x :int) (y :int)
+  (width :unsigned-int) (height :unsigned-int) (border :unsigned-int)
+  (border-pixel :unsigned-long) (background :unsigned-long))
+(cffi:defcfun ("XMapWindow" x-map-window) :int (display :pointer) (window :unsigned-long))
+(cffi:defcfun ("XStoreName" x-store-name) :int
+  (display :pointer) (window :unsigned-long) (name :string))
+(cffi:defcfun ("XFlush" x-flush) :int (display :pointer))
+(cffi:defcfun ("XSelectInput" x-select-input) :int
+  (display :pointer) (window :unsigned-long) (mask :long))
+(cffi:defcfun ("XNextEvent" x-next-event) :int (display :pointer) (event :pointer))
+(cffi:defcfun ("XLookupString" x-lookup-string) :int
+  (event :pointer) (buffer :pointer) (nbytes :int) (keysym :pointer) (status :pointer))
+
+(defun document-extent (box)
+  "Bottom of the furthest descendant, in document pixels."
+  (let ((bottom 0d0))
+    (labels ((walk (b)
+               (when b
+                 (setf bottom (max bottom (+ (box-y b) (box-h b))))
+                 (dolist (c (box-children b)) (walk c)))))
+      (walk box))
+    bottom))
+
+(defun clamp-scroll (scroll viewport extent)
+  (max 0d0 (min (max 0d0 (- extent viewport)) (float scroll 1d0))))
+
+(defun scroll-step (scroll command viewport extent)
+  "New scroll offset after a pointer or keyboard command."
+  (case command
+    (:home 0d0)
+    (:end (clamp-scroll extent viewport extent))
+    (t (let ((delta (case command
+                      (:wheel-up -48d0)
+                      (:wheel-down 48d0)
+                      (:line-up -24d0)
+                      (:line-down 24d0)
+                      (:page-up (- viewport))
+                      (:page-down viewport)
+                      (t 0d0))))
+         (clamp-scroll (+ scroll delta) viewport extent)))))
+
+(defun event-scroll-command (kind detail &optional (state 0))
+  "Map an X button number or keysym to a scroll command. :QUIT leaves the window.
+STATE is the X modifier mask: shift is 1, alt is 8."
+  (cond
+    ((and (eq kind :button) (= detail 4)) :wheel-up)
+    ((and (eq kind :button) (= detail 5)) :wheel-down)
+    ((eq kind :key)
+     (cond
+       ((= detail #xff52) :line-up)
+       ((= detail #xff54) :line-down)
+       ((= detail #xff55) :page-up)
+       ((= detail #xff56) :page-down)
+       ((= detail #xff50) :home)
+       ((= detail #xff57) :end)
+       ((or (= detail #x71) (= detail #x51) (= detail #xff1b)) :quit)
+       ((and (= detail #xff08) (plusp (logand state 1))) :forward)
+       ((= detail #xff08) :back)
+       ((and (= detail #xff53) (plusp (logand state 8))) :forward)
+       ((and (= detail #xff51) (plusp (logand state 8))) :back)))
+    (t nil)))
+
+(defun document-title (root)
+  "Text of the document's title element, or NIL."
+  (let ((doc (and root (box-element root))))
+    (when (dom-element-p doc)
+      (let ((title (find-element doc "title")))
+        (when title
+          (let ((text (string-trim '(#\space #\tab #\newline #\return #\page)
+                                   (dom-text-content title))))
+            (when (plusp (length text)) text)))))))
+
+(defun window-title (root base &optional fallback)
+  "Prefer the document title, then the URL, then FALLBACK."
+  (let ((title (document-title root)))
+    (cond
+      ((and title (plusp (length title)))
+       (concatenate 'string title " — Closure"))
+      ((and (stringp base) (plusp (length base)))
+       (concatenate 'string "Closure — " base))
+      ((and (stringp fallback) (plusp (length fallback))) fallback)
+      (t "Closure"))))
+
+(defun paint-window (root &key (width 800) (height 600) (scroll-y 0d0) (title "Closure"))
+  "Paint ROOT into an X11 window using paint-cr, the same path as paint-png.
+Returns NIL when no display can be opened. The caller must close the display
+with close-window."
+  (handler-case
+      (progn
+        (cffi:use-foreign-library x11)
+        (let ((display (x-open-display (cffi:null-pointer))))
+          (when (cffi:null-pointer-p display)
+            (return-from paint-window nil))
+          (let* ((screen (x-default-screen display))
+                 (visual (x-default-visual display screen))
+                 (window (x-create-simple-window display
+                                                 (x-default-root-window display)
+                                                 0 0 width height 0 0 0)))
+            (x-store-name display window title)
+            (x-map-window display window)
+            (let ((surface (cairo-xlib-surface-create display window visual width height)))
+              (unwind-protect
+                   (let ((cr (cairo-create surface)))
+                     (unwind-protect
+                          (paint-cr cr root width height :scroll-y scroll-y)
+                       (cairo-destroy cr)))
+                (cairo-surface-destroy surface)))
+            (x-flush display)
+            display)))
+    (error () nil)))
+
+(defun browse-history-start (root base)
+  "History is (past current future). CURRENT is (root base scroll)."
+  (list nil (list root base 0d0) nil))
+
+(defun browse-history-current (history)
+  (second history))
+
+(defun browse-history-go (history root base scroll)
+  "Leave the current page at SCROLL and open ROOT. The forward list is cleared."
+  (let ((current (browse-history-current history)))
+    (when current
+      (setf (third current) (float scroll 1d0)))
+    (list (cons current (first history))
+          (list root base 0d0)
+          nil)))
+
+(defun browse-history-back (history)
+  "Move to the previous page, keeping the current one available for forward."
+  (let ((past (first history))
+        (current (second history))
+        (future (third history)))
+    (if past
+        (list (cdr past) (car past) (cons current future))
+        history)))
+
+(defun browse-history-forward (history)
+  "Move to the page that back just left. Unchanged when there is none."
+  (let ((past (first history))
+        (current (second history))
+        (future (third history)))
+    (if future
+        (list (cons current past) (car future) (cdr future))
+        history)))
+
+(defvar *activate-link* nil
+  "Function of (root x y scroll base width height) that loads a clicked link.
+Returns the new root and base, or NIL.")
+
+(defun run-window (root &key (width 800) (height 600) (title "Closure") base)
+  "Map an X11 window and scroll ROOT from the wheel and the arrow keys.
+q or Escape closes it. Repaints with paint-cr. Returns NIL when no display
+can be opened."
+  (handler-case
+      (progn
+        (cffi:use-foreign-library x11)
+        (ensure-cairo)
+        (let ((display (x-open-display (cffi:null-pointer))))
+          (when (cffi:null-pointer-p display)
+            (return-from run-window nil))
+          (unwind-protect
+               (let* ((screen (x-default-screen display))
+                      (visual (x-default-visual display screen))
+                      (window (x-create-simple-window display
+                                                      (x-default-root-window display)
+                                                      0 0 width height 0 0 0))
+                      (extent (document-extent root))
+                      (scroll 0d0)
+                      (page root)
+                      (page-base base)
+                      (history (browse-history-start root base))
+                      (view (float height 1d0)))
+                 (x-store-name display window (window-title page page-base title))
+                 (x-select-input display window (logior 1 4 32768))
+                 (x-map-window display window)
+                 (let ((surface (cairo-xlib-surface-create display window visual width height)))
+                   (unwind-protect
+                        (cffi:with-foreign-objects ((event :unsigned-char 192)
+                                                    (keysym :unsigned-long)
+                                                    (buf :char 8))
+                          (loop
+                            (let ((cr (cairo-create surface)))
+                              (unwind-protect
+                                   (paint-cr cr page width height :scroll-y scroll)
+                                (cairo-destroy cr)))
+                            (x-flush display)
+                            (x-next-event display event)
+                            (let ((type (cffi:mem-ref event :int)))
+                              (cond
+                                ((= type 4)
+                                 (let* ((button (cffi:mem-ref event :unsigned-int 84))
+                                        (cmd (event-scroll-command :button button)))
+                                   (cond
+                                     (cmd
+                                      (setf scroll (scroll-step scroll cmd view extent)))
+                                     ((and (= button 1) *activate-link*)
+                                      (multiple-value-bind (new-root new-base departed)
+                                          (funcall *activate-link* page
+                                                   (cffi:mem-ref event :int 64)
+                                                   (cffi:mem-ref event :int 68)
+                                                   scroll page-base width height)
+                                        (when new-root
+                                          (dolist (entry departed)
+                                            (setf history (browse-history-go history
+                                                                             (first entry)
+                                                                             (second entry)
+                                                                             scroll)))
+                                          (setf history (browse-history-go history new-root new-base scroll)
+                                                page new-root
+                                                page-base new-base
+                                                scroll 0d0
+                                                extent (document-extent new-root))
+                                          (x-store-name display window (window-title page page-base))))))))
+                                ((= type 2)
+                                 (x-lookup-string event buf 8 keysym (cffi:null-pointer))
+                                 (let ((cmd (event-scroll-command
+                                             :key (cffi:mem-ref keysym :unsigned-long)
+                                             (cffi:mem-ref event :unsigned-int 80))))
+                                   (labels ((show (entry)
+                                              (setf page (first entry)
+                                                    page-base (second entry)
+                                                    scroll (third entry)
+                                                    extent (document-extent page))
+                                              (x-store-name display window (window-title page page-base))))
+                                     (cond
+                                       ((eq cmd :quit) (return))
+                                       ((eq cmd :back)
+                                        (let ((older (browse-history-back history)))
+                                          (when (not (eq older history))
+                                            (setf history older)
+                                            (show (browse-history-current history)))))
+                                       ((eq cmd :forward)
+                                        (let ((newer (browse-history-forward history)))
+                                          (when (not (eq newer history))
+                                            (setf history newer)
+                                            (show (browse-history-current history)))))
+                                       (cmd
+                                        (setf scroll (scroll-step scroll cmd view extent)))))))))))
+                     (cairo-surface-destroy surface))))
+            (x-close-display display))))
+    (error () nil)))
+
+(defun close-window (display)
+  (when (and display (not (cffi:null-pointer-p display)))
+    (ignore-errors (x-close-display display)))
+  nil)
+
 (defun count-ink (pathname)
   "Count pixels in a PNG that are not opaque white. Used by the renderer tests."
   (ensure-cairo)
-  (cffi:defcfun ("cairo_image_surface_create_from_png" cairo-image-surface-create-from-png)
-      :pointer
-    (filename :string))
   (let* ((surface (cairo-image-surface-create-from-png (namestring pathname)))
          (w 0) (h 0) (ink 0))
     (unwind-protect
