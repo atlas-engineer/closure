@@ -265,9 +265,12 @@ from the Lisp engine without calling Node or another browser engine.
   first fifth of the box, then blends to the last color.
 - `radial-gradient(#cc0000, #0000cc)` paints a red center fading to blue.
   The center is red, and the corners are blue.
+- `radial-gradient(circle closest-side, #cc0000, #0000cc)` ends the blend at
+  the nearest edge. That edge is the last color, while the center stays the
+  first.
 
 ## Next
 
-1. `radial-gradient(circle closest-side, #cc0000, #0000cc)` ends the blend at
-   the nearest edge instead of the corner. The done condition is not met;
-   pages still need more of the web than this viewport.
+1. `radial-gradient(circle at 0 0, #cc0000, #0000cc)` puts the first color at
+   the top-left corner. The done condition is not met; pages still need more
+   of the web than this viewport.

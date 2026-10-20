@@ -180,15 +180,23 @@ and gaps between known stops are split evenly."
                  (:left (values (+ x w) y x y))
                  (:top (values x (+ y h) x y))
                  (t (values x y x (+ y h)))))))
-        (let ((pat (if (eq dir :radial)
-                       (let* ((cx (+ (box-x box) (* 0.5d0 (box-w box))))
-                              (cy (+ (box-y box) (* 0.5d0 (box-h box))))
-                              (r (sqrt (+ (expt (* 0.5d0 (box-w box)) 2)
-                                          (expt (* 0.5d0 (box-h box)) 2)))))
-                         (cairo-pattern-create-radial cx cy 0d0 cx cy r))
-                       (cairo-pattern-create-linear x0 y0 x1 y1)))
-              (offsets (gradient-stop-offsets stops)))
-          (loop for color in stops
+        (let* ((extent (if (and (eq dir :radial) (keywordp (car stops)))
+                           (car stops)
+                           :farthest-corner))
+               (colors (if (and (eq dir :radial) (keywordp (car stops)))
+                           (cdr stops)
+                           stops))
+               (pat (if (eq dir :radial)
+                        (let* ((cx (+ (box-x box) (* 0.5d0 (box-w box))))
+                               (cy (+ (box-y box) (* 0.5d0 (box-h box))))
+                               (r (if (eq extent :closest-side)
+                                      (* 0.5d0 (min (box-w box) (box-h box)))
+                                      (sqrt (+ (expt (* 0.5d0 (box-w box)) 2)
+                                               (expt (* 0.5d0 (box-h box)) 2))))))
+                          (cairo-pattern-create-radial cx cy 0d0 cx cy r))
+                        (cairo-pattern-create-linear x0 y0 x1 y1)))
+               (offsets (gradient-stop-offsets colors)))
+          (loop for color in colors
                 for offset in offsets
                 do (cairo-pattern-add-color-stop-rgba
                     pat offset

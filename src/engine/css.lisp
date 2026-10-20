@@ -786,8 +786,22 @@
     (cons dir (nreverse colors))))
 
 (defun radial-gradient-spec (tokens)
-  "A radial-gradient centered in the box, ending at the farthest corner."
-  (cons :radial (cdr (gradient-stops tokens))))
+  "A radial-gradient centered in the box. The default ends at the farthest corner."
+  (let ((extent :farthest-corner)
+        (rest tokens))
+    (loop while (and rest (eq (tok-kind (car rest)) :ident)
+                     (member (tok-text (car rest))
+                             '("circle" "ellipse" "closest-side" "farthest-side"
+                               "closest-corner" "farthest-corner" "at" "center")
+                             :test #'string=))
+          do (when (member (tok-text (car rest))
+                           '("closest-side" "farthest-side" "closest-corner" "farthest-corner")
+                           :test #'string=)
+               (setf extent (intern (string-upcase (tok-text (car rest))) :keyword)))
+             (pop rest))
+    (when (and rest (eq (tok-kind (car rest)) :comma))
+      (pop rest))
+    (list* :radial extent (cdr (gradient-stops rest)))))
 
 (defun expand-background (tokens)
   (let ((color nil) (image nil) (gradient nil) (rest tokens))
