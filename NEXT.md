@@ -280,9 +280,11 @@ from the Lisp engine without calling Node or another browser engine.
   black, and the red line sits below them.
 - `text-underline-offset: 6px` moves the underline further below the
   baseline. The default line stays near the text.
+- `text-decoration-thickness: 4px` paints a thicker decoration line. A 4px
+  line covers more rows than the default hairline.
 
 ## Next
 
-1. `text-decoration-thickness: 4px` paints a thicker decoration line. The
-   done condition is not met; pages still need more of the web than this
-   viewport.
+1. `text-decoration-style: dashed` draws a dashed underline instead of a
+   solid one. The done condition is not met; pages still need more of the
+   web than this viewport.
