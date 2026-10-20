@@ -127,27 +127,35 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
         (t nil)))
 
 (defun paint-background-gradient (cr box)
-  "Paint a vertical linear-gradient across the border box, top color first."
+  "Paint a linear-gradient across the border box. The default runs top to bottom."
   (let* ((st (box-style box))
-         (stops (and st (computed-background-gradient st))))
+         (spec (and st (computed-background-gradient st)))
+         (dir (if (keywordp (car spec)) (car spec) :bottom))
+         (stops (if (keywordp (car spec)) (cdr spec) spec)))
     (when (and stops (> (length stops) 1)
                (> (box-w box) 0d0) (> (box-h box) 0d0))
-      (let ((pat (cairo-pattern-create-linear (box-x box) (box-y box)
-                                              (box-x box) (+ (box-y box) (box-h box))))
-            (n (1- (length stops))))
-        (loop for color in stops
-              for i from 0
-              do (cairo-pattern-add-color-stop-rgba
-                  pat (/ (float i 1d0) n)
-                  (or (first color) 0d0) (or (second color) 0d0)
-                  (or (third color) 0d0) (or (fourth color) 1d0)))
-        (cairo-save cr)
-        (cairo-set-source cr pat)
-        (rounded-rect cr (box-x box) (box-y box) (box-w box) (box-h box)
-                      (or (computed-radius st) 0d0))
-        (cairo-fill cr)
-        (cairo-restore cr)
-        (cairo-pattern-destroy pat)))))
+      (multiple-value-bind (x0 y0 x1 y1)
+          (let ((x (box-x box)) (y (box-y box)) (w (box-w box)) (h (box-h box)))
+            (case dir
+              (:right (values x y (+ x w) y))
+              (:left (values (+ x w) y x y))
+              (:top (values x (+ y h) x y))
+              (t (values x y x (+ y h)))))
+        (let ((pat (cairo-pattern-create-linear x0 y0 x1 y1))
+              (n (1- (length stops))))
+          (loop for color in stops
+                for i from 0
+                do (cairo-pattern-add-color-stop-rgba
+                    pat (/ (float i 1d0) n)
+                    (or (first color) 0d0) (or (second color) 0d0)
+                    (or (third color) 0d0) (or (fourth color) 1d0)))
+          (cairo-save cr)
+          (cairo-set-source cr pat)
+          (rounded-rect cr (box-x box) (box-y box) (box-w box) (box-h box)
+                        (or (computed-radius st) 0d0))
+          (cairo-fill cr)
+          (cairo-restore cr)
+          (cairo-pattern-destroy pat))))))
 
 (defun paint-background-image (cr box)
   "Paint a background-image in the padding box. The default tiles it; no-repeat paints it once."

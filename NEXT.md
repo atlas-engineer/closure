@@ -256,9 +256,11 @@ from the Lisp engine without calling Node or another browser engine.
   second offset sits further down and to the right.
 - `background: linear-gradient(#cc0000, #0000cc)` paints a vertical blend.
   The top of the box is red, the bottom is blue, and the middle mixes them.
+- `linear-gradient(to right, #cc0000, #0000cc)` paints a horizontal blend.
+  The left edge is red from top to bottom, and the right edge is blue.
 
 ## Next
 
-1. `linear-gradient(to right, #cc0000, #0000cc)` paints a horizontal blend
-   from red to blue. The done condition is not met; pages still need more of
-   the web than this viewport.
+1. `linear-gradient(45deg, #cc0000, #0000cc)` paints the blend along a
+   diagonal. The done condition is not met; pages still need more of the web
+   than this viewport.

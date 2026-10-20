@@ -749,16 +749,22 @@
      (tok-text (car tokens)))))
 
 (defun gradient-stops (tokens)
-  "Colors inside linear-gradient(...), top to bottom. Direction words are skipped."
-  (let ((colors nil)
+  "A linear-gradient as (DIRECTION . COLORS). The default direction runs top to bottom."
+  (let ((dir :bottom)
+        (colors nil)
         (rest tokens))
+    (when (and rest (eq (tok-kind (car rest)) :ident) (string= (tok-text (car rest)) "to"))
+      (pop rest)
+      (when (and rest (eq (tok-kind (car rest)) :ident))
+        (setf dir (cond ((string= (tok-text (car rest)) "right") :right)
+                        ((string= (tok-text (car rest)) "left") :left)
+                        ((string= (tok-text (car rest)) "top") :top)
+                        (t :bottom)))
+        (pop rest)))
     (loop while rest do
       (let ((tk (car rest)))
         (cond
           ((eq (tok-kind tk) :comma) (pop rest))
-          ((and (eq (tok-kind tk) :ident)
-                (member (tok-text tk) '("to" "top" "bottom" "left" "right") :test #'string=))
-           (pop rest))
           ((member (tok-kind tk) '(:percentage :dimension :number))
            (pop rest))
           (t
@@ -766,7 +772,7 @@
              (cond ((consp c) (push c colors) (setf rest more))
                    ((not (eq more rest)) (setf rest more))
                    (t (pop rest))))))))
-    (nreverse colors)))
+    (cons dir (nreverse colors))))
 
 (defun expand-background (tokens)
   (let ((color nil) (image nil) (gradient nil) (rest tokens))
