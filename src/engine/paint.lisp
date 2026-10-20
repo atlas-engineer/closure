@@ -128,7 +128,10 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                    (tile-x (member repeat '(:repeat :repeat-x)))
                    (tile-y (member repeat '(:repeat :repeat-y)))
                    (pos (or (computed-background-position st) :left))
-                   (x0 (if (eq pos :right) (- (+ x w) iw) x)))
+                   (x0 (case pos
+                         (:right (- (+ x w) iw))
+                         (:center (+ x (/ (- w iw) 2d0)))
+                         (t x))))
               (when (and (> w 0d0) (> h 0d0) (> iw 0d0) (> ih 0d0))
                 (when tile-x
                   (loop while (> x0 x) do (decf x0 iw)))

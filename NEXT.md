@@ -234,9 +234,11 @@ from the Lisp engine without calling Node or another browser engine.
   still tiles that image across the box.
 - `background-position: right` places a background image on the right. The
   left edge of that box stays empty.
+- `background-position: center` places a background image in the middle. Both
+  side edges of that box stay empty.
 
 ## Next
 
-1. `background-position: center` places a background image in the middle of
-   its box. The done condition is not met; pages still need more of the web
-   than this viewport.
+1. `background-position: bottom` places a background image along the bottom
+   of its box. The done condition is not met; pages still need more of the
+   web than this viewport.
