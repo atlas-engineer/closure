@@ -3077,6 +3077,29 @@ b</div>"
           (format t "~&  none center: ~D ~D ~D~%" r g b)
           (check "none keeps a disc" (and (< r 40) (< g 40) (< b 40))))))))
 
+(defun test-background-clip-content ()
+  (let* ((html "<div id='pad' style='width:20px;height:20px;padding:8px;background:#cc0000'></div>
+                <div id='clip' style='width:20px;height:20px;padding:8px;background:#cc0000;background-clip:content-box'></div>")
+         (out "/tmp/closure-engine-bg-clip.png")
+         (root (closure.engine:render-html html :width 80 :height 100 :output out
+                                          :stylesheet "body{margin:0}"))
+         (pad (closure.engine:find-box root "pad"))
+         (clip (closure.engine:find-box root "clip")))
+    (labels ((at (box dx dy)
+               (png-rgb out
+                        (round (+ (closure.engine:box-x box) dx))
+                        (round (+ (closure.engine:box-y box) dy)))))
+      (check "clip boxes" (and pad clip))
+      (multiple-value-bind (r g b) (at pad 1 1)
+        (format t "~&  padding edge: ~D ~D ~D~%" r g b)
+        (check "the default background fills the padding" (and (> r 180) (< g 40) (< b 40))))
+      (multiple-value-bind (r g b) (at clip 1 1)
+        (format t "~&  clipped padding: ~D ~D ~D~%" r g b)
+        (check "content-box leaves the padding empty" (and (> r 240) (> g 240) (> b 240))))
+      (multiple-value-bind (r g b) (at clip 10 10)
+        (format t "~&  clipped content: ~D ~D ~D~%" r g b)
+        (check "content-box still paints the content box" (and (> r 180) (< g 40) (< b 40)))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3532,6 +3555,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-list-style-circle)
   (test-list-style-image)
   (test-list-style-image-none)
+  (test-background-clip-content)
   (test-wbr)
   (test-address)
   (test-text-indent)

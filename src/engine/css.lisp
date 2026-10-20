@@ -35,6 +35,7 @@
   (background-repeat :repeat)
   (background-position :left)
   (background-size :auto)
+  (background-clip :border-box)
   (object-fit :fill)
   (font-size 16d0)
   (font-weight :normal)
@@ -126,7 +127,7 @@
  "border-top-style" "border-right-style" "border-bottom-style" "border-left-style"
  "border-top-color" "border-right-color" "border-bottom-color" "border-left-color"
  "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
- "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "object-fit"
+ "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "background-clip" "object-fit"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
  "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-underline-offset" "text-decoration-thickness" "text-decoration-style" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
@@ -1062,6 +1063,7 @@
                (multiple-value-bind (b rest2) (parse-one-length rest)
                  (declare (ignore rest2))
                  (list a (or b :auto)))))))
+      ((:background-clip) (kw '("border-box" "padding-box" "content-box")))
       ((:object-fit) (kw '("fill" "contain" "cover" "none" "scale-down")))
       ((:list-style :list-style-type)
        (kw '("disc" "circle" "square" "decimal" "none")))
@@ -1972,6 +1974,7 @@
                     (list (absolutize (first value) parent-size)
                           (absolutize (second value) parent-size))
                     value)))
+         (:background-clip (when value (setf (computed-background-clip style) value)))
          (:object-fit (when value (setf (computed-object-fit style) value)))
          (:font-size
           (setf (computed-font-size style)
