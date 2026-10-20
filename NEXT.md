@@ -348,9 +348,11 @@ from the Lisp engine without calling Node or another browser engine.
   corner. The middle stays empty, and the corner is the image.
 - `object-position: 100% 0` places a replaced image in the top-right
   corner. The middle stays empty, and that corner is the image.
+- `aspect-ratio: 2 / 1` sets an auto height from the width. An empty 40px
+  box stays flat, and the ratio box is 40 by 20.
 
 ## Next
 
-1. `aspect-ratio: 2 / 1` sets an auto height from the width so the box is
-   twice as wide as it is tall. The done condition is not met; pages still
-   need more of the web than this viewport.
+1. `aspect-ratio: 2 / 1` with `height: 20px` and `width: auto` makes the box
+   40px wide. The done condition is not met; pages still need more of the
+   web than this viewport.

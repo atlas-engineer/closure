@@ -3383,6 +3383,23 @@ b</div>"
           (format t "~&  percent corner: ~D ~D ~D~%" r g b)
           (check "100% 0 places the image in the top-right corner" (and (< r 80) (< g 80) (> b 180))))))))
 
+(defun test-aspect-ratio ()
+  (let* ((html "<div id='plain' style='width:40px'></div>
+                <div id='box' style='width:40px;aspect-ratio:2 / 1'></div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (plain (closure.engine:find-box root "plain"))
+         (box (closure.engine:find-box root "box")))
+    (check "aspect-ratio boxes" (and plain box))
+    (format t "~&  plain ~S ratio ~Sx~S~%"
+            (and plain (closure.engine:box-height plain))
+            (and box (closure.engine:box-width box))
+            (and box (closure.engine:box-height box)))
+    (check "an empty box stays flat" (and plain (~ (closure.engine:box-height plain) 0d0)))
+    (check "the ratio box keeps its width" (and box (~ (closure.engine:box-width box) 40d0)))
+    (check "2 / 1 makes the box half as tall as it is wide"
+           (and box (~ (closure.engine:box-height box) 20d0)))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3850,6 +3867,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-object-position-bottom)
   (test-object-position-left-bottom)
   (test-object-position-percent)
+  (test-aspect-ratio)
   (test-wbr)
   (test-address)
   (test-text-indent)

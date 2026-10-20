@@ -21,6 +21,7 @@
   (min-width :auto)
   (max-width :none)
   (min-height :auto)
+  (aspect-ratio nil)
   (max-height :none)
   (mt 0d0) (mr 0d0) (mb 0d0) (ml 0d0)
   (pt 0d0) (pr 0d0) (pb 0d0) (pl 0d0)
@@ -120,7 +121,7 @@
 
 (register-props
  "display" "position" "float" "clear" "width" "height"
- "min-width" "max-width" "min-height" "max-height"
+ "min-width" "max-width" "min-height" "max-height" "aspect-ratio"
  "margin" "margin-top" "margin-right" "margin-bottom" "margin-left"
  "padding" "padding-top" "padding-right" "padding-bottom" "padding-left"
  "border" "border-width" "border-style" "border-color"
@@ -919,6 +920,16 @@
       ((:width :height :min-width :min-height :max-width :max-height)
        (or (len :allow-auto t)
            (kw '("auto" "none" "min-content" "max-content" "fit-content"))))
+      ((:aspect-ratio)
+       (when (and tokens (eq (tok-kind (car tokens)) :number))
+         (let ((w (float (tok-number (car tokens)) 1d0))
+               (rest (cdr tokens)))
+           (cond
+             ((and rest (eq (tok-kind (car rest)) :slash)
+                   (cdr rest) (eq (tok-kind (cadr rest)) :number)
+                   (> (tok-number (cadr rest)) 0))
+              (/ w (float (tok-number (cadr rest)) 1d0)))
+             ((> w 0) w)))))
       ((:margin-top :margin-right :margin-bottom :margin-left :top :right :bottom :left)
        (parse-margin-token tokens))
       ((:padding-top :padding-right :padding-bottom :padding-left
@@ -1908,6 +1919,7 @@
          (:clear (setf (computed-clear style) value))
          (:width (setf (computed-width style) (len value)))
          (:height (setf (computed-height style) (len value)))
+         (:aspect-ratio (when (numberp value) (setf (computed-aspect-ratio style) (float value 1d0))))
          (:min-width (setf (computed-min-width style) (len value)))
          (:max-width (setf (computed-max-width style) (len value)))
          (:min-height (setf (computed-min-height style) (len value)))
