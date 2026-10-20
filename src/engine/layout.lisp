@@ -651,7 +651,11 @@ A replaced image does not stretch to the container the way an ordinary block doe
                    (when (and (> current-w 0d0) (> (+ current-w adv) wrap-limit)
                               (not (member white '(:nowrap :pre)))
                               (not (keeps-together use)))
-                     (break-line))
+                     (break-line)
+                     ;; A collapsible space that does not fit ends the line.
+                     ;; It must not become a blank line of its own.
+                     (when (string= shown " ")
+                       (return-from emit-word nil)))
                    (push tb current)
                    (incf current-w adv)
                    (setf previous use))))
@@ -1484,6 +1488,93 @@ A replaced image does not stretch to the container the way an ordinary block doe
       (:bottom bb)
       (t bt))))
 
+(defun content-ink-right (box)
+  "Right edge of real content inside BOX. Line boxes and the block that
+wraps a line stretch to the available width, so their own width is ignored."
+  (labels ((walk (b)
+             (let ((kids (box-children b)))
+               (if (and kids (member (box-kind b) '(:line :block)))
+                   (reduce #'max kids :key #'walk :initial-value (box-x b))
+                   (+ (box-x b) (box-w b))))))
+    (let ((kids (box-children box)))
+      (if kids
+          (reduce #'max kids :key #'walk :initial-value (box-x box))
+          (+ (box-x box) (box-w box))))))
+
+(defun ink-border-box (style box)
+  "Border-box width from the ink inside BOX, plus the right border and padding."
+  (multiple-value-bind (bt br bb bl) (border4 style)
+    (declare (ignore bt bb bl))
+    (multiple-value-bind (pt pr pb pl) (pad4 style 0d0)
+      (declare (ignore pt pb pl))
+      (+ (max 0d0 (- (content-ink-right box) (box-x box))) br pr))))
+
+(defun cell-max-content-width (cell)
+  "Border-box width of CELL on one line. A specified width is that width."
+  (let* ((style (dom-element-style cell))
+         (box (layout-element cell 0d0 0d0 100000d0 nil nil :shrink t)))
+    (cond
+      ((null box) 0d0)
+      ((not (eq (computed-width style) :auto)) (box-w box))
+      (t (ink-border-box style box)))))
+
+(defun element-min-content-width (el)
+  "Width of the longest unbreakable line. Used so a caption can widen a table."
+  (let* ((style (dom-element-style el))
+         (box (layout-element el 0d0 0d0 1d0 nil nil :shrink t)))
+    (cond
+      ((null box) 0d0)
+      ((not (eq (computed-width style) :auto)) (box-w box))
+      (t (ink-border-box style box)))))
+
+(defun measure-table-columns (rows ncols)
+  "Preferred border-box width of each column. A colspan cell that is wider
+than the columns it covers shares the extra across those columns."
+  (let ((cols (make-array ncols :initial-element 0d0))
+        (spans nil)
+        (covered (make-array ncols :initial-element 0)))
+    (dolist (row rows)
+      (let ((col 0))
+        (dolist (cell (row-cells row))
+          (loop while (and (< col ncols) (> (aref covered col) 0))
+                do (incf col))
+          (when (< col ncols)
+            (let* ((span (min (cell-colspan cell) (max 1 (- ncols col))))
+                   (rspan (cell-rowspan cell))
+                   (w (cell-max-content-width cell)))
+              (if (= span 1)
+                  (setf (aref cols col) (max (aref cols col) w))
+                  (push (list col span w) spans))
+              (dotimes (i span)
+                (when (< (+ col i) ncols)
+                  (setf (aref covered (+ col i)) rspan)))
+              (incf col span))))
+        (dotimes (i ncols)
+          (when (> (aref covered i) 0)
+            (decf (aref covered i))))))
+    (dolist (sp spans)
+      (destructuring-bind (start span w) sp
+        (let ((sum (loop for i from start below (+ start span) sum (aref cols i))))
+          (when (> w (+ sum 0.5d0))
+            (let ((extra (/ (- w sum) span)))
+              (dotimes (i span)
+                (incf (aref cols (+ start i)) extra)))))))
+    cols))
+
+(defun column-outer-width (cols gap space-x)
+  "Content width of the columns plus the gaps or border-spacing around them."
+  (let ((n (length cols)))
+    (+ (reduce #'+ cols :initial-value 0d0)
+       (if (> space-x 0d0)
+           (* space-x (1+ n))
+           (* gap (max 0 (1- n)))))))
+
+(defun column-span-width (cols start span gap)
+  (+ (loop for i from start below (+ start span) sum (if (< i (length cols))
+                                                         (aref cols i)
+                                                         0d0))
+     (* gap (max 0 (1- span)))))
+
 (defun layout-table (el x y avail-w avail-h containing)
   (declare (ignore avail-h containing))
   (let* ((style (dom-element-style el))
@@ -1492,17 +1583,41 @@ A replaced image does not stretch to the container the way an ordinary block doe
     (multiple-value-bind (bw ml mr cw) (solve-width style avail-w)
       (declare (ignore mr))
       (multiple-value-bind (bt br bb bl) (border4 style)
-        (declare (ignore br))
         (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)
-          (declare (ignore pr))
           (let* ((collapse (eq (computed-border-collapse style) :collapse))
                  (ncols (max 1 (reduce #'max rows :key #'row-column-count :initial-value 1)))
                  (space-x (if collapse 0d0 (computed-border-spacing-x style)))
                  (space-y (if collapse 0d0 (computed-border-spacing-y style)))
                  (gap (if collapse 0d0 (if (> space-x 0d0) space-x (computed-column-gap style))))
-                 (col-w (max 1d0 (/ (- cw (* gap (max 0 (1- ncols)))) (max 1 ncols))))
+                 (specified (numberp (definite-length (computed-width style) avail-w)))
+                 (cols (if specified
+                           (make-array ncols :initial-element
+                                       (max 1d0 (/ (- cw (* gap (max 0 (1- ncols))))
+                                                  (max 1 ncols))))
+                           (measure-table-columns rows ncols)))
                  (cap-el (table-caption el))
-                 (cap-bottom (and cap-el
+                 (cap-min (if (and cap-el (not specified))
+                              (element-min-content-width cap-el)
+                              0d0)))
+            (unless specified
+              (let* ((fixed (if (> space-x 0d0)
+                                (* space-x (1+ ncols))
+                                (* gap (max 0 (1- ncols)))))
+                     (sum (reduce #'+ cols :initial-value 0d0))
+                     (outer (+ sum fixed)))
+                (cond
+                  ((and (> cap-min outer) (> ncols 0))
+                   (let ((extra (/ (min (- cap-min outer) (max 0d0 (- cw outer))) ncols)))
+                     (when (> extra 0d0)
+                       (dotimes (i ncols) (incf (aref cols i) extra)))))
+                  ((and (> outer cw) (> sum 0d0))
+                   (let* ((room (max 0d0 (- cw fixed)))
+                          (scale (/ room sum)))
+                     (dotimes (i ncols)
+                       (setf (aref cols i) (max 1d0 (* (aref cols i) scale)))))))
+                (setf cw (min cw (column-outer-width cols gap space-x))
+                      bw (+ cw bl br pl pr))))
+            (let* ((cap-bottom (and cap-el
                                   (dom-element-style cap-el)
                                   (eq (computed-caption-side (dom-element-style cap-el)) :bottom)))
                  (cap (when (and cap-el
@@ -1525,13 +1640,13 @@ A replaced image does not stretch to the container the way an ordinary block doe
                 (dolist (cell (row-cells row))
                   (loop while (and (< col ncols) (> (aref covered col) 0))
                         do (incf xx (cond
-                                      (collapse col-w)
-                                      ((> space-x 0d0) (+ col-w space-x))
-                                      (t (+ col-w gap))))
+                                      (collapse (aref cols col))
+                                      ((> space-x 0d0) (+ (aref cols col) space-x))
+                                      (t (+ (aref cols col) gap))))
                            (incf col))
                   (let* ((span (min (cell-colspan cell) (max 1 (- ncols col))))
                          (rspan (cell-rowspan cell))
-                         (slot (+ (* span col-w) (* gap (max 0 (1- span)))))
+                         (slot (column-span-width cols col span gap))
                          (cb (layout-element cell xx yy (max 1d0 slot) nil nil)))
                     (when cb
                       (when (and collapse prev)
@@ -1596,7 +1711,7 @@ A replaced image does not stretch to the container the way an ordinary block doe
                   (box-w box) bw
                   (box-h box) (+ (- yy y bt pt) bt bb pt pb)
                   (box-children box) (nreverse kids))
-            box))))))
+            box)))))))
 
 (defun layout-document (html-element)
   (let ((root (layout-element html-element 0d0 0d0 *viewport-width* *viewport-height* nil)))

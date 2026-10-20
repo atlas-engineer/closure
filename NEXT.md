@@ -356,6 +356,10 @@ from the Lisp engine without calling Node or another browser engine.
   is taller. An empty 40px box stays 20px tall, and a 40px child makes it 40.
 - An image with `width: 40px` and `aspect-ratio: 2 / 1` is 20px tall even
   when the file is square. The same square file with only the width stays 40.
+- A table with `width: auto` is as wide as its cells, and a caption wraps
+  inside that width. A long caption word widens the table. A specified
+  table width still fills that width. A space that does not fit at the end
+  of a line is dropped, so it does not become a blank line.
 
 ## Next
 

@@ -2851,6 +2851,68 @@ b</div>"
                                      (/ (closure.engine:box-height b) 2d0))))
                     (~ text-mid cell-mid 4d0)))))))
 
+(defun test-table-auto-width ()
+  (let* ((html "<table id='t' style='border-collapse:collapse'>
+                  <caption id='cap'>Top caption</caption>
+                  <tr>
+                    <td id='a' style='border:1px solid #000;padding:4px'>One</td>
+                    <td id='b' style='border:1px solid #000;padding:4px'>Two</td>
+                  </tr>
+                </table>
+                <table id='word'>
+                  <caption id='long'>Supercalifragilistic</caption>
+                  <tr><td id='tiny'>I</td></tr>
+                </table>
+                <table id='bot' style='border-collapse:collapse'>
+                  <caption id='bc' style='caption-side:bottom'>Bottom caption</caption>
+                  <tr><td style='border:1px solid #000;padding:4px'>Cell</td></tr>
+                </table>
+                <table id='wide' style='width:180px'>
+                  <tr><td id='c'>One</td><td id='d'>Two</td></tr>
+                </table>")
+         (root (closure.engine:layout-html html :width 400 :height 240
+                                          :stylesheet "body{margin:0}"))
+         (table (closure.engine:find-box root "t"))
+         (cap (closure.engine:find-box root "cap"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (word (closure.engine:find-box root "word"))
+         (long (closure.engine:find-box root "long"))
+         (tiny (closure.engine:find-box root "tiny"))
+         (bc (closure.engine:find-box root "bc"))
+         (wide (closure.engine:find-box root "wide")))
+    (format t "~&  auto table: table ~A cap ~Ax~A a ~A b ~A word ~A tiny ~A wide ~A~%"
+            (and table (closure.engine:box-width table))
+            (and cap (closure.engine:box-width cap))
+            (and cap (closure.engine:box-height cap))
+            (and a (closure.engine:box-width a))
+            (and b (closure.engine:box-x b))
+            (and word (closure.engine:box-width word))
+            (and tiny (closure.engine:box-width tiny))
+            (and wide (closure.engine:box-width wide)))
+    (check "auto-width table" (and table cap a b word long tiny wide))
+    (check "an auto table stays as wide as its cells"
+           (and table (< (closure.engine:box-width table) 160d0)
+                (> (closure.engine:box-width table) 30d0)))
+    (check "the cells sit side by side inside that table"
+           (and a b table
+                (> (closure.engine:box-x b) (closure.engine:box-x a))
+                (<= (+ (closure.engine:box-x b) (closure.engine:box-width b))
+                    (+ (closure.engine:box-x table) (closure.engine:box-width table) 1d0))))
+    (check "the caption is only as wide as the table"
+           (and cap table (~ (closure.engine:box-width cap)
+                             (closure.engine:box-width table) 4d0)))
+    (check "a long caption word widens the table"
+           (and word tiny long
+                (> (closure.engine:box-width word) 80d0)
+                (~ (closure.engine:box-width tiny) (closure.engine:box-width word) 4d0)
+                (~ (closure.engine:box-width long) (closure.engine:box-width word) 4d0)))
+    (check "a wrapped caption does not give a trailing space its own line"
+           (and bc (> (closure.engine:box-height bc) 30d0)
+                (< (closure.engine:box-height bc) 50d0)))
+    (check "a specified table width still fills that width"
+           (and wide (~ (closure.engine:box-width wide) 180d0)))))
+
 (defun test-caption ()
   (let* ((html "<table id='t'>
                   <caption id='cap'>Title</caption>
@@ -3902,6 +3964,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-rowspan)
   (test-table-valign)
   (test-table-valign-middle)
+  (test-table-auto-width)
   (test-caption)
   (test-caption-bottom)
   (test-empty-cells)
