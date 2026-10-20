@@ -785,18 +785,25 @@
                    (t (pop rest))))))))
     (cons dir (nreverse colors))))
 
+(defun radial-gradient-spec (tokens)
+  "A radial-gradient centered in the box, ending at the farthest corner."
+  (cons :radial (cdr (gradient-stops tokens))))
+
 (defun expand-background (tokens)
   (let ((color nil) (image nil) (gradient nil) (rest tokens))
     (loop while rest do
       (let ((tk (car rest)))
         (cond
-          ((and (eq (tok-kind tk) :function) (member (tok-text tk) '("url" "linear-gradient") :test #'string=))
+          ((and (eq (tok-kind tk) :function)
+                (member (tok-text tk) '("url" "linear-gradient" "radial-gradient") :test #'string=))
            (multiple-value-bind (inside more) (take-until-rparen (cdr rest))
              (cond ((string= (tok-text tk) "url")
                     (let ((s (find-if (lambda (x) (member (tok-kind x) '(:string :ident))) inside)))
                       (when s (setf image (tok-text s)))))
                    ((string= (tok-text tk) "linear-gradient")
-                    (setf gradient (gradient-stops inside))))
+                    (setf gradient (gradient-stops inside)))
+                   ((string= (tok-text tk) "radial-gradient")
+                    (setf gradient (radial-gradient-spec inside))))
              (setf rest more)))
           (t
            (multiple-value-bind (c more) (parse-color-tokens rest)
@@ -947,10 +954,12 @@
        (cond ((and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "none"))
               :none)
              ((and tokens (eq (tok-kind (car tokens)) :function)
-                   (string= (tok-text (car tokens)) "linear-gradient"))
+                   (member (tok-text (car tokens)) '("linear-gradient" "radial-gradient") :test #'string=))
               (multiple-value-bind (inside more) (take-until-rparen (cdr tokens))
                 (declare (ignore more))
-                (cons :linear-gradient (gradient-stops inside))))
+                (if (string= (tok-text (car tokens)) "radial-gradient")
+                    (cons :radial-gradient (radial-gradient-spec inside))
+                    (cons :linear-gradient (gradient-stops inside)))))
              (t (url-from-tokens tokens))))
       ((:background-repeat) (kw '("repeat" "no-repeat" "repeat-x" "repeat-y")))
       ((:background-position)
@@ -1862,9 +1871,9 @@
          (:color (when value (setf (computed-color style) value)))
          (:background-color (setf (computed-background style) value))
          (:background-image
-          (if (and (consp value) (eq (car value) :linear-gradient))
-              (setf (computed-background-gradient style) (cdr value))
-              (setf (computed-background-image style) value)))
+          (cond ((and (consp value) (member (car value) '(:linear-gradient :radial-gradient)))
+                 (setf (computed-background-gradient style) (cdr value)))
+                (t (setf (computed-background-image style) value))))
          (:background-gradient (when value (setf (computed-background-gradient style) value)))
          (:background-repeat (when value (setf (computed-background-repeat style) value)))
          (:background-position

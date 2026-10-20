@@ -180,7 +180,13 @@ and gaps between known stops are split evenly."
                  (:left (values (+ x w) y x y))
                  (:top (values x (+ y h) x y))
                  (t (values x y x (+ y h)))))))
-        (let ((pat (cairo-pattern-create-linear x0 y0 x1 y1))
+        (let ((pat (if (eq dir :radial)
+                       (let* ((cx (+ (box-x box) (* 0.5d0 (box-w box))))
+                              (cy (+ (box-y box) (* 0.5d0 (box-h box))))
+                              (r (sqrt (+ (expt (* 0.5d0 (box-w box)) 2)
+                                          (expt (* 0.5d0 (box-h box)) 2)))))
+                         (cairo-pattern-create-radial cx cy 0d0 cx cy r))
+                       (cairo-pattern-create-linear x0 y0 x1 y1)))
               (offsets (gradient-stop-offsets stops)))
           (loop for color in stops
                 for offset in offsets
