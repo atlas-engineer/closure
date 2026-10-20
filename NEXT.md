@@ -373,6 +373,8 @@ from the Lisp engine without calling Node or another browser engine.
 - Kerning tucks pairs such as "Tw" together, and a collapsed table does
   not count the shared border twice. The sample page shows H<sub>2</sub>O
   and a superscript.
+- `vertical-align: sub` lowers the baseline by 0.3em. A subscript sits
+  about 10px below the line top. `<code>` is 13px monospace.
 
 ## Next
 

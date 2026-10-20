@@ -1297,17 +1297,21 @@ b</div>"
 
 (defun test-sub-sup ()
   (let* ((root (closure.engine:layout-html
-                "<p>A<sup id='up'>2</sup><sub id='down'>2</sub></p>"
+                "<p id='p'>A<sup id='up'>2</sup><sub id='down'>2</sub></p>"
                 :width 200 :height 80
                 :stylesheet "body{margin:0} p{margin:0}"))
+         (p (closure.engine:find-box root "p"))
          (ay (cdr (assoc "A" (text-ys root) :test #'string=)))
          (up (closure.engine:find-box root "up"))
          (down (closure.engine:find-box root "down")))
-    (check "sup and sub boxes" (and up down ay))
+    (format t "~&  sub offset ~A~%" (and p down (- (closure.engine:box-y down) (closure.engine:box-y p))))
+    (check "sup and sub boxes" (and up down ay p))
     (check "sup sits above the baseline"
            (and up ay (< (closure.engine:box-y up) ay)))
     (check "sub sits below the baseline"
-           (and down ay (> (closure.engine:box-y down) ay)))))
+           (and down ay (> (closure.engine:box-y down) ay)))
+    (check "the subscript is lowered about 0.3em"
+           (and p down (~ (- (closure.engine:box-y down) (closure.engine:box-y p)) 10.5d0 1d0)))))
 
 (defun test-mark ()
   (let* ((html "<mark id='m'>O</mark><mark><b id='b'>O</b></mark><span id='p'>O</span>")
@@ -3618,6 +3622,29 @@ mono two</pre>")
       (check "2 / 1 makes the square image 20px tall"
              (and box (~ (closure.engine:box-height box) 20d0))))))
 
+(defun test-code-font ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'>Use <code id='c'>code</code> now</p>"
+                :width 300 :height 40
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (code (closure.engine:find-box root "c")))
+    (format t "~&  code ~A,~A ~Ax~A~%"
+            (and code (closure.engine:box-x code))
+            (and code (closure.engine:box-y code))
+            (and code (closure.engine:box-width code))
+            (and code (closure.engine:box-height code)))
+    (check "code box" code)
+    (check "code is 13px monospace"
+           (and code
+                (~ (closure.engine::computed-font-size (closure.engine::box-style code)) 13d0)
+                (member "monospace"
+                        (closure.engine::computed-font-family (closure.engine::box-style code))
+                        :test #'string=)))
+    (check "code is as wide as the word at 13px"
+           (and code
+                (~ (closure.engine:box-width code)
+                   (closure.engine::text-advance "code" 13d0 "monospace" :normal :normal))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -4060,6 +4087,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-radial-gradient-closest-side)
   (test-radial-gradient-at-corner)
   (test-repeating-linear-gradient)
+  (test-code-font)
   (test-tt)
   (test-nobr)
   (test-text-overflow)

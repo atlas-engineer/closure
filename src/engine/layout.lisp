@@ -736,7 +736,7 @@ A replaced image does not stretch to the container the way an ordinary block doe
                       (em (computed-font-size style)))
                  (case (align-kind item)
                    (:super (- (+ base (* 0.35d0 em))))
-                   (:sub (+ (- base) (* 0.2d0 em)))
+                   (:sub (+ (- base) (* 0.3d0 em)))
                    (:middle (- (* -0.25d0 em) (/ (box-h item) 2d0)))
                    (t (- base))))))
       (feed-inline nodes style nil)
