@@ -341,9 +341,12 @@ from the Lisp engine without calling Node or another browser engine.
 - `object-position: right` places a replaced image against the right side
   of its box. The default stays in the middle, and the right-aligned image
   leaves that middle empty.
+- `object-position: bottom` places a replaced image against the bottom of
+  its box. The default stays in the middle, and the bottom-aligned image
+  leaves that middle empty.
 
 ## Next
 
-1. `object-position: bottom` places a replaced image against the bottom of
-   its box. The done condition is not met; pages still need more of the
-   web than this viewport.
+1. `object-position: left bottom` places a replaced image in the bottom-left
+   corner of its box. The done condition is not met; pages still need more
+   of the web than this viewport.

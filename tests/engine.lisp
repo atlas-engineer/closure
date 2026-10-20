@@ -3305,6 +3305,32 @@ b</div>"
           (format t "~&  right edge: ~D ~D ~D~%" r g b)
           (check "right places the image against the right side" (and (< r 80) (< g 80) (> b 180))))))))
 
+(defun test-object-position-bottom ()
+  (let ((png "/tmp/closure-object-pos-bottom.png"))
+    (write-solid-png png 4 4 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<img id='mid' src='~A' width='8' height='20' style='display:block;object-fit:none'>
+                <img id='low' src='~A' width='8' height='20' style='display:block;object-fit:none;object-position:bottom'>"
+                         png png))
+           (out "/tmp/closure-engine-object-pos-bottom.png")
+           (root (closure.engine:render-html html :width 20 :height 50 :output out
+                                            :stylesheet "body{margin:0}"))
+           (mid (closure.engine:find-box root "mid"))
+           (low (closure.engine:find-box root "low")))
+      (labels ((at (box dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x box) dx))
+                          (round (+ (closure.engine:box-y box) dy)))))
+        (check "bottom position boxes" (and mid low))
+        (multiple-value-bind (r g b) (at mid 3 9)
+          (format t "~&  centered: ~D ~D ~D~%" r g b)
+          (check "the default image sits in the middle" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at low 3 9)
+          (format t "~&  bottom middle: ~D ~D ~D~%" r g b)
+          (check "bottom leaves the middle empty" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at low 3 17)
+          (format t "~&  bottom edge: ~D ~D ~D~%" r g b)
+          (check "bottom places the image against the bottom" (and (< r 80) (< g 80) (> b 180))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3769,6 +3795,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-repeat-space)
   (test-background-repeat-round)
   (test-object-position-right)
+  (test-object-position-bottom)
   (test-wbr)
   (test-address)
   (test-text-indent)
