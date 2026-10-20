@@ -354,9 +354,11 @@ from the Lisp engine without calling Node or another browser engine.
   40px wide. A height alone still stretches to the container.
 - An `aspect-ratio: 2 / 1` box grows taller than the ratio when its content
   is taller. An empty 40px box stays 20px tall, and a 40px child makes it 40.
+- An image with `width: 40px` and `aspect-ratio: 2 / 1` is 20px tall even
+  when the file is square. The same square file with only the width stays 40.
 
 ## Next
 
-1. An image with `width: 40px` and `aspect-ratio: 2 / 1` is 20px tall even
+1. An image with `height: 20px` and `aspect-ratio: 2 / 1` is 40px wide even
    when the file is square. The done condition is not met; pages still need
    more of the web than this viewport.

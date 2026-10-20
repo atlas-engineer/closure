@@ -3434,6 +3434,27 @@ b</div>"
     (check "taller content grows the box past the ratio"
            (and box (~ (closure.engine:box-height box) 40d0)))))
 
+(defun test-aspect-ratio-image ()
+  (let* ((png "/tmp/closure-aspect-square.png"))
+    (write-solid-png png 20 20 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<img id='plain' src='~A' style='width:40px'>
+                          <img id='box' src='~A' style='width:40px;aspect-ratio:2 / 1'>"
+                         png png))
+           (root (closure.engine:layout-html html :width 200 :height 80
+                                            :stylesheet "body{margin:0}"))
+           (plain (closure.engine:find-box root "plain"))
+           (box (closure.engine:find-box root "box")))
+      (check "aspect image boxes" (and plain box))
+      (format t "~&  square ~Sx~S ratio ~Sx~S~%"
+              (and plain (closure.engine:box-width plain))
+              (and plain (closure.engine:box-height plain))
+              (and box (closure.engine:box-width box))
+              (and box (closure.engine:box-height box)))
+      (check "a square file stays square" (and plain (~ (closure.engine:box-height plain) 40d0)))
+      (check "the ratio image keeps its width" (and box (~ (closure.engine:box-width box) 40d0)))
+      (check "2 / 1 makes the square image 20px tall"
+             (and box (~ (closure.engine:box-height box) 20d0))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3904,6 +3925,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio)
   (test-aspect-ratio-width)
   (test-aspect-ratio-content)
+  (test-aspect-ratio-image)
   (test-wbr)
   (test-address)
   (test-text-indent)

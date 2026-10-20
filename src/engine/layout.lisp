@@ -123,7 +123,12 @@ A replaced image does not stretch to the container the way an ordinary block doe
                    (border-box (eq (computed-box-sizing style) :border-box))
                    (cw spec-w)
                    (ch spec-h)
-                   (ratio (when (and iw ih (> iw 0d0) (> ih 0d0)) (/ ih iw))))
+                   (css-ratio (computed-aspect-ratio style))
+                   (ratio (cond
+                            ((and (numberp css-ratio) (> css-ratio 0d0))
+                             (/ 1d0 css-ratio))
+                            ((and iw ih (> iw 0d0) (> ih 0d0))
+                             (/ ih iw)))))
               (when (and cw border-box) (setf cw (max 0d0 (- cw extra-w))))
               (when (and ch border-box) (setf ch (max 0d0 (- ch extra-h))))
               (cond
