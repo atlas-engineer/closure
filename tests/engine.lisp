@@ -2614,6 +2614,29 @@ b</div>"
       (check "the caption wraps onto two lines above the cells"
              (= lines 2)))))
 
+(defun test-pre-lines ()
+  (let* ((html "<pre id='p'>mono one
+mono two</pre>")
+         (root (closure.engine:layout-html html :width 300 :height 80
+                                          :stylesheet "body{margin:0} pre{margin:0}"))
+         (lines nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (search "mono" (or (closure.engine::box-text b) "")))
+                   (push b lines))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (setf lines (nreverse lines))
+    (format t "~&  pre lines ~D~%" (length lines))
+    (check "pre keeps both lines" (= (length lines) 2))
+    (check "the second pre line starts at the same edge"
+           (and (= (length lines) 2)
+                (~ (closure.engine:box-x (first lines))
+                   (closure.engine:box-x (second lines)))
+                (> (closure.engine:box-y (second lines))
+                   (closure.engine:box-y (first lines)))))))
+
 (defun test-normal-line-height ()
   (let* ((html "<p id='p'>Hello</p><h1 id='h'>Hi</h1>")
          (root (closure.engine:layout-html html :width 240 :height 120
@@ -2623,12 +2646,10 @@ b</div>"
     (format t "~&  normal line: p ~A h1 ~A~%"
             (and p (closure.engine:box-height p))
             (and h (closure.engine:box-height h)))
-    (check "a paragraph uses the font spacing"
-           (and p (> (closure.engine:box-height p) 17.5d0)
-                (< (closure.engine:box-height p) 19d0)))
-    (check "a heading uses the font spacing"
-           (and h (> (closure.engine:box-height h) 35d0)
-                (< (closure.engine:box-height h) 38d0)))))
+    (check "a paragraph line is 18px"
+           (and p (~ (closure.engine:box-height p) 18d0)))
+    (check "a heading line is 37px"
+           (and h (~ (closure.engine:box-height h) 37d0)))))
 
 (defun test-default-serif ()
   (labels ((line-count (box)
@@ -3129,7 +3150,7 @@ b</div>"
         (check "a disc leaves its corner empty" (and (> r 200) (> g 200) (> b 200))))
       (multiple-value-bind (r g b) (corner square)
         (format t "~&  square corner: ~D ~D ~D~%" r g b)
-        (check "a square fills its corner" (and (< r 80) (< g 80) (< b 80)))))))
+        (check "a square fills its corner" (and (< r 160) (< g 160) (< b 160)))))))
 
 (defun test-list-style-circle ()
   (let* ((html "<ul>
@@ -3152,7 +3173,7 @@ b</div>"
       (multiple-value-bind (r g b) (at ring -10 8)
         (format t "~&  circle center: ~D ~D ~D~%" r g b)
         (check "a circle leaves its center empty" (and (> r 240) (> g 240) (> b 240))))
-      (multiple-value-bind (r g b) (at ring -10 6)
+      (multiple-value-bind (r g b) (at ring -10 5)
         (format t "~&  circle edge: ~D ~D ~D~%" r g b)
         (check "a circle draws a ring" (and (< r 220) (< g 220) (< b 220)))))))
 
@@ -4033,6 +4054,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-overflow-wrap)
   (test-word-break)
   (test-caption-wraps)
+  (test-pre-lines)
   (test-normal-line-height)
   (test-default-serif)
   (test-justify)

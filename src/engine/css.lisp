@@ -2201,10 +2201,13 @@
      (float (computed-line-height style) 1d0))
     ((numberp (computed-line-height-mult style))
      (* (computed-line-height-mult style) (computed-font-size style)))
-    (t (font-height (computed-font-size style)
-                    (computed-font-family style)
-                    (computed-font-weight style)
-                    (computed-font-style style)))))
+    (t
+     ;; Browsers use a whole pixel for the normal line height.
+     (float (round (font-height (computed-font-size style)
+                                (computed-font-family style)
+                                (computed-font-weight style)
+                                (computed-font-style style)))
+            1d0))))
 
 (defun used-border-width (width style)
   (if (member style '(:none :hidden nil))

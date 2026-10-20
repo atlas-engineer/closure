@@ -48,7 +48,7 @@ script element after style and layout. Left unset until that engine exists.")
    sup { vertical-align: super; font-size: smaller; }
    a { color: #0000ee; }
    a:link { text-decoration: underline; }
-   code, kbd, samp, tt, pre { font-family: monospace; }
+   code, kbd, samp, tt, pre { font-family: monospace; font-size: 13px; }
    pre { white-space: pre; }
    nobr { white-space: nowrap; }
    table { display: table; }
