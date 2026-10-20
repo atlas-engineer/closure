@@ -3053,6 +3053,30 @@ b</div>"
           (format t "~&  disc beside its center: ~D ~D ~D~%" r g b)
           (check "a disc does not use the image" (not (and (< r 80) (< g 80) (> b 180)))))))))
 
+(defun test-list-style-image-none ()
+  (let ((png "/tmp/closure-list-marker.png"))
+    (write-solid-png png 4 4 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<ul style='list-style-image:url(\"~A\")'>
+                  <li id='pic'>Picture</li>
+                  <li id='off' style='list-style-image:none'>Off</li>
+                </ul>" png))
+           (out "/tmp/closure-list-image-none.png")
+           (root (closure.engine:render-html html :width 200 :height 80 :output out
+                                            :stylesheet "body{margin:0}"))
+           (pic (closure.engine:find-box root "pic"))
+           (off (closure.engine:find-box root "off")))
+      (labels ((at (item dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x item) dx))
+                          (round (+ (closure.engine:box-y item) dy)))))
+        (check "none marker boxes" (and pic off))
+        (multiple-value-bind (r g b) (at pic -10 8)
+          (format t "~&  inherited image: ~D ~D ~D~%" r g b)
+          (check "the inherited image still paints" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at off -10 8)
+          (format t "~&  none center: ~D ~D ~D~%" r g b)
+          (check "none keeps a disc" (and (< r 40) (< g 40) (< b 40))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3507,6 +3531,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-list-style-square)
   (test-list-style-circle)
   (test-list-style-image)
+  (test-list-style-image-none)
   (test-wbr)
   (test-address)
   (test-text-indent)

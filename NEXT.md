@@ -314,9 +314,11 @@ from the Lisp engine without calling Node or another browser engine.
   the bottom and right.
 - `list-style-image` paints that image as the list marker. The marker is
   the image color, and it covers a spot a disc leaves empty.
+- `list-style-image: none` keeps the disc. An inherited image still paints
+  on the other item, and the item set to none is a black disc.
 
 ## Next
 
-1. `list-style-image: none` keeps the disc marker instead of painting an
-   image. The done condition is not met; pages still need more of the web
-   than this viewport.
+1. `background-clip: content-box` paints the background inside the content
+   box, leaving the padding empty. The done condition is not met; pages
+   still need more of the web than this viewport.
