@@ -297,9 +297,12 @@ from the Lisp engine without calling Node or another browser engine.
 - `outline-style: double` draws two parallel outlines. A gap separates the
   lines, and a solid outline of the same width fills the band. The box width
   is unchanged.
+- `border-style: double` draws two parallel border edges. A gap separates
+  them, and a solid border of the same width fills the band. Both boxes keep
+  the same width.
 
 ## Next
 
-1. `border-style: double` draws two parallel border edges instead of one
-   solid stroke. The done condition is not met; pages still need more of the
-   web than this viewport.
+1. `border-style: groove` paints the top and left edges lighter than the
+   bottom and right edges. The done condition is not met; pages still need
+   more of the web than this viewport.
