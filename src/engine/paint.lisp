@@ -126,6 +126,33 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
          (* 0.01d0 (float (cdr value) 1d0) box-size))
         (t nil)))
 
+(defun gradient-stop-offsets (stops)
+  "Positions from 0 to 1. A missing first stop is 0, a missing last stop is 1,
+and gaps between known stops are split evenly."
+  (let* ((n (length stops))
+         (offs (make-list n)))
+    (loop for color in stops
+          for i from 0
+          for given = (fifth color)
+          when (numberp given)
+            do (setf (nth i offs) (max 0d0 (min 1d0 (float given 1d0)))))
+    (unless (numberp (nth 0 offs))
+      (setf (nth 0 offs) 0d0))
+    (unless (numberp (nth (1- n) offs))
+      (setf (nth (1- n) offs) 1d0))
+    (loop for i from 0 below n
+          unless (numberp (nth i offs))
+            do (let* ((start (loop for j from (1- i) downto 0
+                                   when (numberp (nth j offs)) return j))
+                      (end (loop for j from (1+ i) below n
+                                 when (numberp (nth j offs)) return j))
+                      (span (- end start)))
+                 (setf (nth i offs)
+                       (+ (nth start offs)
+                          (* (/ (- i start) span)
+                             (- (nth end offs) (nth start offs)))))))
+    offs))
+
 (defun paint-background-gradient (cr box)
   "Paint a linear-gradient across the border box. The default runs top to bottom."
   (let* ((st (box-style box))
@@ -154,11 +181,11 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                  (:top (values x (+ y h) x y))
                  (t (values x y x (+ y h)))))))
         (let ((pat (cairo-pattern-create-linear x0 y0 x1 y1))
-              (n (1- (length stops))))
+              (offsets (gradient-stop-offsets stops)))
           (loop for color in stops
-                for i from 0
+                for offset in offsets
                 do (cairo-pattern-add-color-stop-rgba
-                    pat (/ (float i 1d0) n)
+                    pat offset
                     (or (first color) 0d0) (or (second color) 0d0)
                     (or (third color) 0d0) (or (fourth color) 1d0)))
           (cairo-save cr)
