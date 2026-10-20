@@ -3149,6 +3149,32 @@ b</div>"
           (format t "~&  clipped image content: ~D ~D ~D~%" r g b)
           (check "content-box still paints the image in the content box" (and (< r 80) (< g 80) (> b 180))))))))
 
+(defun test-background-origin-content ()
+  (let ((png "/tmp/closure-bg-origin.png"))
+    (write-solid-png png 4 4 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<div id='pad' style='width:20px;height:20px;padding:8px;background-image:url(\"~A\");background-repeat:no-repeat'></div>
+                <div id='content' style='width:20px;height:20px;padding:8px;background-image:url(\"~A\");background-repeat:no-repeat;background-origin:content-box'></div>"
+                         png png))
+           (out "/tmp/closure-engine-bg-origin.png")
+           (root (closure.engine:render-html html :width 80 :height 100 :output out
+                                            :stylesheet "body{margin:0}"))
+           (pad (closure.engine:find-box root "pad"))
+           (content (closure.engine:find-box root "content")))
+      (labels ((at (box dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x box) dx))
+                          (round (+ (closure.engine:box-y box) dy)))))
+        (check "origin boxes" (and pad content))
+        (multiple-value-bind (r g b) (at pad 1 1)
+          (format t "~&  default origin: ~D ~D ~D~%" r g b)
+          (check "the default image starts in the padding" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at content 1 1)
+          (format t "~&  content origin padding: ~D ~D ~D~%" r g b)
+          (check "content-box origin leaves the padding empty" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at content 9 9)
+          (format t "~&  content origin image: ~D ~D ~D~%" r g b)
+          (check "content-box origin starts the image at the content edge" (and (< r 80) (< g 80) (> b 180))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3607,6 +3633,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-clip-content)
   (test-background-clip-padding)
   (test-background-image-clip-content)
+  (test-background-origin-content)
   (test-wbr)
   (test-address)
   (test-text-indent)
