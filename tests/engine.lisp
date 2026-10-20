@@ -3400,6 +3400,23 @@ b</div>"
     (check "2 / 1 makes the box half as tall as it is wide"
            (and box (~ (closure.engine:box-height box) 20d0)))))
 
+(defun test-aspect-ratio-width ()
+  (let* ((html "<div id='stretch' style='height:20px'></div>
+                <div id='box' style='height:20px;width:auto;aspect-ratio:2 / 1'></div>")
+         (root (closure.engine:layout-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (stretch (closure.engine:find-box root "stretch"))
+         (box (closure.engine:find-box root "box")))
+    (check "aspect width boxes" (and stretch box))
+    (format t "~&  stretch ~S ratio ~Sx~S~%"
+            (and stretch (closure.engine:box-width stretch))
+            (and box (closure.engine:box-width box))
+            (and box (closure.engine:box-height box)))
+    (check "a height alone still stretches" (and stretch (~ (closure.engine:box-width stretch) 200d0)))
+    (check "the ratio keeps the height" (and box (~ (closure.engine:box-height box) 20d0)))
+    (check "2 / 1 makes the auto width twice the height"
+           (and box (~ (closure.engine:box-width box) 40d0)))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3868,6 +3885,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-object-position-left-bottom)
   (test-object-position-percent)
   (test-aspect-ratio)
+  (test-aspect-ratio-width)
   (test-wbr)
   (test-address)
   (test-text-indent)

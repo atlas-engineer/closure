@@ -350,9 +350,11 @@ from the Lisp engine without calling Node or another browser engine.
   corner. The middle stays empty, and that corner is the image.
 - `aspect-ratio: 2 / 1` sets an auto height from the width. An empty 40px
   box stays flat, and the ratio box is 40 by 20.
+- `aspect-ratio: 2 / 1` with `height: 20px` and `width: auto` makes the box
+  40px wide. A height alone still stretches to the container.
 
 ## Next
 
-1. `aspect-ratio: 2 / 1` with `height: 20px` and `width: auto` makes the box
-   40px wide. The done condition is not met; pages still need more of the
+1. An `aspect-ratio: 2 / 1` box grows taller than the ratio when its content
+   is taller. The done condition is not met; pages still need more of the
    web than this viewport.
