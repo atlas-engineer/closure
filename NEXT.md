@@ -290,9 +290,11 @@ from the Lisp engine without calling Node or another browser engine.
   separates the lines, and a solid underline stays a single line.
 - `text-decoration-style: dotted` draws a dotted underline. The solid line
   stays continuous, and the dotted line leaves gaps.
+- `outline-style: dashed` draws a dashed outline. The solid outline stays
+  continuous, and the dashed outline leaves gaps. The box width is unchanged.
 
 ## Next
 
-1. `outline-style: dashed` draws a dashed outline instead of a solid one.
+1. `outline-style: dotted` draws a dotted outline instead of a solid one.
    The done condition is not met; pages still need more of the web than this
    viewport.

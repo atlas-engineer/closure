@@ -66,16 +66,26 @@
                (not (member style '(:none :hidden nil)))
                (> (box-w box) 0d0) (> (box-h box) 0d0))
       (let ((out (+ (/ bw 2d0) (or (computed-outline-offset st) 0d0))))
-      (set-color cr (color-or (computed-outline-color st) st))
-      (cairo-set-line-width cr bw)
-      (cairo-set-dash cr (cffi:null-pointer) 0 0d0)
-      (cairo-rectangle cr
-                       (- (box-x box) out)
-                       (- (box-y box) out)
-                       (+ (box-w box) (* 2d0 out))
-                       (+ (box-h box) (* 2d0 out)))
-      (cairo-stroke cr)
-      (cairo-set-dash cr (cffi:null-pointer) 0 0d0)))))
+        (set-color cr (color-or (computed-outline-color st) st))
+        (cairo-set-line-width cr bw)
+        (flet ((stroke-rect ()
+                 (cairo-rectangle cr
+                                  (- (box-x box) out)
+                                  (- (box-y box) out)
+                                  (+ (box-w box) (* 2d0 out))
+                                  (+ (box-h box) (* 2d0 out)))
+                 (cairo-stroke cr)))
+          (cond
+            ((eq style :dashed)
+             (cffi:with-foreign-object (dash :double 2)
+               (setf (cffi:mem-aref dash :double 0) (* 3d0 bw)
+                     (cffi:mem-aref dash :double 1) (* 2d0 bw))
+               (cairo-set-dash cr dash 2 0d0)
+               (stroke-rect)
+               (cairo-set-dash cr (cffi:null-pointer) 0 0d0)))
+            (t
+             (cairo-set-dash cr (cffi:null-pointer) 0 0d0)
+             (stroke-rect))))))))
 
 (defun fitted-image-origin (fit iw ih x y w h)
   "Where to draw an image of IW by IH inside the box at X Y W H.
