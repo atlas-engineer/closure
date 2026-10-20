@@ -947,7 +947,16 @@
        (if (and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "normal"))
            0d0
            (len)))
-      ((:text-decoration) (kw '("none" "underline" "overline" "line-through")))
+      ((:text-decoration)
+       (let ((found (loop for tk in tokens
+                          when (and (eq (tok-kind tk) :ident)
+                                    (member (tok-text tk)
+                                            '("none" "underline" "overline" "line-through")
+                                            :test #'string=))
+                            collect (intern (string-upcase (tok-text tk)) :keyword))))
+         (cond ((or (null found) (member :none found)) :none)
+               ((null (cdr found)) (car found))
+               (t found))))
       ((:white-space) (kw '("normal" "nowrap" "pre" "pre-wrap" "pre-line" "break-spaces")))
       ((:text-overflow) (kw '("clip" "ellipsis")))
       ((:overflow-wrap :word-wrap) (kw '("normal" "break-word" "anywhere")))

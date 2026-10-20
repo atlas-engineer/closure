@@ -1478,6 +1478,41 @@ b</div>"
             (format t "~&  plain above: ~D ~D ~D~%" r g b)
             (check "plain text has no overline" (and (> r 240) (> g 240) (> b 240))))))))
 
+(defun test-underline-and-overline ()
+  (let* ((html "<span id='b' style='text-decoration:underline overline'>x</span><span id='p'>x</span>")
+         (out "/tmp/closure-engine-both-lines.png")
+         (root (closure.engine:render-html html :width 120 :height 40 :output out
+                                          :stylesheet "body{margin:0;font-size:16px}"))
+         (both (closure.engine:find-box root "b"))
+         (plain (closure.engine:find-box root "p")))
+    (labels ((at (box dy)
+               (when box
+                 (png-rgb out
+                          (floor (+ (closure.engine:box-x box)
+                                    (/ (closure.engine:box-width box) 2d0)))
+                          (floor (+ (closure.engine:box-y box)
+                                    (closure.engine::box-baseline box)
+                                    dy))))))
+      (check "both decoration boxes" (and both plain))
+      (let* ((ascent (round (closure.engine::font-ascent
+                             16d0
+                             (closure.engine::computed-font-family
+                              (closure.engine::box-style both))
+                             :normal :normal)))
+             (above (- 1 ascent)))
+        (multiple-value-bind (r g b) (at both above)
+          (format t "~&  both overline: ~D ~D ~D~%" r g b)
+          (check "both decorations draw the overline" (and (< r 80) (< g 80) (< b 80))))
+        (multiple-value-bind (r g b) (at both 2)
+          (format t "~&  both underline: ~D ~D ~D~%" r g b)
+          (check "both decorations draw the underline" (and (< r 80) (< g 80) (< b 80))))
+        (multiple-value-bind (r g b) (at plain above)
+          (format t "~&  plain above both: ~D ~D ~D~%" r g b)
+          (check "plain text has neither line above" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at plain 2)
+          (format t "~&  plain below both: ~D ~D ~D~%" r g b)
+          (check "plain text has neither line below" (and (> r 240) (> g 240) (> b 240))))))))
+
 (defun test-outline ()
   (let* ((html "<div id='a' style='margin-top:8px;width:40px;height:20px;outline:4px solid #cc0000'></div>
                 <div id='b' style='width:40px;height:10px;background:#000'></div>")
@@ -2976,6 +3011,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-big)
   (test-u-ins)
   (test-overline)
+  (test-underline-and-overline)
   (test-text-shadow)
   (test-text-shadow-two)
   (test-linear-gradient)
