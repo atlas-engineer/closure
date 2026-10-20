@@ -390,8 +390,11 @@ from the Lisp engine without calling Node or another browser engine.
   line is 26.4px and the next line starts with Chromium. An image on the
   baseline makes its line 24px. `<big>` is 21px tall.
 
+- Kerning uses the unfitted pair adjustment, including between a word
+  and the space after it. The link in the sample page starts at the same
+  place as in a browser. A `<q>` wraps its words in quotes.
+
 ## Next
 
-1. Kerning is still a fraction of a pixel short of the browser, so a later
-   word can sit about a pixel to the right. The done condition is not met;
-   pages still need more of the web than this viewport.
+1. The done condition is not met; pages still need more of the web than
+   this viewport.

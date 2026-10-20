@@ -245,7 +245,7 @@ disturb the context that measures text."
                             (if (zerop (ft-get-kerning face
                                                        (ft-get-char-index face (char-code left))
                                                        (ft-get-char-index face (char-code right))
-                                                       0 vec))
+                                                       1 vec)) ; FT_KERNING_UNFITTED, not grid-fitted
                                 (/ (float (cffi:foreign-slot-value vec '(:struct ft-vector) 'x) 1d0)
                                    64d0)
                                 0d0)))

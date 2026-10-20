@@ -2659,8 +2659,8 @@ mono two</pre>")
                    (closure.engine::text-advance "w" 16d0 "serif" :normal :normal)
                    (closure.engine::text-advance "o" 16d0 "serif" :normal :normal))))
     (format t "~&  kern Two ~A parts ~A~%" two parts)
-    (check "Two is tucked tighter than its letters"
-           (< two (- parts 0.5d0)))))
+    (check "Two is tucked by the unfitted kern"
+           (~ (- parts two) 1.125d0 0.05d0))))
 
 (defun test-normal-line-height ()
   (let* ((html "<p id='p'>Hello</p><h1 id='h'>Hi</h1>")
