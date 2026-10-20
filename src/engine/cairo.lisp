@@ -185,15 +185,18 @@ with the browser's Times widths."
     (select-cairo-font cr (cairo-family family) slant
                        (if (and (numberp weight) (>= weight 600)) 1 weight)
                        size)
-    (if (or (null string) (zerop (length string)))
-        (values 0d0 (* size 0.8d0) (* size 0.2d0))
-        (cffi:with-foreign-objects ((te '(:struct cairo-text-extents))
-                                    (fe '(:struct cairo-font-extents)))
-          (cairo-text-extents cr string te)
-          (cairo-font-extents cr fe)
-          (values (cffi:foreign-slot-value te '(:struct cairo-text-extents) 'x-advance)
-                  (cffi:foreign-slot-value fe '(:struct cairo-font-extents) 'ascent)
-                  (cffi:foreign-slot-value fe '(:struct cairo-font-extents) 'descent))))))
+    (cffi:with-foreign-objects ((te '(:struct cairo-text-extents))
+                                (fe '(:struct cairo-font-extents)))
+      (cairo-font-extents cr fe)
+      (let ((asc (cffi:foreign-slot-value fe '(:struct cairo-font-extents) 'ascent))
+            (desc (cffi:foreign-slot-value fe '(:struct cairo-font-extents) 'descent))
+            (height (cffi:foreign-slot-value fe '(:struct cairo-font-extents) 'height)))
+        (if (or (null string) (zerop (length string)))
+            (values 0d0 asc desc height)
+            (progn
+              (cairo-text-extents cr string te)
+              (values (cffi:foreign-slot-value te '(:struct cairo-text-extents) 'x-advance)
+                      asc desc height)))))))
 
 (defun measure-text (string size family weight style)
   "Return (values advance ascent descent) in CSS pixels."
@@ -232,6 +235,10 @@ with the browser's Times widths."
                          '("DejaVu Sans" "Liberation Sans"))
                 "Sans"))))
   *sans-face*)
+
+(defun font-height (size family weight style)
+  "The font's recommended line spacing. This is the CSS normal line height."
+  (fourth (measure-text "Mg" size family weight style)))
 
 (defun font-ascent (size family weight style)
   (second (measure-text "Mg" size family weight style)))

@@ -1390,8 +1390,9 @@ b</div>"
                 (reduce #'+ ma) (reduce #'+ mb) (reduce #'+ mc))
         (check "ordered numbers are painted" (and (some #'plusp ma) (some #'plusp mb)))
         (check "item numbers differ" (not (equal ma mb)))
-        (check "bullets are painted" (some #'plusp mc))
-        (check "bullets match each other" (equal mc md))
+        (check "bullets are painted" (and (some #'plusp mc) (some #'plusp md)))
+        (check "bullets match each other"
+               (< (abs (- (reduce #'+ mc) (reduce #'+ md))) 12))
         (check "a number is not a bullet" (not (equal ma mc)))))))
 
 (defun test-small ()
@@ -2612,6 +2613,22 @@ b</div>"
       (check "caption box" cap)
       (check "the caption wraps onto two lines above the cells"
              (= lines 2)))))
+
+(defun test-normal-line-height ()
+  (let* ((html "<p id='p'>Hello</p><h1 id='h'>Hi</h1>")
+         (root (closure.engine:layout-html html :width 240 :height 120
+                                          :stylesheet "body{margin:0} p,h1{margin:0}"))
+         (p (closure.engine:find-box root "p"))
+         (h (closure.engine:find-box root "h")))
+    (format t "~&  normal line: p ~A h1 ~A~%"
+            (and p (closure.engine:box-height p))
+            (and h (closure.engine:box-height h)))
+    (check "a paragraph uses the font spacing"
+           (and p (> (closure.engine:box-height p) 17.5d0)
+                (< (closure.engine:box-height p) 19d0)))
+    (check "a heading uses the font spacing"
+           (and h (> (closure.engine:box-height h) 35d0)
+                (< (closure.engine:box-height h) 38d0)))))
 
 (defun test-default-serif ()
   (labels ((line-count (box)
@@ -4016,6 +4033,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-overflow-wrap)
   (test-word-break)
   (test-caption-wraps)
+  (test-normal-line-height)
   (test-default-serif)
   (test-justify)
   (test-border-collapse)

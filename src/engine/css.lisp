@@ -45,7 +45,7 @@
   (font-style :normal)
   (font-family '("serif"))
   (line-height nil)
-  (line-height-mult 1.2d0)
+  (line-height-mult nil)
   (text-align :start)
   (text-indent 0d0)
   (letter-spacing 0d0)
@@ -955,7 +955,7 @@
       ((:font-family) (let ((f (parse-font-family tokens))) (when f f)))
       ((:line-height)
        (cond ((and tokens (eq (tok-kind (car tokens)) :ident) (string= (tok-text (car tokens)) "normal"))
-              (cons :mult 1.2d0))
+              :normal)
              ((and tokens (eq (tok-kind (car tokens)) :number))
               (cons :mult (tok-number (car tokens))))
              (t (len))))
@@ -2005,6 +2005,9 @@
          (:font-family (when value (setf (computed-font-family style) value)))
          (:line-height
           (cond
+            ((eq value :normal)
+             (setf (computed-line-height style) nil)
+             (setf (computed-line-height-mult style) nil))
             ((and (consp value) (eq (car value) :mult))
              (setf (computed-line-height style) nil)
              (setf (computed-line-height-mult style) (cdr value)))
@@ -2192,9 +2195,16 @@
       (walk root nil))))
 
 (defun used-line-height (style)
-  (or (computed-line-height style)
-      (* (or (computed-line-height-mult style) 1.2d0)
-         (computed-font-size style))))
+  "A set length wins, then a unitless multiplier, otherwise the font's own spacing."
+  (cond
+    ((numberp (computed-line-height style))
+     (float (computed-line-height style) 1d0))
+    ((numberp (computed-line-height-mult style))
+     (* (computed-line-height-mult style) (computed-font-size style)))
+    (t (font-height (computed-font-size style)
+                    (computed-font-family style)
+                    (computed-font-weight style)
+                    (computed-font-style style)))))
 
 (defun used-border-width (width style)
   (if (member style '(:none :hidden nil))

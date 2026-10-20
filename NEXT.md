@@ -366,6 +366,9 @@ from the Lisp engine without calling Node or another browser engine.
 - Text is measured without hinting, so a caption above the cells "One"
   and "Two" wraps onto two lines. An `<hr>` is a two-pixel inset gray rule
   across the content width.
+- The initial line height is the font's own spacing. A paragraph line is
+  about 18px and a heading line is about 37px. The sample page has an
+  ordered list; the items are numbered and stacked.
 
 ## Next
 
