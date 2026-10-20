@@ -3201,6 +3201,32 @@ b</div>"
           (format t "~&  default inside the border: ~D ~D ~D~%" r g b)
           (check "the default image still paints inside the border" (and (< r 80) (< g 80) (> b 180))))))))
 
+(defun test-background-image-clip-padding ()
+  (let ((png "/tmp/closure-bg-clip-pad-image.png"))
+    (write-solid-png png 20 20 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<div id='full' style='width:20px;height:20px;border:8px solid rgba(0,0,0,0);background-image:url(\"~A\");background-repeat:no-repeat;background-origin:border-box'></div>
+                <div id='clip' style='width:20px;height:20px;border:8px solid rgba(0,0,0,0);background-image:url(\"~A\");background-repeat:no-repeat;background-origin:border-box;background-clip:padding-box'></div>"
+                         png png))
+           (out "/tmp/closure-engine-bg-image-clip-pad.png")
+           (root (closure.engine:render-html html :width 80 :height 120 :output out
+                                            :stylesheet "body{margin:0}"))
+           (full (closure.engine:find-box root "full"))
+           (clip (closure.engine:find-box root "clip")))
+      (labels ((at (box dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x box) dx))
+                          (round (+ (closure.engine:box-y box) dy)))))
+        (check "padding image clip boxes" (and full clip))
+        (multiple-value-bind (r g b) (at full 1 1)
+          (format t "~&  image under the border: ~D ~D ~D~%" r g b)
+          (check "the default image paints under the border" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at clip 1 1)
+          (format t "~&  clipped border: ~D ~D ~D~%" r g b)
+          (check "padding-box keeps the image out of the border" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at clip 10 10)
+          (format t "~&  clipped inside: ~D ~D ~D~%" r g b)
+          (check "padding-box still paints the image inside the border" (and (< r 80) (< g 80) (> b 180))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3661,6 +3687,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-image-clip-content)
   (test-background-origin-content)
   (test-background-origin-border)
+  (test-background-image-clip-padding)
   (test-wbr)
   (test-address)
   (test-text-indent)
