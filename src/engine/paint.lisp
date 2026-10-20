@@ -128,11 +128,17 @@ Returns the destination origin and size. FILL stretches. The others keep aspect 
                    (tile-x (member repeat '(:repeat :repeat-x)))
                    (tile-y (member repeat '(:repeat :repeat-y)))
                    (pos (or (computed-background-position st) :left))
-                   (x0 (case pos
+                   (horizontal (if (consp pos)
+                                   (find-if (lambda (k) (member k '(:left :right :center))) pos)
+                                   (if (member pos '(:left :right :center)) pos :left)))
+                   (vertical (if (consp pos)
+                                 (find-if (lambda (k) (member k '(:top :bottom))) pos)
+                                 (if (member pos '(:top :bottom)) pos :top)))
+                   (x0 (case horizontal
                          (:right (- (+ x w) iw))
                          (:center (+ x (/ (- w iw) 2d0)))
                          (t x)))
-                   (y0 (if (eq pos :bottom) (- (+ y h) ih) y)))
+                   (y0 (if (eq vertical :bottom) (- (+ y h) ih) y)))
               (when (and (> w 0d0) (> h 0d0) (> iw 0d0) (> ih 0d0))
                 (when tile-x
                   (loop while (> x0 x) do (decf x0 iw)))

@@ -238,9 +238,11 @@ from the Lisp engine without calling Node or another browser engine.
   side edges of that box stay empty.
 - `background-position: bottom` places a background image along the bottom.
   The top edge of that box stays empty.
+- `background-position: right bottom` places a background image in the
+  bottom-right corner. The other three corners stay empty.
 
 ## Next
 
-1. `background-position: right bottom` places a background image in the
-   bottom-right corner. The done condition is not met; pages still need more
+1. `background-size: contain` scales a background image so the whole image
+   fits inside the box. The done condition is not met; pages still need more
    of the web than this viewport.
