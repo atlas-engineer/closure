@@ -3123,6 +3123,32 @@ b</div>"
         (format t "~&  padding-box padding: ~D ~D ~D~%" r g b)
         (check "padding-box still paints the padding" (and (> r 180) (< g 40) (< b 40)))))))
 
+(defun test-background-image-clip-content ()
+  (let ((png "/tmp/closure-bg-clip-image.png"))
+    (write-solid-png png 40 40 0.1d0 0.2d0 0.9d0)
+    (let* ((html (format nil "<div id='full' style='width:20px;height:20px;padding:8px;background-image:url(\"~A\");background-repeat:no-repeat'></div>
+                <div id='clip' style='width:20px;height:20px;padding:8px;background-image:url(\"~A\");background-repeat:no-repeat;background-clip:content-box'></div>"
+                         png png))
+           (out "/tmp/closure-engine-bg-image-clip.png")
+           (root (closure.engine:render-html html :width 80 :height 100 :output out
+                                            :stylesheet "body{margin:0}"))
+           (full (closure.engine:find-box root "full"))
+           (clip (closure.engine:find-box root "clip")))
+      (labels ((at (box dx dy)
+                 (png-rgb out
+                          (round (+ (closure.engine:box-x box) dx))
+                          (round (+ (closure.engine:box-y box) dy)))))
+        (check "image clip boxes" (and full clip))
+        (multiple-value-bind (r g b) (at full 1 1)
+          (format t "~&  image padding: ~D ~D ~D~%" r g b)
+          (check "the default image paints in the padding" (and (< r 80) (< g 80) (> b 180))))
+        (multiple-value-bind (r g b) (at clip 1 1)
+          (format t "~&  clipped image padding: ~D ~D ~D~%" r g b)
+          (check "content-box keeps the image out of the padding" (and (> r 240) (> g 240) (> b 240))))
+        (multiple-value-bind (r g b) (at clip 10 10)
+          (format t "~&  clipped image content: ~D ~D ~D~%" r g b)
+          (check "content-box still paints the image in the content box" (and (< r 80) (< g 80) (> b 180))))))))
+
 (defun test-tt ()
   (let* ((root (closure.engine:layout-html
                 "<p><tt id='w'>WWWW</tt><tt id='i'>iiii</tt><span id='s'>WWWW</span><span id='n'>iiii</span></p>"
@@ -3580,6 +3606,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-list-style-image-none)
   (test-background-clip-content)
   (test-background-clip-padding)
+  (test-background-image-clip-content)
   (test-wbr)
   (test-address)
   (test-text-indent)
