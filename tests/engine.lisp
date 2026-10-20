@@ -3622,6 +3622,30 @@ mono two</pre>")
       (check "2 / 1 makes the square image 20px tall"
              (and box (~ (closure.engine:box-height box) 20d0))))))
 
+(defun test-aspect-ratio-image-height ()
+  (let* ((png "/tmp/closure-aspect-square.png"))
+    (write-solid-png png 20 20 0.8d0 0.1d0 0.1d0)
+    (let* ((html (format nil "<img id='plain' src='~A' style='height:20px'>
+                          <img id='box' src='~A' style='height:20px;aspect-ratio:2 / 1'>"
+                         png png))
+           (root (closure.engine:layout-html html :width 200 :height 80
+                                            :stylesheet "body{margin:0}"))
+           (plain (closure.engine:find-box root "plain"))
+           (box (closure.engine:find-box root "box")))
+      (format t "~&  square-h ~Sx~S ratio ~Sx~S~%"
+              (and plain (closure.engine:box-width plain))
+              (and plain (closure.engine:box-height plain))
+              (and box (closure.engine:box-width box))
+              (and box (closure.engine:box-height box)))
+      (check "height aspect boxes" (and plain box))
+      (check "a square file with only a height stays square"
+             (and plain (~ (closure.engine:box-width plain) 20d0)
+                  (~ (closure.engine:box-height plain) 20d0)))
+      (check "the ratio image keeps its height"
+             (and box (~ (closure.engine:box-height box) 20d0)))
+      (check "2 / 1 makes the square image 40px wide"
+             (and box (~ (closure.engine:box-width box) 40d0))))))
+
 (defun test-code-font ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'>Use <code id='c'>code</code> now</p>"
@@ -4130,6 +4154,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-width)
   (test-aspect-ratio-content)
   (test-aspect-ratio-image)
+  (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
   (test-text-indent)

@@ -375,9 +375,13 @@ from the Lisp engine without calling Node or another browser engine.
   and a superscript.
 - `vertical-align: sub` lowers the baseline by 0.3em. A subscript sits
   about 10px below the line top. `<code>` is 13px monospace.
+- An image with `height: 20px` and `aspect-ratio: 2 / 1` is 40px wide even
+  when the file is square. The same square file with only the height stays
+  20px wide.
 
 ## Next
 
-1. An image with `height: 20px` and `aspect-ratio: 2 / 1` is 40px wide even
-   when the file is square. The done condition is not met; pages still need
-   more of the web than this viewport.
+1. A collapsed table cell with a 1px border is content plus padding plus
+   that one border, and it starts half a pixel inside the table edge. The
+   done condition is not met; pages still need more of the web than this
+   viewport.
