@@ -6363,6 +6363,24 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-cell-percent ()
+  (let* ((root (closure.engine:layout-html
+                "<table width='100' cellspacing='0'><tr><td id='a' width='25%'>A</td><td id='b' width='75%'>B</td></tr></table>
+                 <table width='100' cellspacing='0'><tr><td id='c' width='40'>A</td><td id='d'>B</td></tr></table>"
+                :width 200 :height 80
+                :stylesheet "body{margin:0} td{padding:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (d (closure.engine:find-box root "d")))
+    (check "cell percent boxes" (and a b c d))
+    (check "a cell percentage is a share of the table"
+           (and (~ (closure.engine:box-width a) 25d0)
+                (~ (closure.engine:box-width b) 75d0)))
+    (check "a cell pixel width keeps its size"
+           (and (~ (closure.engine:box-width c) 40d0)
+                (~ (closure.engine:box-width d) 60d0)))))
+
 (defun test-col-percent ()
   (let* ((root (closure.engine:layout-html
                 "<table width='100' cellspacing='0'><col width='25%'><col width='75%'><tr><td id='a'>A</td><td id='b'>B</td></tr></table>
@@ -8096,6 +8114,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-cell-percent)
   (test-col-percent)
   (test-align-middle)
   (test-rowspan-zero)

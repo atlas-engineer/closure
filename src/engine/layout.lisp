@@ -2928,6 +2928,21 @@ widths are kept. Columns without one share what remains."
                       do (setf (aref cols col) px
                                (aref kinds col) kind))))))
         (incf col-i span)))
+    ;; A first-row cell width sets a column the col elements left empty.
+    (let ((first (car (table-rows el)))
+          (col 0))
+      (when first
+        (dolist (cell (row-cells first))
+          (let* ((span (cell-colspan cell))
+                 (st (and (dom-element-p cell) (dom-element-style cell)))
+                 (raw (and st (computed-width st)))
+                 (px (and st (= span 1) (definite-length raw room))))
+            (when (and (numberp px) (< col ncols) (null (aref kinds col)))
+              (setf any t
+                    (aref cols col) px
+                    (aref kinds col) (if (and (consp raw) (eq (car raw) :%))
+                                         :percent :pixel)))
+            (incf col span)))))
     (unless any
       (return-from specified-column-widths
         (make-array ncols :initial-element (max 1d0 (/ room (max 1 ncols))))))
@@ -3104,6 +3119,10 @@ widths are kept. Columns without one share what remains."
                     (when cb
                       (when (and (= span 1) (< col ncols) (aref col-collapsed col))
                         (setf (box-w cb) 0d0))
+                      (when (and (> slot 0d0)
+                                 (not (and (= span 1) (< col ncols)
+                                           (aref col-collapsed col))))
+                        (setf (box-w cb) slot))
                       (when (and collapse prev)
                         (decf xx (max (border-edge (box-style prev) :right)
                                       (border-edge (box-style cb) :left))))
