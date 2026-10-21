@@ -480,6 +480,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A range track is 6px and centered in the control, matching Chromium's bar.
 - An embed with a source paints that image, the same as an img.
 - The range track is a rounded bar, so the ends are not square.
+- A progress or meter track is a 6px rounded bar centered in the control.
 
 ## Next
 
