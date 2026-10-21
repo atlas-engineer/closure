@@ -2674,6 +2674,41 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-obsolete-tail ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='t'><tt id='tt'>tt</tt> <blink id='bl'>blink</blink></p><p id='g'><image id='im' src='square.png' width='20' height='20'></image></p><isindex id='is' prompt='Find'><p id='a'>after</p><plaintext id='pl'>one
+two</plaintext></body></html>"
+                :width 1024 :height 300
+                :stylesheet "body{margin:0}"
+                :base "file:///home/jmercouris/Source/closure/screenshots/page.html"))
+         (tt (closure.engine:find-box root "tt"))
+         (blink (closure.engine:find-box root "bl"))
+         (image (closure.engine:find-box root "im"))
+         (line (closure.engine:find-box root "g"))
+         (index (closure.engine:find-box root "is"))
+         (after (closure.engine:find-box root "a"))
+         (plain (closure.engine:find-box root "pl")))
+    (check "tt, blink, image, and plaintext" (and tt blink image line after plain))
+    (check "tt is 13px monospace and blink is an ordinary word"
+           (and tt blink
+                (~ (closure.engine::computed-font-size (closure.engine::box-style tt)) 13d0)
+                (~ (closure.engine:box-width tt) 15.61d0 0.1d0)
+                (~ (closure.engine:box-y tt) 17d0)
+                (~ (closure.engine:box-width blink) 32.89d0 0.1d0)
+                (~ (closure.engine:box-x blink) 19.61d0 0.1d0)))
+    (check "image is an img and the line is 24 tall"
+           (and image line
+                (string= (closure.engine::box-tag image) "img")
+                (~ (closure.engine:box-width image) 20d0)
+                (~ (closure.engine:box-height image) 20d0)
+                (~ (closure.engine:box-height line) 24d0)))
+    (check "isindex adds no search form, and plaintext is two preformatted lines"
+           (and (not index) after plain
+                (~ (closure.engine:box-y after) 90d0)
+                (~ (closure.engine:box-height after) 18d0)
+                (~ (closure.engine:box-y plain) 124d0)
+                (~ (closure.engine:box-height plain) 34d0)))))
+
 (defun test-listing-abbr ()
   (let* ((root (closure.engine:layout-html
                 "<p><abbr id='a' title='B'>abbr</abbr> <acronym id='c' title='A'>acro</acronym> <abbr id='b'>no</abbr></p><listing id='ls'>one
@@ -4713,6 +4748,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-wbr)
   (test-address)
   (test-ruby)
+  (test-obsolete-tail)
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)

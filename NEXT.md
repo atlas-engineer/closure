@@ -439,6 +439,8 @@ from the Lisp engine without calling Node or another browser engine.
   struck through. A marquee fills its line, and that line is 22px.
 - listing and xmp are preformatted monospace blocks. An abbr or acronym
   with a title is underlined with dots. nobr does not wrap.
+- tt is monospace, blink is an ordinary word, and image is an img.
+  isindex adds no search form. plaintext is preformatted.
 
 ## Next
 

@@ -242,6 +242,29 @@
                        ((dom-element-p c) (walk c))))))
       (walk el))))
 
+(defun element-kids (el)
+  (remove-if-not #'dom-element-p (dom-node-children el)))
+
+(defun isindex-expansion-p (el)
+  "The HTML parser turns isindex into a form Chrome does not paint."
+  (when (and (dom-element-p el) (string-equal (dom-element-tag el) "form"))
+    (let ((kids (element-kids el)))
+      (and (= (length kids) 3)
+           (string-equal (dom-element-tag (first kids)) "hr")
+           (string-equal (dom-element-tag (second kids)) "label")
+           (string-equal (dom-element-tag (third kids)) "hr")
+           (some (lambda (inner)
+                   (and (string-equal (dom-element-tag inner) "input")
+                        (string-equal (or (dom-attr inner "name") "") "isindex")))
+                 (element-kids (second kids)))))))
+
+(defun drop-isindex-forms (node)
+  (when (dom-element-p node)
+    (setf (dom-node-children node)
+          (remove-if #'isindex-expansion-p (dom-node-children node)))
+    (dolist (c (dom-node-children node))
+      (drop-isindex-forms c))))
+
 (defun import-document (html5-document)
   (let ((doc (make-dom-document)))
     (html5-parser:element-map-children
@@ -250,6 +273,8 @@
          (when k (push k (dom-node-children doc)))))
      html5-document)
     (setf (dom-node-children doc) (nreverse (dom-node-children doc)))
+    (dolist (c (dom-node-children doc))
+      (drop-isindex-forms c))
     doc))
 
 (defun document-title-text (doc)

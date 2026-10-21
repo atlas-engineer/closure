@@ -16,7 +16,7 @@ script element after style and layout. Left unset until that engine exists.")
 
 (defparameter *ua-css*
   "html { display: block; }
-   head, script, style, title, meta, link, template, base, source, area, noscript { display: none; }
+   head, script, style, title, meta, link, template, base, basefont, noframes, source, area, noscript { display: none; }
    body { display: block; margin: 8px; }
    div, p, h1, h2, h3, h4, h5, h6, article, section, nav, aside, header, footer, main,
    figure, figcaption, details, summary, dialog, hgroup, menu, dir, center, hr,
