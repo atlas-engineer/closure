@@ -1423,6 +1423,25 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-object-image ()
+  (let* ((out "/tmp/closure-engine-object-image.png")
+         (root (closure.engine:render-html
+                "<object id='o' data='file:///home/jmercouris/Source/closure/screenshots/square.png' width='40' height='20'>Z</object>"
+                :width 80 :height 40 :output out
+                :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "o")))
+    (check "object image box" box)
+    (check "an object data image keeps its width and height"
+           (and box
+                (~ (closure.engine:box-width box) 40d0)
+                (~ (closure.engine:box-height box) 20d0)))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x box) 8))
+                 (round (+ (closure.engine:box-y box) 8)))
+      (check "an object paints its image data"
+             (and (> r 180) (< g 40) (< b 40))))))
+
 (defun test-audio-controls ()
   (let* ((root (closure.engine:layout-html
                 "<audio id='n'></audio>
@@ -7465,6 +7484,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-object-image)
   (test-audio-controls)
   (test-table-layout-fixed)
   (test-popover)
