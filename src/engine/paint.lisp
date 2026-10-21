@@ -69,7 +69,8 @@ color. The top of that groove crosses the legend and stops behind it."
             (multiple-value-bind (legend-y legend-x legend-w)
                 (fieldset-border-top box bt)
               (let* ((y0 (float (round (or legend-y y)) 1d0))
-                     (y1 (float (floor (- (+ y h) 1d-6)) 1d0))
+                     ;; The outer pixel is the last one whose center lies inside the box.
+                     (y1 (float (floor (- (+ y h) 0.5d0)) 1d0))
                      (gap-l (if legend-y (max x (min (+ x w) legend-x)) x))
                      (gap-r (if legend-y
                                 (max x (min (+ x w) (+ legend-x legend-w)))

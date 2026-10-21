@@ -3169,6 +3169,13 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 4 9)
       (check "the inner fieldset edge is the border color"
              (and (> r 220) (> g 220) (> b 220) (< r 250))))
+    (multiple-value-bind (r g b) (png-rgb path 4 52)
+      (declare (ignore b))
+      (check "the fieldset bottom edge is the dark groove"
+             (and (> r 140) (< r 180) (> g 140) (< g 180))))
+    (multiple-value-bind (r g b) (png-rgb path 4 53)
+      (check "the fieldset bottom edge is the border color"
+             (and (> r 220) (> g 220) (> b 220) (< r 250))))
     (multiple-value-bind (r g b) (png-rgb path 17 8)
       (check "the legend leaves a gap in the top border"
              (and (> r 250) (> g 250) (> b 250))))
