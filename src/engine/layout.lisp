@@ -585,6 +585,7 @@ Indented group options count only for a list select."
                                   (line-box (layout-inline-run (nreverse pending) content-x
                                                                (+ (box-y box) bt pt flow-y)
                                                                cw style
+                                                               :avail-h child-h
                                                                :float-inset (if beside
                                                                                 (max 0d0 (- float-right content-x))
                                                                                 0d0)
@@ -1142,7 +1143,7 @@ then adds one pixel: size/5 for sub, size/3 for super."
     (setf (box-children box) (nreverse kids))
     box))
 
-(defun layout-inline-run (nodes x y width style &key (float-inset 0d0) (float-avoid 0d0) (float-span 0d0))
+(defun layout-inline-run (nodes x y width style &key (float-inset 0d0) (float-avoid 0d0) (float-span 0d0) avail-h)
   (let ((font (computed-font-size style))
         (family (computed-font-family style))
         (weight (computed-font-weight style))
@@ -1297,7 +1298,7 @@ then adds one pixel: size/5 for sub, size/3 for super."
                    (incf current-w (box-w b))
                    (setf previous (dom-element-style el)))))
              (emit-atomic (el)
-               (let ((b (layout-element el 0d0 0d0 width nil nil :shrink t)))
+               (let ((b (layout-element el 0d0 0d0 width avail-h nil :shrink t)))
                  (when b
                    (when (zerop (box-baseline b))
                      (setf (box-baseline b) (box-h b)))

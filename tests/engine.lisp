@@ -6363,6 +6363,22 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-img-percent-height ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (root (closure.engine:layout-html
+                (format nil "<div style='height:40px'><img id='i' src='~A' width='10' height='50%'><img id='own' src='~A' width='10' height='50%' style='height:8px'></div>"
+                       png png)
+                :width 200 :height 80
+                :stylesheet "body{margin:0}"))
+         (i (closure.engine:find-box root "i"))
+         (own (closure.engine:find-box root "own")))
+    (check "percent height image boxes" (and i own))
+    (check "an image height percentage is of its container"
+           (and (~ (closure.engine:box-width i) 10d0)
+                (~ (closure.engine:box-height i) 20d0)))
+    (check "an author height wins over an image percentage"
+           (~ (closure.engine:box-height own) 8d0))))
+
 (defun test-img-percent ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (root (closure.engine:layout-html
@@ -8136,6 +8152,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-img-percent-height)
   (test-img-percent)
   (test-cell-percent)
   (test-col-percent)
