@@ -6363,6 +6363,38 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-row-group-align ()
+  (let* ((root (closure.engine:layout-html
+                "<table><tbody align='center'><tr><td id='c' width='80'>Hi</td></tr></tbody></table>
+                 <table><thead align='right'><tr><td id='h' width='80'>Hi</td></tr></thead></table>
+                 <table><tfoot align='center'><tr><td id='own' align='left' width='80'>Hi</td></tr></tfoot></table>
+                 <table><tr><td id='l' width='80'>Hi</td></tr></table>"
+                :width 200 :height 200
+                :stylesheet "body{margin:0} table{border-spacing:0} td{padding:0}"))
+         (c (closure.engine:find-box root "c"))
+         (h (closure.engine:find-box root "h"))
+         (own (closure.engine:find-box root "own"))
+         (l (closure.engine:find-box root "l")))
+    (labels ((glyph-x (box)
+               (let ((text (find-if (lambda (b) (eq (closure.engine::box-kind b) :text))
+                                    (closure.engine::box-children box))))
+                 (if text
+                     (closure.engine:box-x text)
+                     (glyph-x-deep box))))
+             (glyph-x-deep (box)
+               (dolist (child (closure.engine::box-children box))
+                 (if (eq (closure.engine::box-kind child) :text)
+                     (return-from glyph-x-deep (closure.engine:box-x child))
+                     (let ((x (glyph-x-deep child)))
+                       (when x (return-from glyph-x-deep x)))))))
+      (check "row group boxes" (and c h own l))
+      (check "tbody align=center centers the cell text"
+             (and c l (> (glyph-x c) (+ (glyph-x l) 8))))
+      (check "thead align=right packs the cell text to the right"
+             (and h l (> (glyph-x h) (glyph-x c))))
+      (check "a cell align wins over the row group"
+             (and own l (~ (glyph-x own) (glyph-x l) 1d0))))))
+
 (defun test-input-image-align ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (root (closure.engine:layout-html
@@ -7842,6 +7874,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-row-group-align)
   (test-input-image-align)
   (test-replaced-align)
   (test-iframe-margin)

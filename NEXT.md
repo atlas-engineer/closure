@@ -585,6 +585,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An iframe marginwidth and marginheight inset the document the same way. An author margin still wins.
 - align on an object, embed, or iframe moves it the way it moves an image.
 - align on an image button floats or shifts it, and left also sits at the top of the line.
+- align on a row group centers or shifts the cells. A cell's own align still wins.
 
 ## Next
 

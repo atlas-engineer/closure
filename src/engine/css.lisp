@@ -2641,7 +2641,8 @@ scrollbar gutter. An author width or height is left alone."
                  (if (string= value "bottom") :bottom :top)))
           ((and (not (gethash :text-align specified))
                 (member tag '("div" "p" "h1" "h2" "h3" "h4" "h5" "h6"
-                              "td" "th" "tr" "center" "legend")
+                              "td" "th" "tr" "thead" "tbody" "tfoot"
+                              "center" "legend")
                         :test #'string=))
            (let ((align (cond ((string= value "center") :center)
                               ((string= value "right") :right)
