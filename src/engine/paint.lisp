@@ -865,11 +865,14 @@ and gaps between known stops are split evenly."
                                 (font-ascent size family weight fstyle)))
               (cairo-show-text cr marker)))
           (let* ((cy (+ (box-y box) 8d0))
+                 ;; A disc sits 14px left of the item and one pixel below
+                 ;; the disclosure mark, which is where Chromium puts it.
+                 (my (+ (box-y box) 9.5d0))
                  (cx (if (box-marker-inside box)
                          (+ (box-x box) 6d0
                             (px (computed-pl st) (box-w box))
                             (used-border-width (computed-bl st) (computed-bls st)))
-                         (- (box-x box) 10d0)))
+                         (- (box-x box) 13.5d0)))
                  ;; Chromium's disclosure triangle sits on the left of the
                  ;; summary and is about 8px across.
                  (dx (if (and (box-marker-inside box)
@@ -877,7 +880,7 @@ and gaps between known stops are split evenly."
                          (+ (box-x box) 4d0)
                          cx)))
             (cond
-              ((paint-list-style-image cr st cx cy))
+              ((paint-list-style-image cr st cx my))
               ((eq marker :disclosure-open)
                (cairo-move-to cr (- dx 4d0) (- cy 4d0))
                (cairo-line-to cr (+ dx 5.5d0) (- cy 4d0))
@@ -891,14 +894,14 @@ and gaps between known stops are split evenly."
                (cairo-close-path cr)
                (cairo-fill cr))
               ((eq marker :square)
-               (cairo-rectangle cr (- cx 2.5d0) (- cy 2.5d0) 5d0 5d0)
+               (cairo-rectangle cr (- cx 2.5d0) (- my 2.5d0) 5d0 5d0)
                (cairo-fill cr))
               ((eq marker :circle)
                (cairo-set-line-width cr 1d0)
-               (cairo-arc cr cx cy 2.5d0 0d0 (* 2d0 pi))
+               (cairo-arc cr cx my 2.5d0 0d0 (* 2d0 pi))
                (cairo-stroke cr))
               (t
-               (cairo-arc cr cx cy 2.5d0 0d0 (* 2d0 pi))
+               (cairo-arc cr cx my 2.1d0 0d0 (* 2d0 pi))
                (cairo-fill cr))))))))
 
 (defun paint-list-style-image (cr st cx cy)
