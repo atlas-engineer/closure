@@ -2942,6 +2942,16 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-select-arrow ()
+  (let ((path "/tmp/closure-engine-select.png"))
+    (closure.engine:render-html
+     "<select><option>Blue</option></select>"
+     :width 80 :height 30
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 39 10)
+      (check "the select paints a dark arrow" (and (< r 40) (< g 40) (< b 40))))))
+
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
     (closure.engine:render-html
@@ -4977,6 +4987,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-select-arrow)
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)

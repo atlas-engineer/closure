@@ -462,6 +462,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A range draws a blue track up to its thumb. A color input fills with
   its value.
 - A file input paints a Choose File button and the label No file chosen.
+- A select paints a downward triangle in the gutter at its right edge.
 
 ## Next
 

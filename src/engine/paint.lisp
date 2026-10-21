@@ -839,6 +839,18 @@ It does not apply when borders are collapsed."
         0d0
         (max 0d0 (min 1d0 (/ (- value min) (- max min)))))))
 
+(defun paint-select-arrow (cr box)
+  "The downward triangle in the select's right gutter."
+  (when (and (string= (box-tag box) "select") (> (box-w box) 16d0))
+    (let ((cx (- (+ (box-x box) (box-w box)) 9.5d0))
+          (cy (+ (box-y box) (/ (box-h box) 2d0))))
+      (set-color cr (color-bytes 0 0 0))
+      (cairo-move-to cr (- cx 3.5d0) (- cy 2d0))
+      (cairo-line-to cr (+ cx 3.5d0) (- cy 2d0))
+      (cairo-line-to cr cx (+ cy 3d0))
+      (cairo-close-path cr)
+      (cairo-fill cr))))
+
 (defun paint-file-input (cr box)
   "The Choose File button and the empty-file label."
   (let ((el (box-element box)))
@@ -972,7 +984,8 @@ It does not apply when borders are collapsed."
             (paint-gauge cr box)
             (paint-range cr box)
             (paint-color-input cr box)
-            (paint-file-input cr box)))
+            (paint-file-input cr box)
+            (paint-select-arrow cr box)))
         (paint-marker cr box)
         (if (eq (box-kind box) :text)
             (paint-text-box cr box)
