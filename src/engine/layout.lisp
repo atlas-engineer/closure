@@ -1155,7 +1155,8 @@ then adds one pixel: size/5 for sub, size/3 for super."
                        for more = (cdr parts) then (cdr more)
                        do (if collapse
                               (feed-words line st element)
-                              (when (plusp (length line)) (emit-word line st element)))
+                              (when (plusp (length line))
+                            (emit-word (expand-tabs line st) st element)))
                           (when more (break-line)))))
              (feed-inline (nodes st element)
                "Lay out inline descendants, keeping each element's own font."
@@ -1400,6 +1401,31 @@ then adds one pixel: size/5 for sub, size/3 for super."
                (setf start (1+ i)))
     (push (subseq text start) out)
     (nreverse out)))
+
+(defun expand-tabs (text style)
+  "Turn tabs into the spaces that reach Chromium's tab stops."
+  (if (or (null text) (zerop (length text)) (not (find #\tab text)) (null style))
+      text
+      (let* ((size (computed-font-size style))
+             (fam (computed-font-family style))
+             (wt (computed-font-weight style))
+             (fst (computed-font-style style))
+             (space (text-advance " " size fam wt fst))
+             (stops (let ((n (computed-tab-size style)))
+                      (if (and (numberp n) (> n 0d0)) n 8d0)))
+             (cell (max 0.01d0 (* space stops)))
+             (x 0d0))
+        (with-output-to-string (out)
+          (loop for c across text
+                do (if (char= c #\tab)
+                       (let* ((next (* cell (ceiling (/ (+ x 1d-6) cell))))
+                              (gap (max space (- next x)))
+                              (n (max 1 (round (/ gap space)))))
+                         (loop repeat n do (write-char #\space out))
+                         (incf x (* n space)))
+                       (progn
+                         (write-char c out)
+                         (incf x (text-advance (string c) size fam wt fst)))))))))
 
 (defun collapse-space (text)
   (let* ((s (substitute #\space #\newline text))

@@ -2728,6 +2728,34 @@ b</div>"
                 (~ (closure.engine:box-height rb) 17d0)
                 (~ (closure.engine:box-x rb) (closure.engine:box-x ruby) 0.2d0)))))
 
+(defun test-tab-size ()
+  (labels ((pre-text (root id)
+             (let ((host (closure.engine:find-box root id))
+                   (found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (eq (closure.engine::box-kind b) :text)
+                              (setf found b))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk host))
+               found)))
+    (let* ((html (format nil "<pre id='p'>A~AB</pre><pre id='q' style='tab-size:4'>A~AB</pre><p id='n'>A~AB</p>"
+                         #\tab #\tab #\tab))
+           (root (closure.engine:layout-html html :width 400 :height 80
+                                            :stylesheet "body{margin:0} pre{margin:0} p{margin:0}"))
+           (wide (pre-text root "p"))
+           (narrow (pre-text root "q"))
+           (plain (pre-text root "n"))
+           (space (closure.engine::text-advance " " 13d0 "monospace" :normal :normal)))
+      (check "tab boxes" (and wide narrow plain (> space 1d0)))
+      (check "a tab stops every eight spaces"
+             (and wide (~ (closure.engine:box-width wide) (* 9d0 space) 1.5d0)))
+      (check "tab-size 4 stops every four spaces"
+             (and narrow (~ (closure.engine:box-width narrow) (* 5d0 space) 1.5d0)))
+      (check "a paragraph collapses a tab to one space"
+             (and plain wide (< (closure.engine:box-width plain)
+                                (/ (closure.engine:box-width wide) 2d0)))))))
+
 (defun test-hidden-input ()
   (labels ((text-box (root word)
              (let ((found nil))
@@ -7179,6 +7207,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-tab-size)
   (test-hidden-input)
   (test-object-fallback)
   (test-noembed-param)

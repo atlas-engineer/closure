@@ -58,6 +58,7 @@
   (text-decoration-thickness nil)
   (text-decoration-style :solid)
   (white-space :normal)
+  (tab-size 8d0)
   (text-overflow :clip)
   (overflow-wrap :normal)
   (word-break :normal)
@@ -133,7 +134,7 @@
  "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
  "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "background-clip" "background-origin" "object-fit" "object-position"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
- "text-align" "direction" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-underline-offset" "text-decoration-thickness" "text-decoration-style" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
+ "text-align" "direction" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-underline-offset" "text-decoration-thickness" "text-decoration-style" "text-shadow" "white-space" "tab-size" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
  "justify-content" "align-items" "align-content" "align-self" "order" "gap"
  "row-gap" "column-gap"
@@ -146,7 +147,7 @@
 
 (defparameter *inherited-properties*
   '(:color :font-size :font-weight :font-style :font-family
-    :line-height :text-align :text-indent :letter-spacing :word-spacing :text-transform :white-space :visibility :list-style :quotes))
+    :line-height :text-align :text-indent :letter-spacing :word-spacing :text-transform :white-space :tab-size :visibility :list-style :quotes))
 
 (defparameter *named-colors* (make-hash-table :test #'equal))
 
@@ -1007,6 +1008,10 @@
                ((null (cdr found)) (car found))
                (t found))))
       ((:white-space) (kw '("normal" "nowrap" "pre" "pre-wrap" "pre-line" "break-spaces")))
+      ((:tab-size)
+       (when (and tokens (eq (tok-kind (car tokens)) :number))
+         (let ((n (tok-number (car tokens))))
+           (when (and n (>= n 0)) (float n 1d0)))))
       ((:text-overflow) (kw '("clip" "ellipsis")))
       ((:overflow-wrap :word-wrap) (kw '("normal" "break-word" "anywhere")))
       ((:word-break) (kw '("normal" "break-all" "keep-all" "break-word")))
@@ -2351,6 +2356,7 @@
                              (absolutize value (or (computed-font-size style) 16d0)))))
                   (when (and (numberp v) (> v 0d0)) (float v 1d0)))))
          (:white-space (setf (computed-white-space style) value))
+         (:tab-size (when (numberp value) (setf (computed-tab-size style) (float value 1d0))))
          (:text-overflow (when value (setf (computed-text-overflow style) value)))
          ((:overflow-wrap :word-wrap)
           (when value (setf (computed-overflow-wrap style) value)))
@@ -2442,6 +2448,7 @@
       (setf (computed-word-spacing s) (computed-word-spacing parent))
       (setf (computed-text-shadow s) (computed-text-shadow parent))
       (setf (computed-white-space s) (computed-white-space parent))
+      (setf (computed-tab-size s) (computed-tab-size parent))
       (setf (computed-overflow-wrap s) (computed-overflow-wrap parent))
       (setf (computed-word-break s) (computed-word-break parent))
       (setf (computed-border-collapse s) (computed-border-collapse parent))
