@@ -1112,7 +1112,7 @@ It does not apply when borders are collapsed."
                     (cairo-stroke cr)))
                 (progn
                   (set-color cr (if checked blue (color-bytes 255 255 255)))
-                  (cairo-rectangle cr x y w h)
+                  (rounded-rect cr x y w h 2d0)
                   (cairo-fill cr)
                   (if checked
                       (progn
@@ -1125,8 +1125,8 @@ It does not apply when borders are collapsed."
                       (progn
                         (set-color cr gray)
                         (cairo-set-line-width cr 1d0)
-                        (cairo-rectangle cr (+ x 0.5d0) (+ y 0.5d0)
-                                         (- w 1d0) (- h 1d0))
+                        (rounded-rect cr (+ x 0.5d0) (+ y 0.5d0)
+                                      (- w 1d0) (- h 1d0) 2d0)
                         (cairo-stroke cr)))))))))))
 
 (defun paint-select-list (cr box)

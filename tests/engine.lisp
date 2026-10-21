@@ -4127,6 +4127,22 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
            (and para submit
                 (~ (- (closure.engine:box-y submit) (closure.engine:box-y para)) 1d0 0.2d0)))))
 
+(defun test-checkbox-round ()
+  (let ((path "/tmp/closure-engine-checkbox.png"))
+    (closure.engine:render-html
+     "<input type='checkbox' checked style='margin:0;display:block'>"
+     :width 40 :height 30
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 4 4)
+      (declare (ignore g))
+      (check "a checked checkbox is blue inside"
+             (and (< r 40) (> b 200))))
+    (multiple-value-bind (r g b) (png-rgb path 0 0)
+      (declare (ignore g))
+      (check "a checkbox corner is rounded"
+             (and (> r 140) (< r 220) (> b 200))))))
+
 (defun test-radio-shape ()
   (let ((path "/tmp/closure-engine-radio.png"))
     (closure.engine:render-html
@@ -8247,6 +8263,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-font-marquee)
   (test-replaced-widgets)
   (test-check-line)
+  (test-checkbox-round)
   (test-radio-shape)
   (test-check-paint)
   (test-select-arrow)

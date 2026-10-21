@@ -604,6 +604,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A colspan percentage splits across its columns. A column width still wins.
 - An audio control shows the time, track, and volume beside the play mark.
 - A radio is a disc. A checked one is blue, and an unchecked one keeps a round edge.
+- A checkbox corner is rounded. The inside of a checked box stays blue.
 
 ## Next
 
