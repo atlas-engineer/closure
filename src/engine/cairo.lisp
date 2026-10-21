@@ -270,6 +270,11 @@ unit a browser stores a used width in."
     (/ (float (truncate (+ scaled (if (minusp scaled) -0.5d0 0.5d0))) 1d0)
        64d0)))
 
+(defun snap-even-unit (px)
+  "Nearest 1/64px, with a half-unit rounding to the even unit. A browser
+advances to the next glyph by this amount."
+  (/ (fround (* px 64d0)) 64d0))
+
 (defun %measure-uncached (string size family weight slant)
   (let ((cr (ensure-cairo)))
     (select-cairo-font cr (cairo-family family) slant
@@ -285,12 +290,13 @@ unit a browser stores a used width in."
             (values 0d0 asc desc height)
             (progn
               (cairo-text-extents cr string te)
-              (values (snap-layout-unit
-                       (+ (cffi:foreign-slot-value te '(:struct cairo-text-extents) 'x-advance)
-                          (kerning-sum string size family
-                                       (if (and (numberp weight) (>= weight 600)) 1 weight)
-                                       slant)))
-                      asc desc height)))))))
+              (let ((raw (+ (cffi:foreign-slot-value te '(:struct cairo-text-extents) 'x-advance)
+                            (kerning-sum string size family
+                                         (if (and (numberp weight) (>= weight 600)) 1 weight)
+                                         slant))))
+                (values (snap-layout-unit raw)
+                        asc desc height
+                        (snap-even-unit raw)))))))))
 
 (defun measure-text (string size family weight style)
   "Return (values advance ascent descent) in CSS pixels."
@@ -303,6 +309,12 @@ unit a browser stores a used width in."
 
 (defun text-advance (string size family weight style)
   (first (measure-text string size family weight style)))
+
+(defun text-cursor (string size family weight style)
+  "Distance from this text to the next glyph. A half-unit rounds to even,
+which is where the browser puts the next glyph."
+  (let ((m (measure-text string size family weight style)))
+    (or (and (>= (length m) 5) (fifth m)) (first m))))
 
 (defun resolve-serif-face ()
   "Pick a Times-like serif whose bold face is wider than its regular face."

@@ -18,7 +18,7 @@ script element after style and layout. Left unset until that engine exists.")
   "html { display: block; }
    head, script, style, title, meta, link, template, base { display: none; }
    body { display: block; margin: 8px; }
-   div, p, h1, h2, h3, h4, h5, h6, article, section, nav, header, footer, main,
+   div, p, h1, h2, h3, h4, h5, h6, article, section, nav, aside, header, footer, main,
    figure, figcaption, details, summary, dialog, hgroup, menu, dir, center, hr,
    blockquote, pre, form, ul, ol, dl, dd, dt, address, fieldset, legend
    { display: block; }
@@ -27,6 +27,9 @@ script element after style and layout. Left unset until that engine exists.")
    h1 { font-size: 2em; margin-top: 0.67em; margin-bottom: 0.67em; }
    h2 { font-size: 1.5em; margin-top: 0.83em; margin-bottom: 0.83em; }
    h3 { font-size: 1.17em; margin-top: 1em; margin-bottom: 1em; }
+   h4 { font-size: 1em; margin-top: 1.33em; margin-bottom: 1.33em; }
+   h5 { font-size: 0.83em; margin-top: 1.67em; margin-bottom: 1.67em; }
+   h6 { font-size: 0.67em; margin-top: 2.33em; margin-bottom: 2.33em; }
    p, ul, ol, dl, blockquote, pre { margin-top: 1em; margin-bottom: 1em; }
    ul, ol { padding-left: 40px; }
    dd { margin-left: 40px; }

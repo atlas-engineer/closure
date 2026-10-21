@@ -402,9 +402,12 @@ from the Lisp engine without calling Node or another browser engine.
 - A word's advance rounds to the nearest 1/64px after kerning in font
   units. The sample tables are 73.875px and 48.016px wide. An address is
   an italic line across the content width.
+- h4, h5, and h6 use the browser's size and margin. A space between two
+  elements is kept. The sample page also has the smaller headings, the
+  common phrasing elements, center, and the sectioning elements.
 
 ## Next
 
-1. On the first line, "big" starts about 0.03px to the right of the
-   browser. The done condition is not met; pages still need more of the
-   web than this viewport.
+1. Several HTML elements are still missing from the sample page, including
+   fieldset, details, ruby, and the form controls. The done condition is
+   not met.

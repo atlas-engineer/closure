@@ -2465,6 +2465,68 @@ b</div>"
         (check "address has no extra indent"
                (and block (~ (closure.engine:box-x block) 0d0)))))))
 
+(defun test-smaller-headings ()
+  (let* ((root (closure.engine:layout-html
+                "<h4 id='h4'>Hi</h4><h5 id='h5'>Hi</h5><h6 id='h6'>Hi</h6>"
+                :width 400 :height 240
+                :stylesheet "body{margin:0}"))
+         (h4 (closure.engine:find-box root "h4"))
+         (h5 (closure.engine:find-box root "h5"))
+         (h6 (closure.engine:find-box root "h6")))
+    (check "smaller headings" (and h4 h5 h6))
+    (check "h4 keeps the parent size and a 1.33em margin"
+           (and h4 (~ (closure.engine:box-y h4) 21.28d0 0.05d0)
+                (~ (closure.engine::computed-font-size (closure.engine::box-style h4)) 16d0 0.01d0)))
+    (check "h5 is 0.83em with a 1.67em margin"
+           (and h5 (~ (closure.engine::computed-font-size (closure.engine::box-style h5)) 13.28d0 0.02d0)))
+    (check "h6 is 0.67em"
+           (and h6 (~ (closure.engine::computed-font-size (closure.engine::box-style h6)) 10.72d0 0.02d0)))
+    (check "a heading margin separates h5 from h4"
+           (and h4 h5 (> (closure.engine:box-y h5)
+                         (+ (closure.engine:box-y h4) (closure.engine:box-height h4)))))))
+
+(defun test-br-and-center ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'>one<br>two</p><center id='c'>Mid</center><article id='a'>Article</article>"
+                :width 200 :height 120
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (p (closure.engine:find-box root "p"))
+         (center (closure.engine:find-box root "c"))
+         (article (closure.engine:find-box root "a"))
+         (lines nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (member (closure.engine::box-text b) '("one" "two" "Mid") :test #'string=))
+                   (push b lines))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (let ((one (find "one" lines :key #'closure.engine::box-text :test #'string=))
+          (two (find "two" lines :key #'closure.engine::box-text :test #'string=))
+          (mid (find "Mid" lines :key #'closure.engine::box-text :test #'string=)))
+      (check "br and center boxes" (and p center article one two mid))
+      (check "br puts the next word on the following line"
+             (and one two (> (closure.engine:box-y two) (closure.engine:box-y one))))
+      (check "center puts the word in the middle of the line"
+             (and center mid
+                  (> (closure.engine:box-x mid) (+ (closure.engine:box-x center) 40d0))
+                  (< (+ (closure.engine:box-x mid) (closure.engine:box-width mid))
+                     (- (+ (closure.engine:box-x center) (closure.engine:box-width center)) 40d0))))
+      (check "article is a full-width block"
+             (and article (~ (closure.engine:box-width article) 200d0)
+                  (~ (closure.engine:box-x article) 0d0)))
+      (let* ((spaced (closure.engine:layout-html
+                      "<p><b id='b'>bold</b> <i id='i'>italic</i></p>"
+                      :width 300 :height 40
+                      :stylesheet "body{margin:0} p{margin:0}"))
+             (bold (closure.engine:find-box spaced "b"))
+             (italic (closure.engine:find-box spaced "i")))
+        (check "a space between two elements is kept"
+               (and bold italic
+                    (~ (- (closure.engine:box-x italic)
+                          (+ (closure.engine:box-x bold) (closure.engine:box-width bold)))
+                       4d0 0.2d0)))))))
+
 (defun test-wbr ()
   (let* ((whole (closure.engine:layout-html
                  "<div id='w' style='width:40px'>Supercali</div>"
@@ -4260,6 +4322,8 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-smaller-headings)
+  (test-br-and-center)
   (test-text-indent)
   (test-letter-spacing)
   (test-word-spacing)
