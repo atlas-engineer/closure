@@ -522,6 +522,7 @@ from the Lisp engine without calling Node or another browser engine.
 - nowrap keeps a cell on one line and widens the table. An author white-space wins.
 - type on a list or item sets the marker: letters, roman numerals, or a square. An author list style wins.
 - br clear drops the next line below the float. An author clear wins.
+- hspace and vspace put margin around an image. An author margin wins on that side.
 
 ## Next
 

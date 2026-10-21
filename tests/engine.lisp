@@ -5424,6 +5424,33 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-hspace ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (html (format nil "<img id='a' hspace='10' vspace='6' width='20' height='20' src='~A'><span id='t'>x</span><img id='b' hspace='10' style='margin-left:2px' width='20' height='20' src='~A'>" png png))
+         (root (closure.engine:layout-html html :width 200 :stylesheet "body{margin:0}"))
+         (a (closure.engine:find-box root "a"))
+         (tail (closure.engine:find-box root "t"))
+         (b (closure.engine:find-box root "b"))
+         (as (and a (closure.engine::box-style a)))
+         (bs (and b (closure.engine::box-style b))))
+    (check "spaced images" (and a tail b as bs))
+    (check "hspace and vspace are the image margins"
+           (and as
+                (~ (closure.engine::computed-ml as) 10d0 0.01d0)
+                (~ (closure.engine::computed-mr as) 10d0 0.01d0)
+                (~ (closure.engine::computed-mt as) 6d0 0.01d0)
+                (~ (closure.engine::computed-mb as) 6d0 0.01d0)
+                (~ (closure.engine:box-x a) 10d0)
+                (~ (closure.engine:box-y a) 6d0)))
+    (check "the following word starts after the right space"
+           (and a tail
+                (> (closure.engine:box-x tail)
+                   (+ (closure.engine:box-x a) (closure.engine:box-width a) 8d0))))
+    (check "an author margin wins on that side only"
+           (and bs
+                (~ (closure.engine::computed-ml bs) 2d0 0.01d0)
+                (~ (closure.engine::computed-mr bs) 10d0 0.01d0)))))
+
 (defun test-br-clear ()
   (labels ((at (html id)
              (closure.engine:find-box
@@ -5908,6 +5935,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-hspace)
   (test-br-clear)
   (test-list-type-attr)
   (test-nowrap-attr)

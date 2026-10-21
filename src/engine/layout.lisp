@@ -682,19 +682,21 @@ A replaced image does not stretch to the container the way an ordinary block doe
     (if (numberp a) a (box-w box))))
 
 (defun inline-control-margin (item width)
-  "Margins that join an inline line: checkbox, radio, and range.
-Other inline boxes stay at zero so a paragraph margin is not applied again.
-Returns top, right, bottom, left."
+  "Margins that join an inline line: checkbox, radio, range, and replaced
+images. Other inline boxes stay at zero so a paragraph margin is not
+applied again. Returns top, right, bottom, left."
   (let ((st (box-style item))
-        (el (box-element item)))
-    (if (and st el (string= (or (box-tag item) "") "input"))
-        (let ((type (string-downcase (or (dom-attr el "type") ""))))
-          (if (member type '("checkbox" "radio" "range") :test #'string=)
-              (values (px (computed-mt st) width)
-                      (px (computed-mr st) width)
-                      (px (computed-mb st) width)
-                      (px (computed-ml st) width))
-              (values 0d0 0d0 0d0 0d0)))
+        (el (box-element item))
+        (tag (string-downcase (or (box-tag item) ""))))
+    (if (and st
+             (or (member tag '("img" "image" "object" "embed") :test #'string=)
+                 (and el (string= tag "input")
+                      (member (string-downcase (or (dom-attr el "type") ""))
+                              '("checkbox" "radio" "range" "image") :test #'string=))))
+        (values (px (computed-mt st) width)
+                (px (computed-mr st) width)
+                (px (computed-mb st) width)
+                (px (computed-ml st) width))
         (values 0d0 0d0 0d0 0d0))))
 
 (defun used-text-indent (style width)

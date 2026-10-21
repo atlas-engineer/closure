@@ -1941,6 +1941,24 @@
                                      :origin :author :order 0)))
             (dolist (pair (expand-declaration :clear mapped))
               (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
+    ;; hspace and vspace set the two sides. An author margin on one side wins.
+    (when (and (not pseudo)
+               (or (member (dom-element-tag element) '("img" "image" "object" "embed")
+                           :test #'string-equal)
+                   (and (string-equal (dom-element-tag element) "input")
+                        (string-equal (or (dom-attr element "type") "") "image"))))
+      (let ((h (html-spacing-raw (dom-attr element "hspace")))
+            (v (html-spacing-raw (dom-attr element "vspace"))))
+        (when h
+          (dolist (prop '(:margin-left :margin-right))
+            (let ((decl (make-css-decl :property prop :raw h :origin :author :order 0)))
+              (dolist (pair (expand-declaration prop h))
+                (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))
+        (when v
+          (dolist (prop '(:margin-top :margin-bottom))
+            (let ((decl (make-css-decl :property prop :raw v :origin :author :order 0)))
+              (dolist (pair (expand-declaration prop v))
+                (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
     ;; ol/ul/li type loses to an author list-style-type.
     (when (and (not pseudo)
                (member (dom-element-tag element) '("ol" "ul" "li") :test #'string-equal))
@@ -1965,6 +1983,13 @@
                      ((string= down "disc") "disc")
                      ((string= down "circle") "circle")
                      ((string= down "square") "square")))))))
+
+(defun html-spacing-raw (raw)
+  "An hspace or vspace attribute, as a CSS length."
+  (let* ((s (string-trim '(#\space #\newline #\tab #\return) (or raw "")))
+         (n (and (plusp (length s))
+                 (ignore-errors (parse-integer s :junk-allowed t)))))
+    (when (and n (>= n 0)) (format nil "~Dpx" n))))
 
 (defun html-dimension-raw (raw)
   "An HTML width or height attribute, as a CSS length."
