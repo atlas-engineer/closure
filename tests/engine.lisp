@@ -2942,6 +2942,21 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-range-color-paint ()
+  (let ((path "/tmp/closure-engine-range.png"))
+    (closure.engine:render-html
+     "<input type='range' min='0' max='100' value='50'><input type='color' value='#ff0000'>"
+     :width 200 :height 50
+     :stylesheet "body{margin:0} input{display:block}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 20 8)
+      (declare (ignore g))
+      (check "the range fill is blue" (and (< r 40) (> b 200))))
+    (multiple-value-bind (r g b) (png-rgb path 110 8)
+      (check "the range track past the thumb is gray" (and (> r 200) (> g 200) (> b 200))))
+    (multiple-value-bind (r g b) (png-rgb path 10 26)
+      (check "the color input shows its value" (and (> r 200) (< g 40) (< b 40))))))
+
 (defun test-gauge-paint ()
   (let ((path "/tmp/closure-engine-gauge.png"))
     (closure.engine:render-html
@@ -4949,6 +4964,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-range-color-paint)
   (test-gauge-paint)
   (test-time-input)
   (test-input-widgets)

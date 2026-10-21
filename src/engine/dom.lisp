@@ -227,7 +227,11 @@
            ""))
       ((string= tag "select") (form-control-value el))
       ((string= tag "textarea") (dom-text-content el))
-      ((string= tag "input") (or (dom-attr el "value") (dom-attr el "placeholder") ""))
+      ((string= tag "input")
+       (let ((type (string-downcase (or (dom-attr el "type") "text"))))
+         (if (member type '("color" "range" "file") :test #'string=)
+             ""
+             (or (dom-attr el "value") (dom-attr el "placeholder") ""))))
       (t ""))))
 
 (defun element-children (node)

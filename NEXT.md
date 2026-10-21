@@ -459,6 +459,8 @@ from the Lisp engine without calling Node or another browser engine.
   2px inset border.
 - Progress paints a blue bar and meter a green bar, each across half the
   track when the value is half of the range.
+- A range draws a blue track up to its thumb. A color input fills with
+  its value.
 
 ## Next
 
