@@ -54,13 +54,18 @@ script element after style and layout. Left unset until that engine exists.")
    code, kbd, samp, tt, pre { font-family: monospace; font-size: 13px; }
    pre { white-space: pre; }
    nobr { white-space: nowrap; }
-   table { display: table; }
+   table { display: table; border-spacing: 2px; }
    caption { display: table-caption; text-align: center; }
    thead { display: table-header-group; }
    tbody { display: table-row-group; }
    tfoot { display: table-footer-group; }
    tr { display: table-row; }
    td, th { display: table-cell; padding: 1px; }
+   th { text-align: center; }
+   fieldset { margin-left: 2px; margin-right: 2px; border: 2px groove #efefef;
+              padding: 0.35em 0.75em 0.625em; }
+   legend { padding-left: 2px; padding-right: 2px; }
+   summary { display: list-item; list-style-type: disclosure-closed; list-style-position: inside; }
    img, video, canvas, svg, input, select, textarea, iframe { display: inline-block; }
    video, canvas { width: 300px; height: 150px; }
    hr { display: block; margin-top: 0.5em; margin-bottom: 0.5em; border: 1px inset #808080; }

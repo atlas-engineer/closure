@@ -2465,6 +2465,53 @@ b</div>"
         (check "address has no extra indent"
                (and block (~ (closure.engine:box-x block) 0d0)))))))
 
+(defun test-fieldset-details ()
+  (let* ((root (closure.engine:layout-html
+                "<fieldset id='f'><legend id='l'>Legend</legend>Field</fieldset>
+                 <details id='d'><summary id='s'>Summary</summary>Hidden</details>
+                 <table id='t'><tr><th id='h'>Head</th></tr></table>"
+                :width 400 :height 200
+                :stylesheet "body{margin:0}"))
+         (field (closure.engine:find-box root "f"))
+         (legend (closure.engine:find-box root "l"))
+         (details (closure.engine:find-box root "d"))
+         (summary (closure.engine:find-box root "s"))
+         (table (closure.engine:find-box root "t"))
+         (head (closure.engine:find-box root "h"))
+         (texts nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (member (closure.engine::box-text b) '("Summary" "Hidden" "Field")
+                                    :test #'string=))
+                   (push b texts))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (let ((sum (find "Summary" texts :key #'closure.engine::box-text :test #'string=))
+          (hidden (find "Hidden" texts :key #'closure.engine::box-text :test #'string=))
+          (field-text (find "Field" texts :key #'closure.engine::box-text :test #'string=)))
+      (check "fieldset, details, and header cell" (and field legend details summary table head))
+      (check "fieldset is inset 2px and the legend sits on its top edge"
+             (and field legend
+                  (~ (closure.engine:box-x field) 2d0)
+                  (~ (closure.engine:box-y legend) (closure.engine:box-y field))))
+      (check "the field text follows the legend and the top padding"
+             (and field legend field-text
+                  (> (closure.engine:box-y field-text)
+                     (+ (closure.engine:box-y legend) (closure.engine:box-height legend)))))
+      (check "a closed details hides everything but the summary"
+             (and details summary (not hidden)
+                  (~ (closure.engine:box-height details) (closure.engine:box-height summary))))
+      (check "the summary marker indents its text"
+             (and summary sum (> (closure.engine:box-x sum) (+ (closure.engine:box-x summary) 10d0))))
+      (check "a header cell is centered and the table shrinks around it"
+             (and head table
+                  (eq (closure.engine::computed-text-align (closure.engine::box-style head)) :center)
+                  (< (closure.engine:box-width table) 80d0)
+                  (~ (- (closure.engine:box-width table) (closure.engine:box-width head)) 4d0 0.5d0)))
+      (check "the legend shrinks to its text"
+             (and legend (< (closure.engine:box-width legend) 80d0))))))
+
 (defun test-smaller-headings ()
   (let* ((root (closure.engine:layout-html
                 "<h4 id='h4'>Hi</h4><h5 id='h5'>Hi</h5><h6 id='h6'>Hi</h6>"
@@ -3170,8 +3217,8 @@ mono two</pre>")
             (and cap (closure.engine:box-y cap))
             (and table (closure.engine:box-y table)))
     (check "bottom caption and table" (and table cap cell))
-    (check "the first row stays at the top"
-           (and table cell (~ (closure.engine:box-y cell) (closure.engine:box-y table))))
+    (check "the first row starts after the default border spacing"
+           (and table cell (~ (- (closure.engine:box-y cell) (closure.engine:box-y table)) 2d0)))
     (check "the caption sits below the row"
            (and cap cell
                 (>= (closure.engine:box-y cap)
@@ -4322,6 +4369,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-fieldset-details)
   (test-smaller-headings)
   (test-br-and-center)
   (test-text-indent)

@@ -51,6 +51,13 @@
              (walk (nodes)
                (dolist (c nodes)
                  (cond
+                   ;; A closed details shows only its summary.
+                   ((and (string= (dom-element-tag element) "details")
+                         (not (dom-attr element "open"))
+                         (or (dom-text-p c)
+                             (and (dom-element-p c)
+                                  (not (string= (dom-element-tag c) "summary")))))
+                    nil)
                    ((dom-text-p c) (push c out))
                    ((not (dom-element-p c)))
                    ((eq (computed-display (dom-element-style c)) :none))
@@ -197,6 +204,24 @@ A replaced image does not stretch to the container the way an ordinary block doe
     (when (numberp max-v) (setf s (min s max-v)))
     s))
 
+(defun place-fieldset-legend (box)
+  "Sit the legend on the fieldset's top border, then pad before the rest."
+  (let ((legend (find-if (lambda (k) (string= (or (box-tag k) "") "legend"))
+                         (box-children box))))
+    (when legend
+      (let* ((st (box-style box))
+             (pt (px (computed-pt st) (box-w box)))
+             (pb (px (computed-pb st) (box-w box)))
+             (bb (used-border-width (computed-bb st) (computed-bbs st)))
+             (top (box-y box))
+             (yy (+ top (box-h legend) pt)))
+        (translate-box legend 0d0 (- top (box-y legend)))
+        (dolist (k (box-children box))
+          (unless (eq k legend)
+            (translate-box k 0d0 (- yy (box-y k)))
+            (incf yy (box-h k))))
+        (setf (box-h box) (+ (- yy top) pb bb))))))
+
 (defun layout-element (el x y avail-w avail-h containing &key shrink)
   (let* ((style (dom-element-style el))
          (disp (computed-display style)))
@@ -319,7 +344,8 @@ A replaced image does not stretch to the container the way an ordinary block doe
                                    (setf flow-y (max flow-y float-clear)))
                                  (let ((cb (layout-element node content-x
                                                            (+ (box-y box) bt pt flow-y)
-                                                           cw child-h cont)))
+                                                           cw child-h cont
+                                                           :shrink (string= (dom-element-tag node) "legend"))))
                                    (when cb
                                      (let* ((mt (px (computed-mt (dom-element-style node)) cw))
                                             (mb (max (px (computed-mb (dom-element-style node)) cw)
@@ -365,9 +391,14 @@ A replaced image does not stretch to the container the way an ordinary block doe
                        (max-h (definite-length (computed-max-height style) avail-h)))
                   (setf content-h (clamp-size content-h (or min-h 0d0) max-h))
                   (when (and shrink (eq (computed-width style) :auto) kids)
-                    (let ((need (reduce #'max kids
-                                        :key (lambda (k) (max 0d0 (- (+ (box-x k) (box-w k)) content-x)))
-                                        :initial-value 0d0)))
+                    (let ((need (if (string= (dom-element-tag el) "legend")
+                                    (max 0d0 (- (reduce #'max kids
+                                                        :key #'content-ink-right
+                                                        :initial-value content-x)
+                                                content-x))
+                                    (reduce #'max kids
+                                            :key (lambda (k) (max 0d0 (- (+ (box-x k) (box-w k)) content-x)))
+                                            :initial-value 0d0))))
                       (setf cw (min cw need))
                       (setf (box-w box) (+ cw bl br pl pr))))
                   (setf (box-h box) (+ content-h bt bb pt pb))
@@ -395,15 +426,20 @@ A replaced image does not stretch to the container the way an ordinary block doe
                                  (not (eq marker :none)))
                         (setf (box-marker-inside box) t)
                         (let ((first (car (box-children box)))
-                              (dx (if (stringp marker)
-                                      (+ (text-advance marker
-                                                       (computed-font-size style)
-                                                       (computed-font-family style)
-                                                       (computed-font-weight style)
-                                                       (computed-font-style style))
-                                         6d0)
-                                      16d0)))
+                              (dx (cond
+                                    ((stringp marker)
+                                     (+ (text-advance marker
+                                                      (computed-font-size style)
+                                                      (computed-font-family style)
+                                                      (computed-font-weight style)
+                                                      (computed-font-style style))
+                                        6d0))
+                                    ((member marker '(:disclosure-closed :disclosure-open))
+                                     17d0)
+                                    (t 16d0))))
                           (when first (translate-box first dx 0d0))))))
+                  (when (string= (dom-element-tag el) "fieldset")
+                    (place-fieldset-legend box))
                   (when (string= (dom-element-tag el) "img")
                     (apply-image-size box el avail-w avail-h))
                   (when (string= (dom-element-tag el) "svg")
@@ -1565,6 +1601,17 @@ wraps a line stretch to the available width, so their own width is ignored."
       (declare (ignore pt pb pl))
       (+ (max 0d0 (- (content-ink-right box) (box-x box))) br pr))))
 
+(defun line-items-width (box)
+  "Width of the widest run of items, ignoring a line stretched for alignment."
+  (labels ((walk (b)
+             (cond
+               ((and (eq (box-kind b) :line) (box-children b))
+                (reduce #'+ (box-children b) :key #'box-w :initial-value 0d0))
+               ((box-children b)
+                (reduce #'max (box-children b) :key #'walk :initial-value 0d0))
+               (t (box-w b)))))
+    (walk box)))
+
 (defun cell-max-content-width (cell)
   "Border-box width of CELL on one line. A specified width is that width."
   (let* ((style (dom-element-style cell))
@@ -1572,7 +1619,11 @@ wraps a line stretch to the available width, so their own width is ignored."
     (cond
       ((null box) 0d0)
       ((not (eq (computed-width style) :auto)) (box-w box))
-      (t (ink-border-box style box)))))
+      (t (multiple-value-bind (bt br bb bl) (border4 style)
+           (declare (ignore bt bb))
+           (multiple-value-bind (pt pr pb pl) (pad4 style 0d0)
+             (declare (ignore pt pb))
+             (+ (line-items-width box) bl br pl pr)))))))
 
 (defun element-min-content-width (el)
   "Width of the longest unbreakable line. Used so a caption can widen a table."

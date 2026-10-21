@@ -732,6 +732,12 @@ and gaps between known stops are split evenly."
                          (- (box-x box) 10d0))))
             (cond
               ((paint-list-style-image cr st cx cy))
+              ((member marker '(:disclosure-closed :disclosure-open))
+               (cairo-move-to cr (- cx 3d0) (- cy 4d0))
+               (cairo-line-to cr (+ cx 3d0) cy)
+               (cairo-line-to cr (- cx 3d0) (+ cy 4d0))
+               (cairo-close-path cr)
+               (cairo-fill cr))
               ((eq marker :square)
                (cairo-rectangle cr (- cx 2.5d0) (- cy 2.5d0) 5d0 5d0)
                (cairo-fill cr))

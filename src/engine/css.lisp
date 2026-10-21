@@ -1081,7 +1081,7 @@
       ((:background-origin) (kw '("border-box" "padding-box" "content-box")))
       ((:object-fit) (kw '("fill" "contain" "cover" "none" "scale-down")))
       ((:list-style :list-style-type)
-       (kw '("disc" "circle" "square" "decimal" "none")))
+       (kw '("disc" "circle" "square" "decimal" "none" "disclosure-closed" "disclosure-open")))
       ((:list-style-position) (kw '("outside" "inside")))
       ((:list-style-image)
        (cond ((and tokens (eq (tok-kind (car tokens)) :ident)

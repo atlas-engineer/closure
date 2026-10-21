@@ -405,9 +405,11 @@ from the Lisp engine without calling Node or another browser engine.
 - h4, h5, and h6 use the browser's size and margin. A space between two
   elements is kept. The sample page also has the smaller headings, the
   common phrasing elements, center, and the sectioning elements.
+- A fieldset has a 2px groove border and its legend sits on the top edge.
+  A closed details shows only the summary. A header cell is centered, and
+  a separate table keeps 2px of border spacing.
 
 ## Next
 
-1. Several HTML elements are still missing from the sample page, including
-   fieldset, details, ruby, and the form controls. The done condition is
-   not met.
+1. Ruby, the form controls, and several embedded elements are still missing
+   from the sample page. The done condition is not met.
