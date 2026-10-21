@@ -6363,6 +6363,44 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-col-bgcolor ()
+  (let* ((out "/tmp/closure-engine-col-bg.png")
+         (html "<table cellspacing='0'><col id='c' bgcolor='#c00' width='40'><tr><td id='a'>Hi</td><td id='b'>No</td></tr><tr><td id='d'>Yo</td></tr></table>
+                <table cellspacing='0'><col bgcolor='#c00' width='40'><tr><td id='own' bgcolor='#0a0'>Hi</td></tr></table>
+                <table cellspacing='0'><col bgcolor='#c00' width='40'><tr bgcolor='#00c'><td id='row'>Hi</td></tr></table>")
+         (root (closure.engine:render-html html :width 200 :height 120 :output out
+                                          :stylesheet "body{margin:0} td{padding:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (d (closure.engine:find-box root "d"))
+         (own (closure.engine:find-box root "own"))
+         (row (closure.engine:find-box root "row")))
+    (labels ((red-p (box)
+               (multiple-value-bind (r g bcol)
+                   (png-rgb out
+                            (round (+ (closure.engine:box-x box) 4))
+                            (round (+ (closure.engine:box-y box) 4)))
+                 (and (> r 150) (< g 80) (< bcol 80))))
+             (green-p (box)
+               (multiple-value-bind (r g bcol)
+                   (png-rgb out
+                            (round (+ (closure.engine:box-x box) 4))
+                            (round (+ (closure.engine:box-y box) 4)))
+                 (and (< r 80) (> g 120) (< bcol 80))))
+             (blue-p (box)
+               (multiple-value-bind (r g bcol)
+                   (png-rgb out
+                            (round (+ (closure.engine:box-x box) 4))
+                            (round (+ (closure.engine:box-y box) 4)))
+                 (and (< r 80) (< g 80) (> bcol 120)))))
+      (check "column color boxes" (and a b d own row))
+      (check "a column bgcolor paints every cell in the column"
+             (and (red-p a) (red-p d) (not (red-p b))))
+      (check "a cell bgcolor covers the column"
+             (green-p own))
+      (check "a row bgcolor covers the column"
+             (blue-p row)))))
+
 (defun test-row-group-valign ()
   (let* ((root (closure.engine:layout-html
                 "<table><tbody valign='bottom'><tr><td id='b' style='height:40px'>Hi</td></tr></tbody></table>
@@ -7901,6 +7939,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-col-bgcolor)
   (test-row-group-valign)
   (test-row-group-align)
   (test-input-image-align)

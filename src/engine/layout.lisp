@@ -2560,7 +2560,10 @@ the run."
 (defun place-column-boxes (el cells)
   "Boxes for col and colgroup that cover the same area as the columns."
   (let* ((specs (table-column-specs el))
-         (top (and cells (reduce #'min cells :key #'box-y)))
+         (grid-top (and cells (reduce #'min cells :key #'box-y)))
+         (grid-bottom (and cells (reduce #'max cells
+                                         :key (lambda (k) (+ (box-y k) (box-h k))))))
+         (top grid-top)
          (ordered (and top
                        (sort (remove-if-not (lambda (k) (< (abs (- (box-y k) top)) 0.5d0)) cells)
                              #'< :key #'box-x)))
@@ -2574,13 +2577,13 @@ the run."
                            when cell collect cell)))
           (when slice
             (let* ((x0 (reduce #'min slice :key #'box-x))
-                   (y0 (reduce #'min slice :key #'box-y))
                    (right (reduce #'max slice :key (lambda (k) (+ (box-x k) (box-w k)))))
-                   (bottom (reduce #'max slice :key (lambda (k) (+ (box-y k) (box-h k)))))
                    (col-box (make-box :kind :table-column :style (dom-element-style node)
                                       :element node :tag (dom-element-tag node)
                                       :id (dom-element-id node)
-                                      :x x0 :y y0 :w (- right x0) :h (- bottom y0))))
+                                      :x x0 :y grid-top
+                                      :w (- right x0)
+                                      :h (- grid-bottom grid-top))))
               (push col-box boxes)
               (when (and group (not (eq group node)))
                 (let ((existing (find group groups :key #'box-element)))
@@ -2591,7 +2594,9 @@ the run."
                               (box-w existing) (- edge (box-x existing))))
                       (push (make-box :kind :table-column :style (dom-element-style group)
                                       :element group :tag "colgroup" :id (dom-element-id group)
-                                      :x x0 :y y0 :w (- right x0) :h (- bottom y0))
+                                      :x x0 :y grid-top
+                                      :w (- right x0)
+                                      :h (- grid-bottom grid-top))
                             groups))))))
           (incf i span))))
     (nreconc groups (nreverse boxes))))
@@ -3150,11 +3155,12 @@ The remaining columns share what is left of the table."
                   (setf cap placed)
                   (incf yy (box-h placed)))))
             (when cap (push cap kids))
+            ;; Column backgrounds paint behind row backgrounds and cells.
             (dolist (col (place-column-boxes el (remove-if-not
                                                  (lambda (k)
                                                    (member (or (box-tag k) "") '("td" "th") :test #'string=))
                                                  kids)))
-              (push col kids))
+              (setf kids (append kids (list col))))
             (setf (box-x box) (+ x ml)
                   (box-y box) y
                   (box-w box) bw

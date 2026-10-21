@@ -2666,7 +2666,8 @@ The nearer attribute wins. An author vertical-align still wins."
   "bgcolor on body, table, row, and cell. An author background wins."
   (when (and (not (gethash :background-color specified))
              (member (dom-element-tag element)
-                     '("body" "table" "tr" "td" "th" "marquee") :test #'string-equal))
+                     '("body" "table" "tr" "td" "th" "col" "colgroup" "marquee")
+                     :test #'string-equal))
     (let ((raw (dom-attr element "bgcolor")))
       (when (and raw (plusp (length (string-trim '(#\space #\newline #\tab) raw))))
         (let ((c (parse-color-tokens (css-tokenize raw))))
