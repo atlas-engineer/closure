@@ -918,12 +918,20 @@ then adds one pixel: size/5 for sub, size/3 for super."
                         :baseline (+ ann-extra base-asc)))
          (kids nil))
     (when (plusp (length ann-text))
-      (push (make-box :kind :text :style rt-style :element rt
-                      :tag (dom-element-tag rt) :id (dom-element-id rt)
-                      :text ann-text
-                      :x (/ (- ruby-w ann-w) 2d0) :y 0d0
-                      :w ann-w :h ann-h :baseline ann-asc)
-            kids))
+      ;; A short annotation stretches to the base. The glyphs stay centered.
+      ;; A long one keeps its own width and overhangs by half its font size.
+      (let* ((stretch (> ruby-w ann-w))
+             (rt-w (if stretch ruby-w ann-w))
+             (rt-x (if stretch 0d0 (/ (- ruby-w ann-w) 2d0)))
+             (glyph-x (+ rt-x (if stretch (/ (- ruby-w ann-w) 2d0) 0d0))))
+        (push (make-box :kind :inline :style rt-style :element rt
+                        :tag (dom-element-tag rt) :id (dom-element-id rt)
+                        :x rt-x :y 0d0 :w rt-w :h ann-h :baseline ann-asc
+                        :children (list (make-box :kind :text :style rt-style
+                                                  :text ann-text
+                                                  :x glyph-x :y 0d0
+                                                  :w ann-w :h ann-h :baseline ann-asc)))
+              kids)))
     (when (plusp (length base-text))
       (push (make-box :kind :text :style style :element base-el :text base-text
                       :tag (unless (eq base-el el) (dom-element-tag base-el))

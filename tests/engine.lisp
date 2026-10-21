@@ -2728,6 +2728,27 @@ b</div>"
                 (~ (closure.engine:box-height rb) 17d0)
                 (~ (closure.engine:box-x rb) (closure.engine:box-x ruby) 0.2d0)))))
 
+(defun test-ruby-annotation-box ()
+  (let* ((root (closure.engine:layout-html
+                "<p>X<ruby id='r'>WWW<rt id='t' style='background:#c00'>note</rt></ruby>Y</p>"
+                :width 400 :height 40
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (ruby (closure.engine:find-box root "r"))
+         (rt (closure.engine:find-box root "t"))
+         (glyph (and rt (find-if (lambda (c) (eq (closure.engine::box-kind c) :text))
+                                 (closure.engine::box-children rt)))))
+    (check "short annotation boxes" (and ruby rt glyph))
+    (check "a short annotation stretches to the base"
+           (and ruby rt
+                (~ (closure.engine:box-x rt) (closure.engine:box-x ruby) 0.2d0)
+                (~ (closure.engine:box-width rt) (closure.engine:box-width ruby) 0.3d0)))
+    (check "the annotation glyphs stay centered in that box"
+           (and rt glyph
+                (> (closure.engine:box-x glyph) (closure.engine:box-x rt))
+                (~ (- (closure.engine:box-x glyph) (closure.engine:box-x rt))
+                   (/ (- (closure.engine:box-width rt) (closure.engine:box-width glyph)) 2d0)
+                   0.2d0)))))
+
 (defun test-ruby ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'>X<ruby id='r'>字<rt id='t'>annotation</rt></ruby>Y</p>"
@@ -6988,6 +7009,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-ruby-annotation-box)
   (test-ruby-rtc)
   (test-ruby-rb)
   (test-ruby)
