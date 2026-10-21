@@ -2142,9 +2142,38 @@ of that width, both Chromium's gray. An author border is left alone."
                            (walk c))))))
           (walk el))))))
 
+(defun apply-table-cell-attrs (el)
+  "cellspacing and cellpadding override the 2px and 1px user-agent defaults."
+  (let ((style (dom-element-style el))
+        (space (attr-px el "cellspacing"))
+        (pad (attr-px el "cellpadding")))
+    (when (and style space
+               (= (computed-border-spacing-x style) 2d0)
+               (= (computed-border-spacing-y style) 2d0))
+      (setf (computed-border-spacing-x style) space
+            (computed-border-spacing-y style) space))
+    (when pad
+      (labels ((walk (node)
+                 (dolist (c (dom-node-children node))
+                   (when (dom-element-p c)
+                     (if (member (dom-element-tag c) '("td" "th") :test #'string=)
+                         (let ((st (dom-element-style c)))
+                           (when (and st
+                                      (= (computed-pt st) 1d0)
+                                      (= (computed-pr st) 1d0)
+                                      (= (computed-pb st) 1d0)
+                                      (= (computed-pl st) 1d0))
+                             (setf (computed-pt st) pad
+                                   (computed-pr st) pad
+                                   (computed-pb st) pad
+                                   (computed-pl st) pad)))
+                         (walk c))))))
+        (walk el)))))
+
 (defun layout-table (el x y avail-w avail-h containing)
   (declare (ignore avail-h containing))
   (apply-table-border-attr el)
+  (apply-table-cell-attrs el)
   (let* ((style (dom-element-style el))
          (box (make-element-box el :table style))
          (rows (table-rows el)))

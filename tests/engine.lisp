@@ -2756,6 +2756,21 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-table-cell-attrs ()
+  (let* ((html "<table id='t' cellspacing='10' cellpadding='8'><tr><td id='a'>One</td></tr></table>")
+         (root (closure.engine:layout-html html :width 200
+                                          :stylesheet "body{margin:0}"))
+         (table (closure.engine:find-box root "t"))
+         (cell (closure.engine:find-box root "a")))
+    (check "cellspacing and cellpadding match Chromium"
+           (and table cell
+                (~ (closure.engine:box-width table) 62.65625d0 1d0)
+                (~ (closure.engine:box-height table) 54d0 1d0)
+                (~ (closure.engine:box-x cell) 10d0)
+                (~ (closure.engine:box-y cell) 10d0)
+                (~ (closure.engine:box-width cell) 42.65625d0 1d0)
+                (~ (closure.engine:box-height cell) 34d0 1d0)))))
+
 (defun test-table-border-attr ()
   (let* ((html "<table id='t' border='1'><tr><td id='a'>One</td><td>Two</td></tr></table>")
          (path "/tmp/closure-engine-table-border.png")
@@ -5524,6 +5539,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-ruby-rtc)
   (test-ruby-rb)
   (test-ruby)
+  (test-table-cell-attrs)
   (test-table-border-attr)
   (test-frameset)
   (test-embed-paint)

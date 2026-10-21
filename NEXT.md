@@ -510,6 +510,7 @@ from the Lisp engine without calling Node or another browser engine.
 - SVG text is drawn at its x and y in the fill color.
 - A frameset border is Chromium's gray bar, dark on the leading edge and black on the trailing edge.
 - A table border attribute draws an outset frame and an inset edge on each cell, at Chromium's size.
+- cellspacing and cellpadding set the gap and the cell padding Chromium uses.
 
 ## Next
 
