@@ -158,22 +158,28 @@ is 19.92, and Chromium lays that out as 19.90625."
   "Size an img from CSS, then HTML width/height, then the file's intrinsic pixels.
 A replaced image does not stretch to the container the way an ordinary block does."
   (let* ((style (box-style box))
-         (path (image-pathname (dom-attr el "src")))
+         (src (string-trim '(#\space #\newline #\tab #\return)
+                           (or (dom-attr el "src") "")))
+         (path (image-pathname src))
          (attr-w (attr-px el "width"))
          (attr-h (attr-px el "height")))
     (multiple-value-bind (iw ih) (and path (image-intrinsic-size path))
       (let ((spec-w (definite-length (computed-width style) avail-w))
             (spec-h (definite-length (computed-height style) avail-h)))
         (unless (or iw ih attr-w attr-h spec-w spec-h)
-          (let ((alt (dom-attr el "alt")))
-            (when (and alt (plusp (length alt)))
-              (setf (box-w box) (text-advance alt
-                                              (computed-font-size style)
-                                              (computed-font-family style)
-                                              (computed-font-weight style)
-                                              (computed-font-style style))
-                    (box-h box) (used-line-height style)
-                    (box-text box) alt)))
+          ;; A src that does not load collapses. Alt text sizes an image
+          ;; that has no src.
+          (if (plusp (length src))
+              (setf (box-w box) 0d0 (box-h box) 0d0)
+              (let ((alt (dom-attr el "alt")))
+                (when (and alt (plusp (length alt)))
+                  (setf (box-w box) (text-advance alt
+                                                  (computed-font-size style)
+                                                  (computed-font-family style)
+                                                  (computed-font-weight style)
+                                                  (computed-font-style style))
+                        (box-h box) (used-line-height style)
+                        (box-text box) alt))))
           (return-from apply-image-size nil))
         (multiple-value-bind (bt br bb bl) (border4 style)
           (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)

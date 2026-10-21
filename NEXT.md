@@ -562,6 +562,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An object with fallback content shrinks to that content. An empty object stays 300 by 150.
 - A hidden input is not shown. An author display still shows it.
 - A tab in pre advances to the next tab stop. tab-size changes the stop.
+- A broken image with no size collapses. An image with only alt shows that text.
 
 ## Next
 

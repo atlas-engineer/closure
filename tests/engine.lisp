@@ -1424,15 +1424,21 @@
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
 (defun test-image-alt ()
-  (let* ((html "<img id='gone' src='/tmp/closure-does-not-exist.png' alt='missing'>")
+  (let* ((html "<img id='gone' src='/tmp/closure-does-not-exist.png' alt='missing'><img id='alt' alt='missing'>")
          (out "/tmp/closure-engine-alt.png")
          (root (closure.engine:render-html html :width 200 :height 40 :output out
                                           :stylesheet "body{margin:0}"))
-         (box (closure.engine:find-box root "gone"))
+         (gone (closure.engine:find-box root "gone"))
+         (alt (closure.engine:find-box root "alt"))
          (adv (closure.engine::text-advance "missing" 16d0 "serif" :normal :normal)))
-    (check "broken image box" box)
-    (check "alt sizes the box" (and box (~ (closure.engine:box-width box) adv)))
-    (check "alt text is stored" (and box (string= (closure.engine::box-text box) "missing")))
+    (check "image alt boxes" (and gone alt))
+    (check "a broken source collapses"
+           (and gone
+                (< (closure.engine:box-width gone) 1d0)
+                (< (closure.engine:box-height gone) 1d0)))
+    (check "an image with only alt is the text size"
+           (and alt (~ (closure.engine:box-width alt) adv)
+                (string= (closure.engine::box-text alt) "missing")))
     (let ((ink (closure.engine::count-ink out)))
       (format t "~&  alt ink pixels: ~D~%" ink)
       (check "alt text is painted" (> ink 10)))))
