@@ -1138,8 +1138,7 @@ because the monospace dash glyph only covers part of the pixel."
   (let* ((fs (computed-font-size st))
          (fam (computed-font-family st))
          (wt (computed-font-weight st))
-         (fst (computed-font-style st))
-         (asc (font-ascent fs fam wt fst)))
+         (fst (computed-font-style st)))
     (select-cairo-font cr (cairo-family fam) (cairo-slant fst) (cairo-weight wt) fs)
     (set-color cr (color-bytes 39 39 39))
     (let ((pen x))
@@ -1148,7 +1147,10 @@ because the monospace dash glyph only covers part of the pixel."
             do (if (char= ch #\-)
                    (let* ((bw (min adv 5d0))
                           (bx (+ pen (/ (max 0d0 (- adv bw)) 2d0)))
-                          (by (float (round (- y (* asc 0.35d0))) 1d0)))
+                          ;; Five pixels above the baseline lands on the row
+                          ;; Chromium uses for both the time field and the
+                          ;; date line.
+                          (by (float (round (- y 5d0)) 1d0)))
                      (cairo-rectangle cr bx by bw 1d0)
                      (cairo-fill cr))
                    (progn
