@@ -257,22 +257,30 @@ A replaced image does not stretch to the container the way an ordinary block doe
             (incf yy (box-h k))))
         (setf (box-h box) (+ (- yy top) pb bb))))))
 
-(defun select-choice-width (el style)
-  "Widest option or optgroup label, which is what sets a select's width."
+(defun select-choice-width (el style &key indent-groups)
+  "Widest option or optgroup label, which is what sets a select's width.
+Indented group options count only for a list select."
   (let ((best 0d0))
-    (labels ((consider (text &optional (weight (computed-font-weight style)))
+    (labels ((consider (text &optional (weight (computed-font-weight style)) (pad 0d0))
                (when (and text (plusp (length text)))
-                 (setf best (max best (text-advance text
-                                                    (computed-font-size style)
-                                                    (computed-font-family style)
-                                                    weight
-                                                    (computed-font-style style))))))
+                 (setf best (max best (+ pad
+                                         (text-advance text
+                                                       (computed-font-size style)
+                                                       (computed-font-family style)
+                                                       weight
+                                                       (computed-font-style style)))))))
+             (grouped-option-p (node)
+               (let ((parent (dom-node-parent node)))
+                 (and (dom-element-p parent)
+                      (string-equal (dom-element-tag parent) "optgroup"))))
              (walk (node)
                (dolist (c (dom-node-children node))
                  (when (dom-element-p c)
                    (cond
                      ((string= (dom-element-tag c) "option")
-                      (consider (dom-text-content c)))
+                      (consider (dom-text-content c)
+                                (computed-font-weight style)
+                                (if (and indent-groups (grouped-option-p c)) 16d0 0d0)))
                      ((string= (dom-element-tag c) "optgroup")
                       ;; Group labels are bold, which is what widens the control.
                       (consider (dom-attr c "label") :bold)
@@ -576,12 +584,12 @@ A replaced image does not stretch to the container the way an ordinary block doe
                           (setf (box-w box) (+ adv bl br pl pr))))))
                   (when (and (string= (dom-element-tag el) "select")
                              (eq (computed-width style) :auto))
-                    (let* ((adv (select-choice-width el style))
+                    (let* ((rows (select-list-rows el))
+                           (adv (select-choice-width el style :indent-groups (and rows t)))
                            (lh (font-height (computed-font-size style)
                                             (computed-font-family style)
                                             (computed-font-weight style)
-                                            (computed-font-style style)))
-                           (rows (select-list-rows el)))
+                                            (computed-font-style style))))
                       (multiple-value-bind (bt br bb bl) (border4 style)
                         (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)
                           (if rows

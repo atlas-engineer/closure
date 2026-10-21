@@ -59,6 +59,21 @@
         (remove name (dom-element-attrs el) :key #'car :test #'string-equal))
   nil)
 
+(defun select-list-items (el)
+  "List-select rows in source order. A group label is its own row."
+  (let ((items nil))
+    (labels ((walk (node)
+               (dolist (child (element-children node))
+                 (cond
+                   ((string-equal (dom-element-tag child) "option")
+                    (push (list :option child) items))
+                   ((string-equal (dom-element-tag child) "optgroup")
+                    (push (list :label child) items)
+                    (walk child))
+                   (t (walk child))))))
+      (walk el))
+    (nreverse items)))
+
 (defun form-options (el)
   (let ((opts nil))
     (labels ((walk (n)

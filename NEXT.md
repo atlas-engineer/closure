@@ -537,6 +537,7 @@ from the Lisp engine without calling Node or another browser engine.
 - width and height on a canvas or video set the size Chromium uses. An author size wins.
 - An indeterminate progress paints a short blue bar. A value of zero stays empty.
 - A disabled fieldset fades its controls. A control in the first legend stays enabled.
+- A list select shows an optgroup label in bold, indents its options, and grays a disabled group.
 
 ## Next
 

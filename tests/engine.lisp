@@ -5424,6 +5424,43 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-optgroup-list ()
+  (let* ((path "/tmp/closure-engine-optgroup.png")
+         (root (closure.engine:render-html
+                "<select id='s' size='6'><option>One</option><optgroup label='Group'><option>Blue</option><option selected>Red</option></optgroup><optgroup label='More' disabled><option>Gold</option></optgroup></select>"
+                :width 160 :height 140
+                :stylesheet "body{margin:0}"
+                :output path))
+         (box (closure.engine:find-box root "s")))
+    (check "optgroup list" box)
+    (labels ((dark (x0 x1 y0 y1)
+               (loop for y from y0 to y1
+                     thereis (loop for x from x0 to x1
+                                   thereis (multiple-value-bind (r g b) (png-rgb path x y)
+                                             (< (+ r g b) 180)))))
+             (faded (x0 x1 y0 y1)
+               (loop for y from y0 to y1
+                     thereis (loop for x from x0 to x1
+                                   thereis (multiple-value-bind (r g b) (png-rgb path x y)
+                                             (and (< (abs (- r 118)) 24)
+                                                  (< (abs (- g 118)) 24)
+                                                  (< (abs (- b 118)) 24)))))))
+      (let* ((x (round (closure.engine:box-x box)))
+             (y (round (closure.engine:box-y box))))
+        (check "a group label sits on the left"
+               (dark (+ x 4) (+ x 16) (+ y 20) (+ y 32)))
+        (check "an option inside a group is indented"
+               (and (not (dark (+ x 4) (+ x 16) (+ y 36) (+ y 48)))
+                    (dark (+ x 20) (+ x 50) (+ y 36) (+ y 48))))
+        (check "a disabled group label is gray"
+               (faded (+ x 4) (+ x 40) (+ y 70) (+ y 82)))
+        (multiple-value-bind (r g b)
+            (png-rgb path (+ x 8) (+ y 60))
+          (check "the selected option in a group is gray"
+                 (and (< (abs (- r 206)) 16)
+                      (< (abs (- g 206)) 16)
+                      (< (abs (- b 206)) 16))))))))
+
 (defun test-fieldset-disabled ()
   (let* ((html "<fieldset disabled>
                   <legend><button id='lb'>OK</button></legend>
@@ -6368,6 +6405,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-optgroup-list)
   (test-fieldset-disabled)
   (test-progress-indeterminate)
   (test-canvas-size)
