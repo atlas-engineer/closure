@@ -5424,6 +5424,34 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-marquee-presentational ()
+  (let* ((root (closure.engine:layout-html
+                "<marquee id='m' width='120' height='30' bgcolor='#c00'>scroll</marquee>
+                 <marquee id='a' width='120' height='30' style='width:40px;background:#0a0'>x</marquee>
+                 <div id='d' bgcolor='#c00'>no</div>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0}"))
+         (m (closure.engine:find-box root "m"))
+         (a (closure.engine:find-box root "a"))
+         (d (closure.engine:find-box root "d"))
+         (ms (and m (closure.engine::box-style m)))
+         (as (and a (closure.engine::box-style a)))
+         (ds (and d (closure.engine::box-style d))))
+    (check "marquee boxes" (and m a d ms as))
+    (check "width and height size a marquee"
+           (and m (~ (closure.engine:box-width m) 120d0)
+                (~ (closure.engine:box-height m) 30d0)))
+    (check "bgcolor paints a marquee"
+           (and ms
+                (~ (* (first (closure.engine::computed-background ms)) 255d0) 204d0 2d0)
+                (< (* (second (closure.engine::computed-background ms)) 255d0) 20d0)))
+    (check "an author size and background win"
+           (and a as (~ (closure.engine:box-width a) 40d0)
+                (> (* (second (closure.engine::computed-background as)) 255d0) 150d0)))
+    (check "a div ignores bgcolor"
+           (or (null ds)
+               (null (closure.engine::computed-background ds))))))
+
 (defun test-img-align ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'>X<img id='top' align='top' src='square.png' width='20' height='20'><img id='mid' align='middle' src='square.png' width='20' height='20'><img id='abs' align='absmiddle' src='square.png' width='20' height='20'><img id='bot' align='absbottom' src='square.png' width='20' height='20'><img id='base' align='bottom' src='square.png' width='20' height='20'><img id='own' align='middle' style='vertical-align:top' src='square.png' width='20' height='20'></p>"
@@ -6653,6 +6681,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-marquee-presentational)
   (test-img-align)
   (test-frameborder)
   (test-align-hr-legend)

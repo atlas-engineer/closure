@@ -1924,7 +1924,7 @@
     ;; width and height attributes beat the user-agent size and lose to author CSS.
     (when (and (not pseudo)
                (member (dom-element-tag element)
-                       '("iframe" "object" "embed" "canvas" "video"
+                       '("iframe" "object" "embed" "canvas" "video" "marquee"
                          "table" "td" "th" "tr" "col" "colgroup" "hr")
                        :test #'string-equal))
       (dolist (name '("width" "height"))
@@ -2618,7 +2618,7 @@ scrollbar gutter. An author width or height is left alone."
   "bgcolor on body, table, row, and cell. An author background wins."
   (when (and (not (gethash :background-color specified))
              (member (dom-element-tag element)
-                     '("body" "table" "tr" "td" "th") :test #'string-equal))
+                     '("body" "table" "tr" "td" "th" "marquee") :test #'string-equal))
     (let ((raw (dom-attr element "bgcolor")))
       (when (and raw (plusp (length (string-trim '(#\space #\newline #\tab) raw))))
         (let ((c (parse-color-tokens (css-tokenize raw))))

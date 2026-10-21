@@ -546,6 +546,7 @@ from the Lisp engine without calling Node or another browser engine.
 - align on a rule moves it to the center or the right. align on a legend does the same. An author margin or text-align wins.
 - frameborder=0 removes an iframe's border. A non-zero integer keeps it, and an author border wins.
 - align on an image sets top, middle, absmiddle, bottom, or absbottom. An author vertical-align wins.
+- width, height, and bgcolor on a marquee set the size and color Chromium uses. An author rule wins.
 
 ## Next
 
