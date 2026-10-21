@@ -5424,6 +5424,35 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-table-align-float ()
+  (let* ((root (closure.engine:layout-html
+                "<table id='l' align='left'><tr><td>Left</td></tr></table>
+                 <table id='r' align='right'><tr><td>Right</td></tr></table>
+                 <table id='c' align='center'><tr><td>Center</td></tr></table>
+                 <table id='a' align='right' style='float:none'><tr><td>Auth</td></tr></table>"
+                :width 400 :height 160
+                :stylesheet "body{margin:0}"))
+         (left (closure.engine:find-box root "l"))
+         (right (closure.engine:find-box root "r"))
+         (center (closure.engine:find-box root "c"))
+         (author (closure.engine:find-box root "a")))
+    (check "table align boxes" (and left right center author))
+    (check "align=left floats the table to the left"
+           (and left (< (closure.engine:box-x left) 2d0)
+                (eq (closure.engine::computed-float (closure.engine::box-style left))
+                    :left)))
+    (check "align=right floats the table to the right"
+           (and right (> (+ (closure.engine:box-x right)
+                            (closure.engine:box-width right))
+                         390d0)
+                (eq (closure.engine::computed-float (closure.engine::box-style right))
+                    :right)))
+    (check "align=center still centers the table"
+           (and center (> (closure.engine:box-x center) 100d0)
+                (< (closure.engine:box-x center) 250d0)))
+    (check "an author float wins over table align"
+           (and author (< (closure.engine:box-x author) 2d0)))))
+
 (defun test-caption-align ()
   (let* ((root (closure.engine:layout-html
                 "<table><caption id='b' align='bottom'>Bottom</caption><tr><td id='bc'>A</td></tr></table>
@@ -6712,6 +6741,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-table-align-float)
   (test-caption-align)
   (test-marquee-presentational)
   (test-img-align)

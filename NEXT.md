@@ -548,6 +548,7 @@ from the Lisp engine without calling Node or another browser engine.
 - align on an image sets top, middle, absmiddle, bottom, or absbottom. An author vertical-align wins.
 - width, height, and bgcolor on a marquee set the size and color Chromium uses. An author rule wins.
 - caption align=bottom puts the caption under the table. Left and right stay centered. An author caption-side wins.
+- table align=left or right floats the table. align=center still centers it. An author float wins.
 
 ## Next
 
