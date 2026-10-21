@@ -484,6 +484,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An iframe border is Chromium's inset gray, 154 on the top and left and 238 on the bottom and right.
 - A solid border fills its own pixels, so a 3px dialog edge does not fringe into the next row.
 - A checkbox margin is 3px and a radio margin matches Chromium, so the line is 22px tall.
+- The range thumb is a blue disc, painted after the track clip is restored.
 
 ## Next
 

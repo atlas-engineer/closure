@@ -1068,6 +1068,9 @@ It does not apply when borders are collapsed."
         (cairo-rectangle cr x y (max 0d0 (* w ratio)) track-h)
         (cairo-fill cr)
         (cairo-restore cr)
+        ;; Restore drops the blue set inside the clip, so the thumb would
+        ;; fill in whatever color was current before the track.
+        (set-color cr (color-bytes 0 117 255))
         (cairo-arc cr cx cy 7d0 0d0 (* 2d0 pi))
         (cairo-fill cr)))))
 
