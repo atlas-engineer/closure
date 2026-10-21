@@ -2944,12 +2944,28 @@ widths are kept. Columns without one share what remains."
               (let* ((span (cell-colspan cell))
                      (st (and (dom-element-p cell) (dom-element-style cell)))
                      (raw (and st (computed-width st)))
-                     (px (and st (= span 1) (definite-length raw room))))
-                (when (and (numberp px) (null (aref kinds col)))
-                  (setf any t
-                        (aref cols col) px
-                        (aref kinds col) (if (and (consp raw) (eq (car raw) :%))
-                                             :percent :pixel)))
+                     (px (and st (definite-length raw room)))
+                     (targets (loop for i from 0 below span
+                                    for c = (+ col i)
+                                    while (< c ncols)
+                                    collect c)))
+                (cond
+                  ((and (numberp px) (= span 1) (null (aref kinds col)))
+                   (setf any t
+                         (aref cols col) px
+                         (aref kinds col) (if (and (consp raw) (eq (car raw) :%))
+                                              :percent :pixel)))
+                  ;; A percentage colspan is that share of the table, split
+                  ;; evenly. A column that already has a width is left alone.
+                  ((and (numberp px) (> span 1)
+                        (consp raw) (eq (car raw) :%)
+                        targets
+                        (every (lambda (c) (null (aref kinds c))) targets))
+                   (let ((each (/ px (float (length targets) 1d0))))
+                     (dolist (c targets)
+                       (setf any t
+                             (aref cols c) each
+                             (aref kinds c) :percent)))))
                 (dotimes (i span)
                   (when (< (+ col i) ncols)
                     (setf (aref covered (+ col i)) (cell-rowspan cell row))))

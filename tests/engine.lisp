@@ -6363,6 +6363,40 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-colspan-percent ()
+  (let* ((root (closure.engine:layout-html
+                "<table id='t1' width='200' cellspacing='0' cellpadding='0'><tr><td colspan='2' width='50%'>A</td><td width='25%'>B</td></tr><tr><td id='a'>x</td><td id='b'>y</td><td id='c'>z</td></tr></table>
+                 <table id='t2' width='200' cellspacing='0' cellpadding='0'><tr><td colspan='2' width='80%'>A</td><td width='50%'>B</td></tr><tr><td id='d'>x</td><td id='e'>y</td><td id='f'>z</td></tr></table>
+                 <table id='t7' width='100' cellspacing='2' cellpadding='0'><tr><td colspan='2' width='50%'>A</td><td width='50%'>B</td></tr><tr><td id='g'>x</td><td id='h'>y</td><td id='i'>z</td></tr></table>
+                 <table id='px' width='200' cellspacing='0' cellpadding='0'><tr><td colspan='2' width='100'>A</td><td>B</td></tr><tr><td id='p'>x</td><td id='q'>y</td><td id='r'>z</td></tr></table>
+                 <table id='col' width='200' cellspacing='0' cellpadding='0'><col width='40'><tr><td colspan='2' width='50%'>A</td><td>B</td></tr><tr><td id='u'>x</td><td id='v'>y</td><td id='w'>z</td></tr></table>"
+                :width 400 :height 300
+                :stylesheet "body{margin:0} table{border-collapse:collapse} td{padding:0} #t7{border-collapse:separate}"))
+         (w (lambda (id) (closure.engine:box-width (closure.engine:find-box root id)))))
+    (check "colspan percentage boxes"
+           (every (lambda (id) (closure.engine:find-box root id))
+                  '("a" "b" "c" "d" "e" "f" "g" "h" "i" "p" "q" "r" "u" "v" "w")))
+    (check "a colspan percentage splits across its columns"
+           (and (~ (funcall w "a") (/ 200d0 3d0))
+                (~ (funcall w "b") (/ 200d0 3d0))
+                (~ (funcall w "c") (/ 200d0 3d0))))
+    (check "a wide colspan percentage keeps its share"
+           (and (~ (funcall w "d") 80d0)
+                (~ (funcall w "e") 80d0)
+                (~ (funcall w "f") 40d0)))
+    (check "a colspan percentage uses the room inside the spacing"
+           (and (~ (funcall w "g") 23d0)
+                (~ (funcall w "h") 23d0)
+                (~ (funcall w "i") 46d0)))
+    (check "a pixel colspan does not set the columns"
+           (and (~ (funcall w "p") (/ 200d0 3d0))
+                (~ (funcall w "q") (/ 200d0 3d0))
+                (~ (funcall w "r") (/ 200d0 3d0))))
+    (check "a column width wins over a colspan percentage"
+           (and (~ (funcall w "u") 40d0)
+                (~ (funcall w "v") 80d0)
+                (~ (funcall w "w") 80d0)))))
+
 (defun test-input-image-percent ()
   (let* ((src "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (root (closure.engine:layout-html
@@ -8239,6 +8273,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-colspan-percent)
   (test-input-image-percent)
   (test-svg-percent)
   (test-canvas-percent)
