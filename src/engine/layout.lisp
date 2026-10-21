@@ -528,6 +528,24 @@ Indented group options count only for a list select."
                     (setf (box-collapsed-bottom box) open-margin)
                     (consume-margin))
                 (setf flow-y (max flow-y float-clear))
+                ;; Chromium draws a disclosure row even when details has no summary.
+                (when (and (string-equal (dom-element-tag el) "details")
+                           (notany (lambda (c)
+                                     (and (dom-element-p c)
+                                          (string-equal (dom-element-tag c) "summary")))
+                                   (dom-node-children el)))
+                  (let* ((lh (used-line-height style))
+                         (row (make-box :kind :block :style style
+                                        :x content-x
+                                        :y (+ (box-y box) bt pt)
+                                        :w cw :h lh
+                                        :marker (if (dom-attr el "open")
+                                                    :disclosure-open
+                                                    :disclosure-closed)
+                                        :marker-inside t)))
+                    (dolist (k kids) (translate-box k 0d0 lh))
+                    (incf flow-y lh)
+                    (setf kids (append kids (list row)))))
                 (let* ((specified-h (definite-length (computed-height style) avail-h))
                        (content-h (if specified-h
                                       (if (eq (computed-box-sizing style) :border-box)

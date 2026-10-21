@@ -1423,6 +1423,41 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-details-no-summary ()
+  (let* ((root (closure.engine:layout-html
+                "<details id='e'></details>
+                 <details id='c'><p id='b'>Body</p></details>
+                 <details id='o' open><p id='s'>Shown</p></details>
+                 <details id='n'><summary id='sum'>More</summary><p id='in'>In</p></details>"
+                :width 400 :height 200
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (empty (closure.engine:find-box root "e"))
+         (closed (closure.engine:find-box root "c"))
+         (body (closure.engine:find-box root "b"))
+         (open (closure.engine:find-box root "o"))
+         (shown (closure.engine:find-box root "s"))
+         (named (closure.engine:find-box root "n"))
+         (summary (closure.engine:find-box root "sum")))
+    (labels ((marker (box)
+               (some (lambda (k) (closure.engine::box-marker k))
+                     (closure.engine::box-children box))))
+      (check "details without summary boxes" (and empty closed open named summary))
+      (check "an empty details is one disclosure line"
+             (and empty (~ (closure.engine:box-height empty) 18d0 2d0)
+                  (eq (marker empty) :disclosure-closed)))
+      (check "a closed details hides its body"
+             (and closed (null body)
+                  (~ (closure.engine:box-height closed) 18d0 2d0)))
+      (check "an open details shows the body under the marker"
+             (and open shown
+                  (eq (marker open) :disclosure-open)
+                  (~ (- (closure.engine:box-y shown) (closure.engine:box-y open)) 18d0 2d0)))
+      (check "a real summary is not given a second marker row"
+             (and named summary
+                  (~ (closure.engine:box-height named)
+                     (closure.engine:box-height summary)
+                     2d0))))))
+
 (defun test-image-one-axis ()
   (let* ((png "/tmp/closure-one-axis.png")
          (html (format nil "<img id='badw' src='/tmp/closure-does-not-exist.png' width='40' alt='Hello'>
@@ -7325,6 +7360,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-details-no-summary)
   (test-image-one-axis)
   (test-image-alt)
   (test-image-alt-clip)
