@@ -558,6 +558,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A short ruby annotation stretches to the base. The glyphs stay centered.
 - A table cell centers its text. valign and an author vertical-align still win.
 - A right-to-left bdo reverses its characters. A left-to-right bdo does not.
+- noembed and param are hidden. An author display still shows a noembed.
 
 ## Next
 

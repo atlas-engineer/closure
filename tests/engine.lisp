@@ -2728,6 +2728,37 @@ b</div>"
                 (~ (closure.engine:box-height rb) 17d0)
                 (~ (closure.engine:box-x rb) (closure.engine:box-x ruby) 0.2d0)))))
 
+(defun test-noembed-param ()
+  (labels ((text-box (root word)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (and (eq (closure.engine::box-kind b) :text)
+                                       (string= (or (closure.engine::box-text b) "") word))
+                              (setf found b))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               found)))
+    (let* ((root (closure.engine:layout-html
+                  "<p>X<noembed id='ne'>Hide</noembed>Y<param id='pa' name='a' value='1'></p>
+                   <noembed id='shown' style='display:inline'>See</noembed>"
+                  :width 200 :height 40
+                  :stylesheet "body{margin:0} p{margin:0}"))
+           (x (text-box root "X"))
+           (y (text-box root "Y"))
+           (see (text-box root "See")))
+      (check "hidden fallback boxes" (and x y see))
+      (check "noembed and param are not shown"
+             (and (null (closure.engine:find-box root "ne"))
+                  (null (closure.engine:find-box root "pa"))
+                  (null (text-box root "Hide"))))
+      (check "the words around a noembed stay together"
+             (and x y (~ (closure.engine:box-x y)
+                         (+ (closure.engine:box-x x) (closure.engine:box-width x))
+                         0.6d0)))
+      (check "an author display shows a noembed"
+             (and see (string= (closure.engine::box-text see) "See"))))))
+
 (defun test-bdo-rtl ()
   (labels ((texts (root id)
              (let ((found nil))
@@ -7068,6 +7099,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-noembed-param)
   (test-bdo-rtl)
   (test-ruby-annotation-box)
   (test-ruby-rtc)
