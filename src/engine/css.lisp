@@ -1000,7 +1000,9 @@
            (multiple-value-bind (b more) (parse-one-length rest)
              (declare (ignore more))
              (list a (or b a))))))
-      ((:vertical-align) (kw '("baseline" "top" "middle" "bottom" "sub" "super" "text-top" "text-bottom")))
+      ((:vertical-align)
+       (or (len)
+           (kw '("baseline" "top" "middle" "bottom" "sub" "super" "text-top" "text-bottom"))))
       ((:flex-direction) (kw '("row" "row-reverse" "column" "column-reverse")))
       ((:flex-wrap) (kw '("nowrap" "wrap" "wrap-reverse")))
       ((:justify-content)
@@ -2057,7 +2059,12 @@
           (when (consp value)
             (setf (computed-border-spacing-x style) (or (len (first value)) 0d0)
                   (computed-border-spacing-y style) (or (len (second value)) 0d0))))
-         (:vertical-align (when value (setf (computed-vertical-align style) value)))
+         (:vertical-align
+          (when value
+            (setf (computed-vertical-align style)
+                  (if (keywordp value)
+                      value
+                      (absolutize value (computed-font-size style))))))
          (:flex-direction (setf (computed-flex-direction style) value))
          (:flex-wrap (setf (computed-flex-wrap style) value))
          (:justify-content (setf (computed-justify-content style) value))

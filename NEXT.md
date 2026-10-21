@@ -408,8 +408,10 @@ from the Lisp engine without calling Node or another browser engine.
 - A fieldset has a 2px groove border and its legend sits on the top edge.
   A closed details shows only the summary. A header cell is centered, and
   a separate table keeps 2px of border spacing.
+- A video and a canvas are 300 by 150. Progress is 160 by 16 and meter is
+  80 by 16, both 0.2em below the baseline. Audio is not shown.
 
 ## Next
 
-1. Ruby, the form controls, and several embedded elements are still missing
-   from the sample page. The done condition is not met.
+1. Ruby annotations and several form controls still do not match the
+   browser. The done condition is not met.

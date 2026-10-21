@@ -2465,6 +2465,37 @@ b</div>"
         (check "address has no extra indent"
                (and block (~ (closure.engine:box-x block) 0d0)))))))
 
+(defun test-replaced-widgets ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'><video id='v'></video> <canvas id='c'></canvas> <progress id='g'></progress> <meter id='m'></meter></p><audio id='a'></audio>"
+                :width 1024 :height 220
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (video (closure.engine:find-box root "v"))
+         (canvas (closure.engine:find-box root "c"))
+         (progress (closure.engine:find-box root "g"))
+         (meter (closure.engine:find-box root "m"))
+         (audio (closure.engine:find-box root "a")))
+    (check "replaced widgets" (and video canvas progress meter))
+    (check "video and canvas are 300 by 150"
+           (and video canvas
+                (~ (closure.engine:box-width video) 300d0)
+                (~ (closure.engine:box-height video) 150d0)
+                (~ (closure.engine:box-width canvas) 300d0)
+                (~ (closure.engine:box-height canvas) 150d0)
+                (~ (closure.engine:box-x canvas) 304d0)))
+    (check "progress is 160 by 16 and sits 0.2em below the video baseline"
+           (and progress video
+                (~ (closure.engine:box-width progress) 160d0)
+                (~ (closure.engine:box-height progress) 16d0)
+                (~ (- (closure.engine:box-y progress) (closure.engine:box-y video)) 137.2d0 0.2d0)))
+    (check "meter is 80 by 16 on that same line"
+           (and meter progress
+                (~ (closure.engine:box-width meter) 80d0)
+                (~ (closure.engine:box-height meter) 16d0)
+                (~ (closure.engine:box-y meter) (closure.engine:box-y progress) 0.2d0)))
+    (check "audio is not shown"
+           (not audio))))
+
 (defun test-fieldset-details ()
   (let* ((root (closure.engine:layout-html
                 "<fieldset id='f'><legend id='l'>Legend</legend>Field</fieldset>
@@ -4369,6 +4400,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-replaced-widgets)
   (test-fieldset-details)
   (test-smaller-headings)
   (test-br-and-center)

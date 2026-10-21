@@ -68,6 +68,9 @@ script element after style and layout. Left unset until that engine exists.")
    summary { display: list-item; list-style-type: disclosure-closed; list-style-position: inside; }
    img, video, canvas, svg, input, select, textarea, iframe { display: inline-block; }
    video, canvas { width: 300px; height: 150px; }
+   audio { display: none; }
+   progress { display: inline-block; width: 160px; height: 16px; vertical-align: -0.2em; }
+   meter { display: inline-block; width: 80px; height: 16px; vertical-align: -0.2em; }
    hr { display: block; margin-top: 0.5em; margin-bottom: 0.5em; border: 1px inset #808080; }
    center { text-align: center; }
    button, input, select, textarea { font-family: sans-serif; }

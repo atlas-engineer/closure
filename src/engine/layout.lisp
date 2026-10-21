@@ -813,11 +813,13 @@ then adds one pixel: size/5 for sub, size/3 for super."
              (raw-y (item)
                "Item top relative to the parent baseline. Smaller is higher."
                (let* ((base (if (plusp (box-baseline item)) (box-baseline item) (box-h item)))
-                      (em (computed-font-size style)))
-                 (case (align-kind item)
-                   (:super (- (+ base (baseline-shift em 3))))
-                   (:sub (+ (- base) (baseline-shift em 5)))
-                   (:middle (- (* -0.25d0 em) (/ (box-h item) 2d0)))
+                      (em (computed-font-size style))
+                      (kind (align-kind item)))
+                 (cond
+                   ((numberp kind) (- (- base) kind))
+                   ((eq kind :super) (- (+ base (baseline-shift em 3))))
+                   ((eq kind :sub) (+ (- base) (baseline-shift em 5)))
+                   ((eq kind :middle) (- (* -0.25d0 em) (/ (box-h item) 2d0)))
                    (t (- base))))))
       (feed-inline nodes style nil)
       (when current (break-line))
