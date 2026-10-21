@@ -3048,10 +3048,15 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
     (closure.engine:render-html
-     "<input type='file'>"
+     "<div style='padding-top:0.1px'><input type='file' style='display:block'></div>"
      :width 280 :height 30
      :stylesheet "body{margin:0}"
      :output path)
+    (multiple-value-bind (r g b) (png-rgb path 20 0)
+      (check "the file button border uses the nearer pixel"
+             (and (< (abs (- r 118)) 12)
+                  (< (abs (- g 118)) 12)
+                  (< (abs (- b 118)) 12))))
     (multiple-value-bind (r g b) (png-rgb path 20 6)
       (check "the file button is gray" (and (> r 200) (> g 200) (> b 200) (< r 250))))
     (multiple-value-bind (r g b) (png-rgb path 240 6)

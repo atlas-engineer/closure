@@ -485,6 +485,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A solid border fills its own pixels, so a 3px dialog edge does not fringe into the next row.
 - A checkbox margin is 3px and a radio margin matches Chromium, so the line is 22px tall.
 - The range thumb is a blue disc, painted after the track clip is restored.
+- A file button border uses the nearer pixel, so a box at 2922.09 does not paint one row low.
 
 ## Next
 
