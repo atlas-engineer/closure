@@ -531,6 +531,7 @@ from the Lisp engine without calling Node or another browser engine.
 - disabled fades a button and grays a field. An author color wins.
 - A placeholder is gray, and a typed value stays the field's own color.
 - cols and rows size a textarea from the character cell. An author size wins.
+- size on a text field sets its width in characters. An author width wins.
 
 ## Next
 

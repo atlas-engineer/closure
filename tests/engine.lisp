@@ -5424,6 +5424,31 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-input-size ()
+  (let* ((html "<input id='d' value='Hi'>
+                <input id='a' size='10' value='Hi'>
+                <input id='b' size='40' value='Hi'>
+                <input id='c' size='10' style='width:80px' value='Hi'>
+                <input id='s' type='submit' size='10' value='Go'>")
+         (root (closure.engine:layout-html html :width 800 :stylesheet "body{margin:0}"))
+         (d (closure.engine:find-box root "d"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (s (closure.engine:find-box root "s")))
+    (check "sized inputs" (and d a b c s))
+    (check "the default field stays 177 wide"
+           (and d (~ (closure.engine:box-width d) 177d0)))
+    (check "size sets the field width in characters"
+           (and a b
+                (~ (closure.engine:box-width a) 97d0 6d0)
+                (> (closure.engine:box-width b) (+ (closure.engine:box-width a) 150d0))
+                (~ (closure.engine:box-height a) 21d0)))
+    (check "an author width wins over size"
+           (and c (~ (closure.engine:box-width c) 80d0)))
+    (check "size does not widen a submit button"
+           (and s (< (closure.engine:box-width s) 80d0)))))
+
 (defun test-textarea-size ()
   (let* ((html "<textarea id='d'></textarea>
                 <textarea id='a' cols='40' rows='4'></textarea>
@@ -6172,6 +6197,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-input-size)
   (test-textarea-size)
   (test-placeholder)
   (test-disabled)

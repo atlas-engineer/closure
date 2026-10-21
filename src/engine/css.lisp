@@ -2358,6 +2358,30 @@ the smaller fixed table."
                  '(10d0 12d0 13d0 16d0 20d0 26d0 39d0)
                  '(10d0 13d0 16d0 18d0 24d0 32d0 48d0)))))))
 
+(defun apply-input-size (element style)
+  "size on a text field is a character width plus Chromium's 17px gutter.
+An author width is left alone. Buttons and special inputs ignore size."
+  (when (and style (string-equal (dom-element-tag element) "input"))
+    (let* ((type (string-downcase (or (dom-attr element "type") "text")))
+           (raw (string-trim '(#\space #\newline #\tab #\return)
+                             (or (dom-attr element "size") "")))
+           (n (and (plusp (length raw))
+                   (ignore-errors (parse-integer raw :junk-allowed t)))))
+      (when (and n (> n 0)
+                 (not (member type '("submit" "reset" "button" "checkbox" "radio"
+                                     "file" "image" "color" "range" "date" "month"
+                                     "week" "time" "datetime-local" "hidden")
+                              :test #'string=))
+                 (numberp (computed-width style))
+                 (< (abs (- (computed-width style) 177d0)) 0.5d0))
+        (setf (computed-width style)
+              (+ (* n (text-advance "0"
+                                    (computed-font-size style)
+                                    (computed-font-family style)
+                                    (computed-font-weight style)
+                                    (computed-font-style style)))
+                 17d0))))))
+
 (defun apply-textarea-presentational (element style)
   "cols and rows size a textarea from the monospace cell, plus Chromium's
 scrollbar gutter. An author width or height is left alone."
@@ -2506,7 +2530,8 @@ scrollbar gutter. An author width or height is left alone."
           (apply-align-presentational element style best)
           (apply-valign-presentational element style best)
           (apply-hr-presentational element style)
-          (apply-textarea-presentational element style))))
+          (apply-textarea-presentational element style)
+          (apply-input-size element style))))
     (if pseudo
         (setf (dom-element-style element) previous)
         (setf (dom-element-style element) style))
