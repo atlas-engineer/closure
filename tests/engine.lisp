@@ -2942,6 +2942,28 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-input-widgets ()
+  (let* ((root (closure.engine:layout-html
+                "<input id='f' type='file'><input id='g' type='range'><input id='c' type='color'>"
+                :width 800 :height 40
+                :stylesheet "body{margin:0}"))
+         (file (closure.engine:find-box root "f"))
+         (range (closure.engine:find-box root "g"))
+         (color (closure.engine:find-box root "c")))
+    (check "file, range, and color" (and file range color))
+    (check "a file input is 253 by 21"
+           (and file
+                (~ (closure.engine:box-width file) 253d0)
+                (~ (closure.engine:box-height file) 21d0)))
+    (check "a range is 129 by 16"
+           (and range
+                (~ (closure.engine:box-width range) 129d0)
+                (~ (closure.engine:box-height range) 16d0)))
+    (check "a color input is 50 by 27"
+           (and color
+                (~ (closure.engine:box-width color) 50d0)
+                (~ (closure.engine:box-height color) 27d0)))))
+
 (defun test-check-submit ()
   (let* ((root (closure.engine:layout-html
                 "<input id='c' type='checkbox'><input id='r' type='radio'><input id='s' type='submit' value='Go'><input id='z' type='reset' value='Reset'>"
@@ -4901,6 +4923,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-input-widgets)
   (test-check-submit)
   (test-open-details)
   (test-fieldset-details)

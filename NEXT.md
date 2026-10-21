@@ -453,6 +453,8 @@ from the Lisp engine without calling Node or another browser engine.
   box is 52px tall, and the paragraph starts 34px down.
 - A checkbox and a radio are 13px. Submit and reset use the button border
   and shrink to the label instead of the text-field width.
+- A file input is 253 by 21, a range is 129 by 16, and a color input is
+  50 by 27.
 
 ## Next
 
