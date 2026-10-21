@@ -1423,6 +1423,35 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-frame-src ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (doc "file:///home/jmercouris/Source/closure/screenshots/frame.html")
+         (out "/tmp/closure-engine-frame-src.png")
+         (html (format nil "<frameset cols='100,*'><frame id='a' src='~A'></frame><frame id='b' src='~A'></frame></frameset>"
+                      png doc))
+         (root (closure.engine:render-html html :width 300 :height 80 :output out))
+         (image (closure.engine:find-box root "a"))
+         (page (closure.engine:find-box root "b")))
+    (check "frame boxes" (and image page))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x image) 4))
+                 (round (+ (closure.engine:box-y image) 4)))
+      (check "a frame src image paints at the top left"
+             (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x image) 40))
+                 (round (+ (closure.engine:box-y image) 10)))
+      (check "a frame image keeps its own size"
+             (and (> r 240) (> g 240) (> b 240))))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x page) 20))
+                 (round (+ (closure.engine:box-y page) 20)))
+      (check "a frame src document paints inside the frame"
+             (and (> r 180) (< g 40) (< b 40))))))
+
 (defun test-iframe-image ()
   (let* ((url "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (out "/tmp/closure-engine-iframe-image.png")
@@ -7716,6 +7745,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-frame-src)
   (test-iframe-image)
   (test-object-html)
   (test-iframe-src)
