@@ -2073,7 +2073,28 @@
                 (let ((decl (make-css-decl :property :color :raw text
                                            :origin :author :order 0)))
                   (dolist (pair (expand-declaration :color text))
-                    (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
+                    (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))
+            ;; marginwidth beats leftmargin. marginheight beats topmargin.
+            ;; Each side is its own declaration, so an author margin wins there.
+            (labels ((push-sides (raw props)
+                       (let ((px (html-spacing-raw raw)))
+                         (when px
+                           (dolist (prop props)
+                             (let ((decl (make-css-decl :property prop :raw px
+                                                        :origin :author :order 0)))
+                               (dolist (pair (expand-declaration prop px))
+                                 (push (list (car pair) (cdr pair) decl '(0 0 0 0))
+                                       found))))))))
+              (if (html-spacing-raw (dom-attr body "marginwidth"))
+                  (push-sides (dom-attr body "marginwidth")
+                              '(:margin-left :margin-right))
+                  (push-sides (dom-attr body "leftmargin")
+                              '(:margin-left :margin-right)))
+              (if (html-spacing-raw (dom-attr body "marginheight"))
+                  (push-sides (dom-attr body "marginheight")
+                              '(:margin-top :margin-bottom))
+                  (push-sides (dom-attr body "topmargin")
+                              '(:margin-top :margin-bottom)))))
           (when (and (string-equal (dom-element-tag element) "a")
                      (dom-attr element "href"))
             (let* ((states (and *match-states* (gethash element *match-states*)))

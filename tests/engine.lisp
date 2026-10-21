@@ -5424,6 +5424,33 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-body-margin ()
+  (labels ((margins (html)
+             (let* ((root (closure.engine:layout-html html :width 400 :height 80
+                                                     :stylesheet "p{margin:0}"))
+                    (box (closure.engine:find-box root "b"))
+                    (st (and box (closure.engine::box-style box))))
+               (and st
+                    (list (closure.engine::computed-mt st)
+                          (closure.engine::computed-mr st)
+                          (closure.engine::computed-mb st)
+                          (closure.engine::computed-ml st))))))
+    (let ((sides (margins "<body id='b' leftmargin='30' topmargin='12'><p>Hi</p></body>"))
+          (frame (margins "<body id='b' marginwidth='40' marginheight='18'><p>Hi</p></body>"))
+          (both (margins "<body id='b' leftmargin='30' topmargin='12' marginwidth='10' marginheight='4'><p>Hi</p></body>"))
+          (author (margins "<body id='b' leftmargin='30' style='margin-left:2px'><p>Hi</p></body>")))
+      (check "body margin boxes" (and sides frame both author))
+      (check "leftmargin and topmargin set both sides"
+             (and (~ (fourth sides) 30d0) (~ (second sides) 30d0)
+                  (~ (first sides) 12d0) (~ (third sides) 12d0)))
+      (check "marginwidth and marginheight set both sides"
+             (and (~ (fourth frame) 40d0) (~ (second frame) 40d0)
+                  (~ (first frame) 18d0) (~ (third frame) 18d0)))
+      (check "marginwidth wins over leftmargin"
+             (and (~ (fourth both) 10d0) (~ (first both) 4d0)))
+      (check "an author margin wins on that side"
+             (and (~ (fourth author) 2d0) (~ (second author) 30d0))))))
+
 (defun test-table-background ()
   (let* ((html "<table id='t' background='square.png'>
                   <tr id='r' background='square.png'>
@@ -6526,6 +6553,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-body-margin)
   (test-table-background)
   (test-body-presentational)
   (test-disclosure-open)

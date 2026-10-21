@@ -542,6 +542,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An open disclosure triangle reaches Chromium's right edge, and its tip sits on Chromium's row.
 - body text, link, and background set the color and tiled image Chromium uses. An author rule wins.
 - background on a table, row, or cell tiles that image. A div ignores it, and an author image wins.
+- leftmargin and topmargin set the body margin. marginwidth and marginheight win when both are set.
 
 ## Next
 
