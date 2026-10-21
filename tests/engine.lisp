@@ -4667,6 +4667,46 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                    (* 16d0 (/ 5d0 18d0)) 0.3d0)
                 (< (closure.engine:box-y index) (closure.engine:box-y base))))))
 
+(defun test-math-display ()
+  (let* ((root (closure.engine:layout-html
+                "<math id='i'><mi id='z'>z</mi></math>
+                 <math id='b' display='block'><mi id='x'>x</mi></math>
+                 <math id='u' display='Block'><mi id='c'>x</mi></math>
+                 <math id='a' display='block' style='text-align:left'><mi id='l'>x</mi></math>"
+                :width 200 :height 120
+                :stylesheet "body{margin:0}"))
+         (inline (closure.engine:find-box root "z"))
+         (centered (closure.engine:find-box root "b"))
+         (x (closure.engine:find-box root "x"))
+         (upper (closure.engine:find-box root "u"))
+         (xu (closure.engine:find-box root "c"))
+         (author (closure.engine:find-box root "a"))
+         (left (closure.engine:find-box root "l")))
+    (check "math display boxes" (and inline centered x upper xu author left))
+    (check "inline math stays at the start"
+           (and inline (< (closure.engine:box-x inline) 2d0)
+                (< (closure.engine:box-width inline) 40d0)))
+    (check "block math fills the line and centers its contents"
+           (and centered x
+                (~ (closure.engine:box-width centered) 200d0)
+                (~ (closure.engine:box-x x)
+                   (+ (closure.engine:box-x centered)
+                      (/ (- (closure.engine:box-width centered)
+                            (closure.engine:box-width x))
+                         2d0))
+                   1d0)))
+    (check "display=Block is centered too"
+           (and upper xu
+                (~ (closure.engine:box-x xu)
+                   (+ (closure.engine:box-x upper)
+                      (/ (- (closure.engine:box-width upper)
+                            (closure.engine:box-width xu))
+                         2d0))
+                   1d0)))
+    (check "an author alignment wins"
+           (and author left
+                (~ (closure.engine:box-x left) (closure.engine:box-x author) 1d0)))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8655,6 +8695,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-fraction)
   (test-math-sqrt)
   (test-math-root)
+  (test-math-display)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)

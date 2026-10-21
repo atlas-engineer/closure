@@ -2606,6 +2606,17 @@ The nearer attribute wins. An author vertical-align still wins."
                             ((string= value "baseline") :baseline))))
           (when align (setf (computed-vertical-align style) align)))))))
 
+(defun apply-math-display (element style specified)
+  "display=block turns math into a centered block. An author rule still wins."
+  (when (and (string-equal (dom-element-tag element) "math")
+             (string-equal (string-trim '(#\space #\newline #\tab #\return)
+                                        (or (dom-attr element "display") ""))
+                           "block"))
+    (unless (author-specified-p specified :display)
+      (setf (computed-display style) :block))
+    (unless (author-specified-p specified :text-align)
+      (setf (computed-text-align style) :center))))
+
 (defun apply-align-presentational (element style specified)
   "align sets text alignment, centers a table, or floats a replaced element."
   (let ((raw (dom-attr element "align")))
@@ -2739,6 +2750,7 @@ The nearer attribute wins. An author vertical-align still wins."
         (unless pseudo
           (apply-font-presentational element style best)
           (apply-bgcolor-presentational element style best)
+          (apply-math-display element style best)
           (apply-align-presentational element style best)
           (apply-valign-presentational element style best)
           (apply-hr-presentational element style)

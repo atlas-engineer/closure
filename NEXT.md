@@ -617,6 +617,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A math fraction stacks a smaller numerator over a bar and a denominator. Both are centered.
 - A square root draws a radical beside the expression and a bar over it.
 - An nth root puts a half-size index in the radical's upper corner. The radicand still starts after the sign.
+- display=block makes math a block and centers it. An author alignment still wins.
 
 ## Next
 
