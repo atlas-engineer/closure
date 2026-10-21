@@ -601,6 +601,69 @@ A replaced image does not stretch to the container the way an ordinary block doe
 then adds one pixel: size/5 for sub, size/3 for super."
   (float (+ (/ (floor (* em 64d0) divisor) 64d0) 1d0) 1d0))
 
+(defun ruby-plain-text (nodes &key skip-annot)
+  "Visible text under NODES. RT and RP are the annotation, not the base."
+  (with-output-to-string (out)
+    (dolist (n nodes)
+      (cond
+        ((dom-text-p n)
+         (write-string (collapse-space (dom-text-text n)) out))
+        ((and (dom-element-p n)
+              (dom-element-style n)
+              (not (eq (computed-display (dom-element-style n)) :none))
+              (not (and skip-annot
+                        (member (dom-element-tag n) '("rt" "rp") :test #'string=))))
+         (write-string (ruby-plain-text (dom-node-children n) :skip-annot skip-annot) out))))))
+
+(defun layout-ruby-box (el)
+  "Base text with its annotation above it. A long annotation overhangs by half its font size on each side."
+  (let* ((style (dom-element-style el))
+         (rt (find-if (lambda (c)
+                        (and (dom-element-p c) (string= (dom-element-tag c) "rt")))
+                      (dom-node-children el)))
+         (rt-style (or (and rt (dom-element-style rt)) style))
+         (base-text (string-trim '(#\space #\newline #\tab)
+                                 (ruby-plain-text (dom-node-children el) :skip-annot t)))
+         (ann-text (if rt
+                       (string-trim '(#\space #\newline #\tab)
+                                    (ruby-plain-text (dom-node-children rt)))
+                       ""))
+         (fs (computed-font-size style))
+         (fam (computed-font-family style))
+         (wt (computed-font-weight style))
+         (fst (computed-font-style style))
+         (afs (computed-font-size rt-style))
+         (afam (computed-font-family rt-style))
+         (awt (computed-font-weight rt-style))
+         (afst (computed-font-style rt-style))
+         (base-w (if (plusp (length base-text)) (text-advance base-text fs fam wt fst) 0d0))
+         (ann-w (if (plusp (length ann-text)) (text-advance ann-text afs afam awt afst) 0d0))
+         (ann-extra (if (plusp (length ann-text)) afs 0d0))
+         (ruby-w (max base-w (max 0d0 (- ann-w ann-extra))))
+         (base-asc (font-ascent fs fam wt fst))
+         (base-h (+ base-asc (font-descent fs fam wt fst)))
+         (ann-asc (font-ascent afs afam awt afst))
+         (ann-h (+ ann-asc (font-descent afs afam awt afst)))
+         (box (make-box :kind :inline :style style :element el
+                        :tag (dom-element-tag el) :id (dom-element-id el)
+                        :w ruby-w :h (+ ann-extra base-h)
+                        :baseline (+ ann-extra base-asc)))
+         (kids nil))
+    (when (plusp (length ann-text))
+      (push (make-box :kind :text :style rt-style :element rt
+                      :tag (dom-element-tag rt) :id (dom-element-id rt)
+                      :text ann-text
+                      :x (/ (- ruby-w ann-w) 2d0) :y 0d0
+                      :w ann-w :h ann-h :baseline ann-asc)
+            kids))
+    (when (plusp (length base-text))
+      (push (make-box :kind :text :style style :element el :text base-text
+                      :x (/ (- ruby-w base-w) 2d0) :y ann-extra
+                      :w base-w :h base-h :baseline base-asc)
+            kids))
+    (setf (box-children box) (nreverse kids))
+    box))
+
 (defun layout-inline-run (nodes x y width style &key (float-inset 0d0) (float-avoid 0d0) (float-span 0d0))
   (let ((font (computed-font-size style))
         (family (computed-font-family style))
@@ -739,6 +802,15 @@ then adds one pixel: size/5 for sub, size/3 for super."
                    (push tb current)
                    (incf current-w step)
                    (setf previous use))))
+             (emit-ruby (el)
+               (let ((b (layout-ruby-box el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-atomic (el)
                (let ((b (layout-element el 0d0 0d0 width nil nil :shrink t)))
                  (when b
@@ -789,6 +861,8 @@ then adds one pixel: size/5 for sub, size/3 for super."
                    ((dom-element-p n)
                     (cond
                       ((eq (computed-display (dom-element-style n)) :none))
+                      ((string= (dom-element-tag n) "ruby")
+                       (emit-ruby n))
                       ((string= (dom-element-tag n) "br")
                        (break-line))
                       ((string= (dom-element-tag n) "wbr"))
@@ -894,8 +968,13 @@ then adds one pixel: size/5 for sub, size/3 for super."
                               (:bottom (- bottom (box-h item)))
                               (:text-bottom (- parent-desc (box-h item)))
                               (t (raw-y item)))))
-                    (setf (box-x item) xx
-                          (box-y item) (+ yy (- ry top)))
+                    (let ((ox (box-x item))
+                          (oy (box-y item))
+                          (ny (+ yy (- ry top))))
+                      (setf (box-x item) xx
+                            (box-y item) ny)
+                      (dolist (child (box-children item))
+                        (translate-box child (- xx ox) (- ny oy))))
                     (when (and (> justify-extra 0d0)
                                (stringp (box-text item))
                                (string= (box-text item) " "))

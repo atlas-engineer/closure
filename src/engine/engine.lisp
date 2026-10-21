@@ -47,6 +47,9 @@ script element after style and layout. Left unset until that engine exists.")
    mark { background-color: #ffff00; color: black; }
    q:before { content: open-quote; }
    q:after { content: close-quote; }
+   ruby, rt { display: inline; }
+   rt { font-size: 50%; }
+   rp { display: none; }
    sub { vertical-align: sub; font-size: smaller; }
    sup { vertical-align: super; font-size: smaller; }
    a { color: #0000ee; }

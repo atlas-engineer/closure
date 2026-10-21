@@ -2465,6 +2465,34 @@ b</div>"
         (check "address has no extra indent"
                (and block (~ (closure.engine:box-x block) 0d0)))))))
 
+(defun test-ruby ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'>X<ruby id='r'>字<rt id='t'>annotation</rt></ruby>Y</p>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (p (closure.engine:find-box root "p"))
+         (ruby (closure.engine:find-box root "r"))
+         (rt (closure.engine:find-box root "t"))
+         (base nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (string= (or (closure.engine::box-text b) "") "字"))
+                   (setf base b))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "ruby boxes" (and p ruby rt base))
+    (check "the annotation is half the base size"
+           (and rt (~ (closure.engine::computed-font-size (closure.engine::box-style rt)) 8d0 0.1d0)))
+    (check "the annotation sits above the base"
+           (and rt base (< (closure.engine:box-y rt) (closure.engine:box-y base))))
+    (check "a ruby line is taller than a normal line"
+           (and p (> (closure.engine:box-height p) 20d0)
+                (~ (closure.engine:box-height p) 26d0 0.6d0)))
+    (check "a long annotation overhangs the ruby box"
+           (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
+                (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
+
 (defun test-replaced-widgets ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'><video id='v'></video> <canvas id='c'></canvas> <progress id='g'></progress> <meter id='m'></meter></p><audio id='a'></audio>"
@@ -4400,6 +4428,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-ruby)
   (test-replaced-widgets)
   (test-fieldset-details)
   (test-smaller-headings)

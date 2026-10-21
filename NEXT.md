@@ -410,8 +410,11 @@ from the Lisp engine without calling Node or another browser engine.
   a separate table keeps 2px of border spacing.
 - A video and a canvas are 300 by 150. Progress is 160 by 16 and meter is
   80 by 16, both 0.2em below the baseline. Audio is not shown.
+- A ruby annotation is half size and sits above its base. A longer
+  annotation overhangs by half its font size on each side, and the line
+  grows to 26px.
 
 ## Next
 
-1. Ruby annotations and several form controls still do not match the
+1. Form controls such as the button still use a different size from the
    browser. The done condition is not met.
