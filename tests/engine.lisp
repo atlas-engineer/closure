@@ -2756,6 +2756,34 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-valign-attr ()
+  (let* ((html "<table>
+                  <tr><td id='top' style='height:40px'>A</td></tr>
+                  <tr><td id='mid' valign='middle' style='height:40px'>B</td></tr>
+                  <tr valign='bottom'><td id='bot' style='height:40px'>C</td></tr>
+                </table>")
+         (root (closure.engine:layout-html html :width 200
+                                          :stylesheet "body{margin:0}"))
+         (top (closure.engine:find-box root "top"))
+         (mid (closure.engine:find-box root "mid"))
+         (bot (closure.engine:find-box root "bot")))
+    (labels ((text-offset (cell)
+               (labels ((find-text (b)
+                          (when b
+                            (if (eq (closure.engine::box-kind b) :text)
+                                b
+                                (some #'find-text (closure.engine::box-children b))))))
+                 (let ((hit (find-text cell)))
+                   (and hit (- (closure.engine:box-y hit) (closure.engine:box-y cell)))))))
+      (let ((top-off (text-offset top))
+            (mid-off (text-offset mid))
+            (bot-off (text-offset bot)))
+        (check "valign offsets" (and top-off mid-off bot-off))
+        (check "valign=middle sits below the top"
+               (and top-off mid-off (> mid-off (+ top-off 4d0))))
+        (check "valign=bottom sits below the middle"
+               (and mid-off bot-off (> bot-off (+ mid-off 4d0))))))))
+
 (defun test-align-attr ()
   (let* ((html "<div id='d' align='center' style='width:200px'><span id='w'>Hi</span></div>
                 <table id='t' align='center'><tr><td id='c' align='right' style='width:80px'>X</td></tr></table>
@@ -5594,6 +5622,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-ruby-rtc)
   (test-ruby-rb)
   (test-ruby)
+  (test-valign-attr)
   (test-align-attr)
   (test-bgcolor)
   (test-table-cell-attrs)

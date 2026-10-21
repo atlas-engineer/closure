@@ -2212,6 +2212,23 @@ the smaller fixed table."
                  '(10d0 12d0 13d0 16d0 20d0 26d0 39d0)
                  '(10d0 13d0 16d0 18d0 24d0 32d0 48d0)))))))
 
+(defun apply-valign-presentational (element style specified)
+  "valign on a cell, or on its row, sets vertical-align. An author value wins."
+  (when (and (not (gethash :vertical-align specified))
+             (member (dom-element-tag element) '("td" "th") :test #'string-equal))
+    (let* ((row (dom-node-parent element))
+           (raw (or (dom-attr element "valign")
+                    (and (dom-element-p row)
+                         (string-equal (dom-element-tag row) "tr")
+                         (dom-attr row "valign")))))
+      (when (and raw (plusp (length (string-trim '(#\space #\newline #\tab) raw))))
+        (let* ((value (string-downcase (string-trim '(#\space #\newline #\tab) raw)))
+               (align (cond ((string= value "middle") :middle)
+                            ((string= value "bottom") :bottom)
+                            ((string= value "top") :top)
+                            ((string= value "baseline") :baseline))))
+          (when align (setf (computed-vertical-align style) align)))))))
+
 (defun apply-align-presentational (element style specified)
   "align sets text alignment, centers a table, or floats a replaced element."
   (let ((raw (dom-attr element "align")))
@@ -2294,7 +2311,8 @@ the smaller fixed table."
         (unless pseudo
           (apply-font-presentational element style best)
           (apply-bgcolor-presentational element style best)
-          (apply-align-presentational element style best))))
+          (apply-align-presentational element style best)
+          (apply-valign-presentational element style best))))
     (if pseudo
         (setf (dom-element-style element) previous)
         (setf (dom-element-style element) style))

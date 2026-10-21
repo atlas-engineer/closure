@@ -513,6 +513,7 @@ from the Lisp engine without calling Node or another browser engine.
 - cellspacing and cellpadding set the gap and the cell padding Chromium uses.
 - bgcolor on a body, table, row, or cell paints that background. An author background wins.
 - align centers a line or a table, moves cell text, and floats a replaced element.
+- valign on a cell or its row raises the text to the middle or drops it to the bottom.
 
 ## Next
 
