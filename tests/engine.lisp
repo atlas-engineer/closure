@@ -3028,6 +3028,9 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 20 2)
       (check "the range track is centered, not at the top"
              (and (> r 250) (> g 250) (> b 250))))
+    (multiple-value-bind (r g b) (png-rgb path 0 5)
+      (check "the range track has a rounded end"
+             (and (> r 250) (> g 250) (> b 250))))
     (multiple-value-bind (r g b) (png-rgb path 20 8)
       (declare (ignore g))
       (check "the range fill is blue" (and (< r 40) (> b 200))))

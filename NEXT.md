@@ -479,6 +479,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A text input's border is a one-pixel gray line, the same edge Chromium paints.
 - A range track is 6px and centered in the control, matching Chromium's bar.
 - An embed with a source paints that image, the same as an img.
+- The range track is a rounded bar, so the ends are not square.
 
 ## Next
 
