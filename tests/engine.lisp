@@ -6363,6 +6363,29 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-input-image-align ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (root (closure.engine:layout-html
+                (format nil "<p>X<input id='mid' type='image' align='middle' src='~A' width='20' height='20'><img id='im' align='middle' src='~A' width='20' height='20'><input id='left' type='image' align='left' src='~A' width='20' height='20'><input id='top' type='image' align='top' src='~A' width='20' height='20'><input id='own' type='image' align='left' style='float:none' src='~A' width='20' height='20'><input id='va' type='image' align='middle' style='vertical-align:top' src='~A' width='20' height='20'></p>"
+                       png png png png png png)
+                :width 700 :height 80
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (mid (closure.engine:find-box root "mid"))
+         (im (closure.engine:find-box root "im"))
+         (left (closure.engine:find-box root "left"))
+         (top (closure.engine:find-box root "top"))
+         (own (closure.engine:find-box root "own"))
+         (va (closure.engine:find-box root "va")))
+    (check "image button align boxes" (and mid im left top own va))
+    (check "an image button align=middle matches an image"
+           (and mid im (~ (closure.engine:box-y mid) (closure.engine:box-y im) 1d0)))
+    (check "an image button align=left floats"
+           (and left (eq (closure.engine::computed-float (closure.engine::box-style left)) :left)))
+    (check "align=left still sits at the top when float is cleared"
+           (and own top (~ (closure.engine:box-y own) (closure.engine:box-y top) 1d0)))
+    (check "an author vertical-align wins on an image button"
+           (and va top (~ (closure.engine:box-y va) (closure.engine:box-y top) 1d0)))))
+
 (defun test-replaced-align ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (root (closure.engine:layout-html
@@ -7819,6 +7842,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-input-image-align)
   (test-replaced-align)
   (test-iframe-margin)
   (test-frame-margin)
