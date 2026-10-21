@@ -4850,6 +4850,38 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                        (< (+ r g b) 240)))
                    '((0 . 0) (-1 . 0) (1 . 0) (0 . -1) (0 . 1)))))))
 
+(defun test-math-color ()
+  (let* ((path "/tmp/closure-engine-mathcolor.png")
+         (root (closure.engine:render-html
+                "<p style='margin:0'><math><mi id='r' mathcolor='#cc0000'>x</mi><mi id='k'>y</mi></math>
+                 <math mathcolor='#0000cc'><mi id='c'>z</mi></math>
+                 <math><mi id='a' mathcolor='#cc0000' style='color:#00cc00'>x</mi></math></p>
+                 <math id='bg' display='block' mathbackground='#cc0000'><mi>x</mi></math>"
+                :width 200 :height 80
+                :stylesheet "body{margin:0;font-size:16px}"
+                :output path))
+         (red (closure.engine:find-box root "r"))
+         (plain (closure.engine:find-box root "k"))
+         (child (closure.engine:find-box root "c"))
+         (author (closure.engine:find-box root "a"))
+         (bg (closure.engine:find-box root "bg")))
+    (labels ((chan (box n)
+               (nth n (closure.engine::computed-color (closure.engine::box-style box)))))
+      (check "math color boxes" (and red plain child author bg))
+      (check "mathcolor paints red"
+             (and red (> (chan red 0) 0.7d0) (< (chan red 1) 0.1d0)))
+      (check "a token without mathcolor stays dark"
+             (and plain (< (chan plain 0) 0.1d0) (< (chan plain 2) 0.1d0)))
+      (check "a child inherits mathcolor"
+             (and child (> (chan child 2) 0.7d0) (< (chan child 0) 0.1d0)))
+      (check "an author color wins"
+             (and author (> (chan author 1) 0.7d0) (< (chan author 0) 0.1d0))))
+    (let ((px (round (+ (closure.engine:box-x bg) 4d0)))
+          (py (round (+ (closure.engine:box-y bg) 4d0))))
+      (multiple-value-bind (r g b) (png-rgb path px py)
+        (check "mathbackground fills the math block"
+               (and (> r 150) (< g 80) (< b 80)))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8843,6 +8875,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-limit)
   (test-math-underover)
   (test-math-enclose)
+  (test-math-color)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)

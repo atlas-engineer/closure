@@ -2606,6 +2606,19 @@ The nearer attribute wins. An author vertical-align still wins."
                             ((string= value "baseline") :baseline))))
           (when align (setf (computed-vertical-align style) align)))))))
 
+(defun apply-math-color (element style specified)
+  "mathcolor and mathbackground set the color and background. An author rule wins."
+  (flet ((paint (attr prop slot)
+           (let ((raw (string-trim '(#\space #\newline #\tab #\return)
+                                   (or (dom-attr element attr) ""))))
+             (when (and (plusp (length raw))
+                        (not (author-specified-p specified prop)))
+               (let ((c (parse-color-tokens (css-tokenize raw))))
+                 (when (and c (listp c))
+                   (funcall slot c style)))))))
+    (paint "mathcolor" :color #'(setf computed-color))
+    (paint "mathbackground" :background-color #'(setf computed-background))))
+
 (defun apply-math-display (element style specified)
   "display=block turns math into a centered block. An author rule still wins."
   (when (and (string-equal (dom-element-tag element) "math")
@@ -2750,6 +2763,7 @@ The nearer attribute wins. An author vertical-align still wins."
         (unless pseudo
           (apply-font-presentational element style best)
           (apply-bgcolor-presentational element style best)
+          (apply-math-color element style best)
           (apply-math-display element style best)
           (apply-align-presentational element style best)
           (apply-valign-presentational element style best)
