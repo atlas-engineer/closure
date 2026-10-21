@@ -2942,6 +2942,22 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-open-details ()
+  (let* ((root (closure.engine:layout-html
+                "<details id='d' open><summary id='s'>Summary</summary><p id='h'>Hidden</p></details>"
+                :width 800 :height 120
+                :stylesheet "body{margin:0}"))
+         (details (closure.engine:find-box root "d"))
+         (summary (closure.engine:find-box root "s"))
+         (hidden (closure.engine:find-box root "h")))
+    (check "an open details shows its body"
+           (and details summary hidden
+                (~ (closure.engine:box-height details) 52d0)
+                (~ (closure.engine:box-height summary) 18d0)
+                (~ (closure.engine:box-y hidden) 34d0)
+                (~ (closure.engine:box-height hidden) 18d0)
+                (eq (closure.engine::box-marker summary) :disclosure-open)))))
+
 (defun test-fieldset-details ()
   (let* ((root (closure.engine:layout-html
                 "<fieldset id='f'><legend id='l'>Legend</legend>Field</fieldset>
@@ -4862,6 +4878,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-open-details)
   (test-fieldset-details)
   (test-smaller-headings)
   (test-br-and-center)

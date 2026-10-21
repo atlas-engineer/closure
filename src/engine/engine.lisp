@@ -73,6 +73,7 @@ script element after style and layout. Left unset until that engine exists.")
               padding: 0.35em 0.75em 0.625em; }
    legend { padding-left: 2px; padding-right: 2px; }
    summary { display: list-item; list-style-type: disclosure-closed; list-style-position: inside; }
+   details[open] > summary { list-style-type: disclosure-open; }
    search { display: block; }
    output { display: inline; }
    datalist { display: none; }

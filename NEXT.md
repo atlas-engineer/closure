@@ -449,6 +449,8 @@ from the Lisp engine without calling Node or another browser engine.
   box is 45.31 by 17 at the same x as the ruby.
 - An rt inside rtc stays full size and follows the base on the line. The
   ruby is 72.86 by 17, and the container starts where the base ends.
+- An open details shows its body and the summary marker points down. The
+  box is 52px tall, and the paragraph starts 34px down.
 
 ## Next
 
