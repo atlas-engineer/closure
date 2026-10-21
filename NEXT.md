@@ -556,6 +556,7 @@ from the Lisp engine without calling Node or another browser engine.
 - visibility:collapse on a colgroup removes every column in the group.
 - visibility:collapse on a row group removes those rows. The gap between groups stays.
 - A short ruby annotation stretches to the base. The glyphs stay centered.
+- A table cell centers its text. valign and an author vertical-align still win.
 
 ## Next
 

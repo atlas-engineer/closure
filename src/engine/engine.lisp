@@ -66,7 +66,7 @@ script element after style and layout. Left unset until that engine exists.")
    tbody { display: table-row-group; }
    tfoot { display: table-footer-group; }
    tr { display: table-row; }
-   td, th { display: table-cell; padding: 1px; }
+   td, th { display: table-cell; padding: 1px; vertical-align: middle; }
    th { text-align: center; }
    fieldset { margin-left: 2px; margin-right: 2px; border: 2px groove #efefef;
               padding: 0.35em 0.75em 0.625em; }

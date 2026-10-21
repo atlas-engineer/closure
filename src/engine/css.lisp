@@ -2549,9 +2549,14 @@ scrollbar gutter. An author width or height is left alone."
                        (and noshade (eq (computed-bbs style) :solid))))
           (setf (computed-bb style) 0d0))))))
 
+(defun author-specified-p (specified prop)
+  "True when an author declaration won for PROP."
+  (let ((item (gethash prop specified)))
+    (and item (eq (css-decl-origin (third item)) :author))))
+
 (defun apply-valign-presentational (element style specified)
   "valign on a cell, or on its row, sets vertical-align. An author value wins."
-  (when (and (not (gethash :vertical-align specified))
+  (when (and (not (author-specified-p specified :vertical-align))
              (member (dom-element-tag element) '("td" "th") :test #'string-equal))
     (let* ((row (dom-node-parent element))
            (raw (or (dom-attr element "valign")

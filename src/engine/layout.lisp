@@ -1177,8 +1177,12 @@ then adds one pixel: size/5 for sub, size/3 for super."
                                        n))))
                       (t (emit-atomic n)))))))
              (align-kind (item)
+               ;; A cell's vertical-align positions the cell in the row.
+               ;; The text inside still sits on the baseline.
                (let ((st (or (box-style item) style)))
-                 (or (computed-vertical-align st) :baseline)))
+                 (if (and st (eq (computed-display st) :table-cell))
+                     :baseline
+                     (or (computed-vertical-align st) :baseline))))
              (raw-y (item)
                "Item top relative to the parent baseline. Smaller is higher."
                (let* ((base (if (plusp (box-baseline item)) (box-baseline item) (box-h item)))

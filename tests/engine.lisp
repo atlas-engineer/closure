@@ -2821,16 +2821,20 @@ b</div>"
            (and rule (~ (closure.engine:box-width rule) 122d0)))))
 
 (defun test-valign-attr ()
-  (let* ((html "<table>
-                  <tr><td id='top' style='height:40px'>A</td></tr>
+  (let* (         (html "<table>
+                  <tr><td id='top' valign='top' style='height:40px'>A</td></tr>
                   <tr><td id='mid' valign='middle' style='height:40px'>B</td></tr>
                   <tr valign='bottom'><td id='bot' style='height:40px'>C</td></tr>
+                  <tr><td id='def' style='height:40px'>D</td></tr>
+                  <tr><td id='css' style='height:40px;vertical-align:top'>E</td></tr>
                 </table>")
          (root (closure.engine:layout-html html :width 200
                                           :stylesheet "body{margin:0}"))
          (top (closure.engine:find-box root "top"))
          (mid (closure.engine:find-box root "mid"))
-         (bot (closure.engine:find-box root "bot")))
+         (bot (closure.engine:find-box root "bot"))
+         (def (closure.engine:find-box root "def"))
+         (css (closure.engine:find-box root "css")))
     (labels ((text-offset (cell)
                (labels ((find-text (b)
                           (when b
@@ -2841,12 +2845,18 @@ b</div>"
                    (and hit (- (closure.engine:box-y hit) (closure.engine:box-y cell)))))))
       (let ((top-off (text-offset top))
             (mid-off (text-offset mid))
-            (bot-off (text-offset bot)))
-        (check "valign offsets" (and top-off mid-off bot-off))
+            (bot-off (text-offset bot))
+            (def-off (text-offset def))
+            (css-off (text-offset css)))
+        (check "valign offsets" (and top-off mid-off bot-off def-off css-off))
         (check "valign=middle sits below the top"
                (and top-off mid-off (> mid-off (+ top-off 4d0))))
         (check "valign=bottom sits below the middle"
-               (and mid-off bot-off (> bot-off (+ mid-off 4d0))))))))
+               (and mid-off bot-off (> bot-off (+ mid-off 4d0))))
+        (check "a cell with no valign is centered"
+               (and def-off mid-off (~ def-off mid-off 1d0)))
+        (check "an author vertical-align wins"
+               (and css-off top-off (~ css-off top-off 1d0)))))))
 
 (defun test-align-attr ()
   (let* ((html "<div id='d' align='center' style='width:200px'><span id='w'>Hi</span></div>
@@ -3134,7 +3144,7 @@ b</div>"
     (multiple-value-bind (r g b) (png-rgb path 3 3)
       (check "the cell border is darker than the frame"
              (and (< r 80) (< g 80) (< b 80))))
-    (multiple-value-bind (r g b) (png-rgb path 10 10)
+    (multiple-value-bind (r g b) (png-rgb path 28 8)
       (check "the cell interior stays empty"
              (and (> r 240) (> g 240) (> b 240))))))
 
@@ -4524,9 +4534,13 @@ mono two</pre>")
       (check "both cells share the row height"
              (and tall low (~ (closure.engine:box-height low) (closure.engine:box-height tall))
                   (> (closure.engine:box-height tall) 30d0)))
-      (check "the top cell keeps its text at the top"
-             (and tall a (< (closure.engine:box-y a)
-                            (+ (closure.engine:box-y tall) 16d0))))
+      (check "a default cell centers its text"
+             (and tall a
+                  (let ((cell-mid (+ (closure.engine:box-y tall)
+                                     (/ (closure.engine:box-height tall) 2d0)))
+                        (text-mid (+ (closure.engine:box-y a)
+                                     (/ (closure.engine:box-height a) 2d0))))
+                    (~ text-mid cell-mid 4d0))))
       (check "bottom alignment sits the text on the bottom"
              (and low b
                   (~ (+ (closure.engine:box-y b) (closure.engine:box-height b))
@@ -4561,9 +4575,13 @@ mono two</pre>")
               (and b (closure.engine:box-y b))
               (and mid (list (closure.engine:box-y mid) (closure.engine:box-height mid))))
       (check "middle valign cells" (and tall mid a b))
-      (check "the top cell keeps its text at the top"
-             (and tall a (< (closure.engine:box-y a)
-                            (+ (closure.engine:box-y tall) 16d0))))
+      (check "a default cell centers its text"
+             (and tall a
+                  (let ((cell-mid (+ (closure.engine:box-y tall)
+                                     (/ (closure.engine:box-height tall) 2d0)))
+                        (text-mid (+ (closure.engine:box-y a)
+                                     (/ (closure.engine:box-height a) 2d0))))
+                    (~ text-mid cell-mid 4d0))))
       (check "middle alignment centers the text"
              (and mid b
                   (let ((cell-mid (+ (closure.engine:box-y mid)
