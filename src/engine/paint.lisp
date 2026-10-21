@@ -1618,6 +1618,38 @@ but paint a 1px gray rounded edge around the background."
       (cairo-close-path cr)
       (cairo-fill cr))))
 
+(defvar *iframe-depth* 0)
+
+(defun paint-iframe-srcdoc (cr box)
+  "Paint an iframe srcdoc document inside the content box, clipped there."
+  (when (and (< *iframe-depth* 2)
+             (box-element box)
+             (string= (or (box-tag box) "") "iframe")
+             (box-style box))
+    (let ((srcdoc (string-trim '(#\space #\newline #\tab #\return)
+                               (or (dom-attr (box-element box) "srcdoc") ""))))
+      (when (plusp (length srcdoc))
+        (multiple-value-bind (bt br bb bl) (border4 (box-style box))
+          (multiple-value-bind (pt pr pb pl) (pad4 (box-style box) (box-w box))
+            (let ((cw (max 0d0 (- (box-w box) bl br pl pr)))
+                  (ch (max 0d0 (- (box-h box) bt bb pt pb))))
+              (when (and (> cw 1d0) (> ch 1d0))
+                (let* ((cx (+ (box-x box) bl pl))
+                       (cy (+ (box-y box) bt pt))
+                       (inner (let ((*iframe-depth* (1+ *iframe-depth*))
+                                    (*navigation-enabled* nil))
+                                (declare (special *navigation-enabled*))
+                                (nth-value 0
+                                           (layout-html srcdoc :width cw :height ch
+                                                        :base *document-base*)))))
+                  (when inner
+                    (translate-box inner cx cy)
+                    (cairo-save cr)
+                    (cairo-rectangle cr cx cy cw ch)
+                    (cairo-clip cr)
+                    (paint-box cr inner)
+                    (cairo-restore cr)))))))))))
+
 (defun paint-box (cr box &optional (scroll-y 0d0))
   (when (and box (or (null (box-style box))
                      (not (member (computed-visibility (box-style box))
@@ -1688,6 +1720,7 @@ but paint a 1px gray rounded edge around the background."
                          (member (box-tag box) '("input" "select" "textarea") :test #'string=))
                 (paint-control cr box))
               (paint-textarea-grip cr box)
+              (paint-iframe-srcdoc cr box)
               (when (and (box-style box)
                          (member (computed-overflow (box-style box)) '(:hidden :clip :scroll :auto)))
                 (cairo-rectangle cr (box-x box) (box-y box) (box-w box) (box-h box))

@@ -575,6 +575,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An img srcset replaces a broken src, including a width descriptor.
 - A srcset width descriptor follows the viewport. A narrow window keeps the smaller image.
 - A srcset density descriptor picks 1x on this screen. 2x is left for a denser display.
+- An iframe srcdoc paints that document inside the frame.
 
 ## Next
 

@@ -1423,6 +1423,30 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-iframe-srcdoc ()
+  (let* ((out "/tmp/closure-engine-srcdoc.png")
+         (html "<iframe id='f' srcdoc='<div style=&quot;width:40px;height:20px;background:red&quot;></div>'></iframe>")
+         (root (closure.engine:render-html html :width 400 :height 200 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "f")))
+    (check "srcdoc iframe" (and box
+                                (> (closure.engine:box-width box) 290)
+                                (< (closure.engine:box-width box) 320)
+                                (> (closure.engine:box-height box) 140)
+                                (< (closure.engine:box-height box) 170)))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x box) 20))
+                 (round (+ (closure.engine:box-y box) 20)))
+      (check "srcdoc paints inside the frame"
+             (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x box) 4))
+                 (round (+ (closure.engine:box-y box) 4)))
+      (check "srcdoc keeps the body margin"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-srcset-density ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (out "/tmp/closure-engine-srcset-density.png")
@@ -7599,6 +7623,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-iframe-srcdoc)
   (test-srcset-density)
   (test-srcset-width)
   (test-img-srcset)
