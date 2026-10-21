@@ -1457,6 +1457,25 @@ contents are centered. A row is at least the math strut."
                     :w table-w :h y :baseline (/ y 2d0)
                     :children (nreverse row-boxes)))))))
 
+(defun layout-math-padded (el)
+  "width sets the advance. lspace shifts the contents right and voffset shifts them up."
+  (let* ((st (dom-element-style el))
+         (em (if st (computed-font-size st) 16d0))
+         (content (math-cell-content el))
+         (width (math-length (string-left-trim '(#\+ #\space)
+                                               (or (dom-attr el "width") ""))
+                             em))
+         (lspace (or (math-length (dom-attr el "lspace") em) 0d0))
+         (voffset (or (math-length (dom-attr el "voffset") em) 0d0)))
+    (dolist (c (box-children content))
+      (translate-box c lspace (- voffset)))
+    (make-box :kind :inline :style st :element el
+              :tag (dom-element-tag el) :id (dom-element-id el)
+              :w (if width (max 0d0 width) (box-w content))
+              :h (box-h content)
+              :baseline (or (box-baseline content) 0d0)
+              :children (box-children content))))
+
 (defun layout-math-enclose (el)
   "The enclosure is the size of its contents. The notation is painted on that box."
   (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
@@ -1874,6 +1893,15 @@ Each pair shares a column, with the superscript above the subscript."
                    (push b current)
                    (incf current-w (box-w b))
                    (setf previous (dom-element-style el)))))
+             (emit-math-padded (el)
+               (let ((b (layout-math-padded el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-math-table (el)
                (let ((b (layout-math-table el)))
                  (when b
@@ -2009,6 +2037,8 @@ Each pair shares a column, with the superscript above the subscript."
                        (emit-math-space n))
                       ((string= (dom-element-tag n) "mtable")
                        (emit-math-table n))
+                      ((string= (dom-element-tag n) "mpadded")
+                       (emit-math-padded n))
                       ((string= (dom-element-tag n) "mmultiscripts")
                        (emit-math-multiscripts n))
                       ((string= (dom-element-tag n) "mfrac")

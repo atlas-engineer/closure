@@ -5032,6 +5032,47 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                    0.3d0)
                 (< (closure.engine:box-y psup) (closure.engine:box-y psub))))))
 
+(defun test-math-padded ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><span id='a1'>A</span><math><mpadded id='w' width='30px'><mi id='x1'>x</mi></mpadded></math><span id='b1'>B</span></p>
+                 <p style='margin:0'><span id='a2'>A</span><math><mpadded id='l' lspace='8px'><mi id='x2'>x</mi></mpadded></math><span id='b2'>B</span></p>
+                 <p style='margin:0'><span id='a3'>A</span><math><mpadded id='v' voffset='6px'><mi id='x3'>x</mi></mpadded></math><span id='b3'>B</span></p>"
+                :width 240 :height 80
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (a1 (closure.engine:find-box root "a1"))
+         (b1 (closure.engine:find-box root "b1"))
+         (w (closure.engine:find-box root "w"))
+         (x1 (closure.engine:find-box root "x1"))
+         (a2 (closure.engine:find-box root "a2"))
+         (b2 (closure.engine:find-box root "b2"))
+         (l (closure.engine:find-box root "l"))
+         (x2 (closure.engine:find-box root "x2"))
+         (v (closure.engine:find-box root "v"))
+         (x3 (closure.engine:find-box root "x3"))
+         (b3 (closure.engine:find-box root "b3")))
+    (check "padded boxes" (and a1 b1 w x1 a2 b2 l x2 v x3 b3))
+    (check "width sets the advance"
+           (and w x1 b1 a1
+                (~ (closure.engine:box-width w) 30d0 0.2d0)
+                (~ (closure.engine:box-x x1) (closure.engine:box-x w) 0.3d0)
+                (~ (closure.engine:box-x b1)
+                   (+ (closure.engine:box-x a1) (closure.engine:box-width a1) 30d0)
+                   0.5d0)))
+    (check "lspace shifts the contents without moving the next letter"
+           (and l x2 a2 b2
+                (~ (- (closure.engine:box-x x2) (closure.engine:box-x l)) 8d0 0.3d0)
+                (~ (closure.engine:box-x b2)
+                   (+ (closure.engine:box-x a2) (closure.engine:box-width a2)
+                      (closure.engine:box-width x2))
+                   0.5d0)))
+    (check "voffset shifts the contents up"
+           (and v x3 b3 a2
+                (~ (- (closure.engine:box-y v) (closure.engine:box-y x3)) 6d0 0.3d0)
+                (~ (closure.engine:box-x b3)
+                   (+ (closure.engine:box-x a2) (closure.engine:box-width a2)
+                      (closure.engine:box-width x3))
+                   0.6d0)))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -9030,6 +9071,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-space)
   (test-math-table)
   (test-math-multiscripts)
+  (test-math-padded)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)
