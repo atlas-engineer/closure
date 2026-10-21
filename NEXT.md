@@ -553,6 +553,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A rowspan height covers every spanned row and the gap between them. The extra is shared.
 - visibility:collapse removes a table row and its gap. The next row moves up.
 - visibility:collapse on a col removes that column and one gap. The later columns move over.
+- visibility:collapse on a colgroup removes every column in the group.
 
 ## Next
 

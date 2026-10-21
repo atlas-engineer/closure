@@ -2190,16 +2190,18 @@ outside the border box, so the box is content plus padding plus one border."
           (setf prev cell))))
     share))
 
+(defun column-collapsed-p (node)
+  (and node (dom-element-style node)
+       (eq (computed-visibility (dom-element-style node)) :collapse)))
+
 (defun collapsed-column-flags (el ncols)
-  "True for each column whose col element is visibility:collapse."
+  "True for each column whose col or colgroup is visibility:collapse."
   (let ((flags (make-array ncols :initial-element nil))
         (index 0))
     (dolist (spec (table-column-specs el))
       (destructuring-bind (node span group) spec
-        (declare (ignore group))
-        (when (and (string-equal (dom-element-tag node) "col")
-                   (dom-element-style node)
-                   (eq (computed-visibility (dom-element-style node)) :collapse))
+        (when (or (column-collapsed-p node)
+                  (and group (not (eq group node)) (column-collapsed-p group)))
           (loop for k from 0 below span
                 for col = (+ index k)
                 when (< col ncols)
@@ -2207,12 +2209,19 @@ outside the border box, so the box is content plus padding plus one border."
         (incf index span)))
     flags))
 
+(defun leading-collapsed-p (collapsed index)
+  (and (< index (length collapsed))
+       (aref collapsed index)
+       (loop for i from 0 to index
+             always (aref collapsed i))))
+
 (defun column-gap-after (index collapsed space)
-  "Border-spacing after column INDEX. A collapsed column removes one gap:
-the gap after it when it is first, otherwise the gap before it."
+  "Border-spacing after column INDEX. A collapsed column drops the gap
+before it. A leading run of collapsed columns also drops the gap after
+the run."
   (cond
     ((or (null collapsed) (<= space 0d0) (>= index (length collapsed))) 0d0)
-    ((and (aref collapsed index) (zerop index)) 0d0)
+    ((leading-collapsed-p collapsed index) 0d0)
     ((and (< (1+ index) (length collapsed))
           (aref collapsed (1+ index)))
      0d0)

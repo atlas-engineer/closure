@@ -5424,6 +5424,24 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-colgroup-collapse ()
+  (let* ((root (closure.engine:layout-html
+                "<table id='t'><colgroup span='2' style='visibility:collapse'></colgroup><col><tr><td id='a'>A</td><td id='b'>B</td><td id='c'>C</td></tr></table>"
+                :width 300 :height 60
+                :stylesheet "body{margin:0} table{border-spacing:2px} td{padding:0;border:1px solid #000}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (table (closure.engine:find-box root "t")))
+    (check "colgroup collapse boxes" (and a b c table))
+    (check "a collapsed colgroup removes each of its columns"
+           (and a b
+                (< (closure.engine:box-width a) 0.5d0)
+                (< (closure.engine:box-width b) 0.5d0)
+                (~ (closure.engine:box-x c) (closure.engine:box-x a) 0.5d0)))
+    (check "the table keeps only the visible column"
+           (and table (~ (closure.engine:box-width table) 16.7d0 0.6d0)))))
+
 (defun test-col-collapse ()
   (let* ((root (closure.engine:layout-html
                 "<table id='t'><col style='visibility:collapse'><col><tr><td id='a'>A</td><td id='b'>B</td><td id='c'>C</td></tr></table>
@@ -6821,6 +6839,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-colgroup-collapse)
   (test-col-collapse)
   (test-row-collapse)
   (test-rowspan-height)
