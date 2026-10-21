@@ -5424,6 +5424,23 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-rowspan-height ()
+  (let* ((root (closure.engine:layout-html
+                "<table><tr><td id='r' rowspan='2' height='50'>R</td><td id='t'>T</td></tr><tr><td id='u'>U</td></tr></table>"
+                :width 200 :height 80
+                :stylesheet "body{margin:0} td{padding:0}"))
+         (r (closure.engine:find-box root "r"))
+         (top (closure.engine:find-box root "t"))
+         (u (closure.engine:find-box root "u")))
+    (check "rowspan boxes" (and r top u))
+    (check "a rowspan height covers both rows and the gap"
+           (and r (~ (closure.engine:box-height r) 50d0 1d0)))
+    (check "the spanned rows share that height"
+           (and top u
+                (~ (closure.engine:box-height top) 24d0 1d0)
+                (~ (closure.engine:box-height u) 24d0 1d0)
+                (~ (- (closure.engine:box-y u) (closure.engine:box-y top)) 26d0 1d0)))))
+
 (defun test-col-span-width ()
   (let* ((root (closure.engine:layout-html
                 "<table><col id='c' span='2' width='40'><tr><td id='a'>A</td><td id='b'>B</td><td id='d'>C</td></tr></table>
@@ -6761,6 +6778,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-rowspan-height)
   (test-col-span-width)
   (test-table-align-float)
   (test-caption-align)

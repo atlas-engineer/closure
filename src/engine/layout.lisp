@@ -2589,7 +2589,10 @@ supplies the width, defaulting to 1px. An author border is left alone."
                         (decf xx (max (border-edge (box-style prev) :right)
                                       (border-edge (box-style cb) :left))))
                       (setf (box-x cb) xx (box-y cb) yy)
-                      (setf rh (max rh (box-h cb)))
+                      ;; A rowspan cell's height belongs to the whole span,
+                      ;; not to this row alone.
+                      (unless (> rspan 1)
+                        (setf rh (max rh (box-h cb))))
                       (push cb cells)
                       (when (> rspan 1)
                         (push (list cb (length row-heights) rspan) rowspans))
@@ -2665,11 +2668,38 @@ supplies the width, defaulting to 1px. An author border is left alone."
                                    (translate-box child 0d0 extra))))))
                   (incf yy (* per n))
                   (setf row-heights (mapcar (lambda (h) (+ h per)) row-heights)))))
-            (dolist (sp rowspans)
-              (destructuring-bind (cb index rspan) sp
-                (setf (box-h cb)
-                      (loop for i from index below (min (+ index rspan) (length row-heights))
-                            sum (or (nth i row-heights) 0d0)))))
+            (let ((row-gap (cond (collapse 0d0)
+                                 ((> space-y 0d0) space-y)
+                                 (t (computed-row-gap style)))))
+              ;; A rowspan height is a minimum for the rows it covers, gaps
+              ;; included. The extra is shared across those rows.
+              (dolist (sp rowspans)
+                (destructuring-bind (cb index rspan) sp
+                  (let* ((last (min (+ index rspan) (length row-heights)))
+                         (count (max 0 (- last index)))
+                         (have (+ (loop for i from index below last
+                                        sum (or (nth i row-heights) 0d0))
+                                  (* row-gap (max 0 (1- count)))))
+                         (want (and (box-style cb)
+                                    (definite-length (computed-height (box-style cb)) nil))))
+                    (when (and (numberp want) (> count 0) (> want (+ have 0.01d0)))
+                      (let ((per (/ (- want have) count)))
+                        (loop for i from index below last
+                              do (setf (nth i row-heights) (+ (nth i row-heights) per))
+                                 (dolist (cell (nth i row-boxes))
+                                   (incf (box-h cell) per))
+                                 (loop for j from (1+ i) below (length row-boxes)
+                                       do (dolist (cell (nth j row-boxes))
+                                            (incf (box-y cell) per))))
+                        (incf yy (* per count)))))))
+              (dolist (sp rowspans)
+                (destructuring-bind (cb index rspan) sp
+                  (let* ((last (min (+ index rspan) (length row-heights)))
+                         (count (max 0 (- last index))))
+                    (setf (box-h cb)
+                          (+ (loop for i from index below last
+                                   sum (or (nth i row-heights) 0d0))
+                             (* row-gap (max 0 (1- count)))))))))
             ;; A row background sits behind its cells. Appended here so the
             ;; later nreverse paints it first.
             (loop for row in rows
