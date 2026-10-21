@@ -100,26 +100,43 @@ is 19.92, and Chromium lays that out as 19.90625."
       (let ((n (ignore-errors (parse-integer a :junk-allowed t))))
         (when n (float n 1d0))))))
 
+(defun svg-viewbox-ratio (el)
+  "ViewBox height divided by width. NIL when the element has no viewBox."
+  (let ((raw (and el (dom-attr el "viewBox"))))
+    (when raw
+      (let ((nums (ignore-errors
+                    (with-input-from-string (in (substitute #\space #\, raw))
+                      (loop for x = (read in nil nil)
+                            while (numberp x)
+                            collect (float x 1d0))))))
+        (when (and nums (>= (length nums) 4)
+                   (> (third nums) 0d0) (> (fourth nums) 0d0))
+          (/ (fourth nums) (third nums)))))))
+
 (defun apply-svg-size (box el avail-w avail-h)
-  "Size an svg from its width and height attributes when CSS leaves them auto."
+  "Size an svg from CSS, then its attributes. With neither, Chromium uses
+300 by 150, or the containing block width and the viewBox ratio."
   (let* ((style (box-style box))
          (aw (attr-px el "width"))
-         (ah (attr-px el "height")))
-    (when (or aw ah)
-      (multiple-value-bind (bt br bb bl) (border4 style)
-        (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)
-          (let* ((extra-w (+ bl br pl pr))
-                 (extra-h (+ bt bb pt pb))
-                 (css-w (definite-length (computed-width style) avail-w))
-                 (css-h (definite-length (computed-height style) avail-h))
-                 (cw (or css-w aw ah 0d0))
-                 (ch (or css-h ah aw 0d0)))
-            (when (and css-w (not css-h) aw ah (> aw 0d0))
-              (setf ch (* css-w (/ ah aw))))
-            (when (and css-h (not css-w) aw ah (> ah 0d0))
-              (setf cw (* css-h (/ aw ah))))
-            (setf (box-w box) (+ cw extra-w)
-                  (box-h box) (+ ch extra-h))))))))
+         (ah (attr-px el "height"))
+         (ratio (svg-viewbox-ratio el)))
+    (multiple-value-bind (bt br bb bl) (border4 style)
+      (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)
+        (let* ((extra-w (+ bl br pl pr))
+               (extra-h (+ bt bb pt pb))
+               (css-w (definite-length (computed-width style) avail-w))
+               (css-h (definite-length (computed-height style) avail-h))
+               (cw (or css-w aw))
+               (ch (or css-h ah)))
+          (cond
+            ((and cw ch))
+            (cw (setf ch (if (and ratio (> cw 0d0)) (* cw ratio) 150d0)))
+            (ch (setf cw (if (and ratio (> ratio 0d0)) (/ ch ratio) 300d0)))
+            (ratio (setf cw (float (or avail-w 300d0) 1d0)
+                         ch (* cw ratio)))
+            (t (setf cw 300d0 ch 150d0)))
+          (setf (box-w box) (+ (or cw 0d0) extra-w)
+                (box-h box) (+ (or ch 0d0) extra-h)))))))
 
 (defun apply-image-size (box el avail-w avail-h)
   "Size an img from CSS, then HTML width/height, then the file's intrinsic pixels.

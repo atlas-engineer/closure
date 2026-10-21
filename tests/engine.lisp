@@ -5042,6 +5042,34 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-svg-default ()
+  (let* ((html "<svg id='plain'><rect width='100' height='50' fill='red'/></svg>
+                <svg id='box' viewBox='0 0 100 50'><rect width='100' height='50' fill='green'/></svg>")
+         (path "/tmp/closure-engine-svg-default.png")
+         (root (closure.engine:render-html html :width 200 :height 400
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (plain (closure.engine:find-box root "plain"))
+         (boxed (closure.engine:find-box root "box")))
+    (check "an svg without a size is 300 by 150"
+           (and plain
+                (~ (closure.engine:box-width plain) 300d0)
+                (~ (closure.engine:box-height plain) 150d0)))
+    (check "a viewBox svg fills the line and keeps its ratio"
+           (and boxed
+                (~ (closure.engine:box-width boxed) 200d0)
+                (~ (closure.engine:box-height boxed) 100d0)))
+    (multiple-value-bind (r g b) (png-rgb path 10 10)
+      (check "the unsized svg paints its rect"
+             (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b) (png-rgb path 180 10)
+      (check "the unsized svg leaves the rest of the viewport empty"
+             (and (> r 240) (> g 240) (> b 240))))
+    (multiple-value-bind (r g b)
+        (png-rgb path 10 (round (+ (closure.engine:box-y boxed) 10)))
+      (check "the viewBox svg paints its rect across the box"
+             (and (< r 40) (> g 100) (< b 40))))))
+
 (defun test-svg ()
   (let* ((html "<svg id='s' width='40' height='20' viewBox='0 0 40 20'>
                   <rect x='0' y='0' width='20' height='20' fill='#cc0000'/>
@@ -5509,6 +5537,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-inline-image-middle)
   (test-image-alt)
   (test-image-alt-clip)
+  (test-svg-default)
   (test-svg)
   (test-selectors-and-cascade)
   (test-flex)

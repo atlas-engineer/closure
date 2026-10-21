@@ -506,6 +506,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A summary's disclosure triangle sits on the left and is about 8px across, the mark Chromium paints.
 - A list bullet is the small disc Chromium paints, 14px left of the item.
 - An ordered-list number sits on Chromium's column, four pixels before the item.
+- An svg with no size is 300 by 150. A viewBox stretches it to the line and keeps the ratio.
 
 ## Next
 
