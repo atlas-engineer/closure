@@ -529,6 +529,7 @@ from the Lisp engine without calling Node or another browser engine.
 - hidden removes an element. An author display wins, and until-found stays visible.
 - dir=rtl aligns the line to the right and keeps source order. An author direction wins.
 - disabled fades a button and grays a field. An author color wins.
+- A placeholder is gray, and a typed value stays the field's own color.
 
 ## Next
 

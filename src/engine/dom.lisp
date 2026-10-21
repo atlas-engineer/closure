@@ -225,6 +225,24 @@
         ((dom-attr el "multiple") 4)
         (t nil)))))
 
+(defun placeholder-shown-p (el)
+  "True when a text field or textarea is empty and has a placeholder."
+  (when (and (dom-element-p el)
+             (dom-attr el "placeholder")
+             (plusp (length (dom-attr el "placeholder"))))
+    (let ((tag (dom-element-tag el)))
+      (cond
+        ((string= tag "textarea")
+         (zerop (length (string-trim '(#\space #\newline #\tab #\return)
+                                     (dom-text-content el)))))
+        ((string= tag "input")
+         (let ((type (string-downcase (or (dom-attr el "type") "text"))))
+           (and (not (member type '("color" "range" "file" "image" "checkbox" "radio"
+                                    "date" "month" "week" "time" "datetime-local")
+                             :test #'string=))
+                (zerop (length (or (dom-attr el "value") ""))))))
+        (t nil)))))
+
 (defun control-label (el)
   "Text painted inside a form control."
   (let ((tag (dom-element-tag el)))
@@ -235,7 +253,10 @@
        "")
       ((string= tag "select")
        (if (select-list-rows el) "" (form-control-value el)))
-      ((string= tag "textarea") (dom-text-content el))
+      ((string= tag "textarea")
+       (if (placeholder-shown-p el)
+           (dom-attr el "placeholder")
+           (dom-text-content el)))
       ((string= tag "input")
        (let ((type (string-downcase (or (dom-attr el "type") "text"))))
          (cond

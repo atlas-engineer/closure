@@ -608,7 +608,9 @@ and gaps between known stops are split evenly."
         (declare (ignore br bb))
         (multiple-value-bind (pt pr pb pl) (pad4 st (box-w box))
           (declare (ignore pr pb))
-          (set-color cr (computed-color st))
+          (set-color cr (if (placeholder-shown-p el)
+                            (color-bytes 117 117 117)
+                            (computed-color st)))
           (select-cairo-font cr
                             (cairo-family (computed-font-family st))
                             (cairo-slant (computed-font-style st))

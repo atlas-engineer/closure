@@ -5424,6 +5424,49 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-placeholder ()
+  (let* ((html "<input id='a' placeholder='Name'><input id='b' placeholder='Name' value='Hi'><textarea id='c' placeholder='Note'></textarea>")
+         (path "/tmp/closure-engine-placeholder.png")
+         (root (closure.engine:render-html html :width 500 :height 80
+                                          :stylesheet "body{margin:0}"
+                                          :output path)))
+    (labels ((gray-ink (box)
+               (when box
+                 (loop for y from (round (+ (closure.engine:box-y box) 2d0))
+                         below (round (+ (closure.engine:box-y box)
+                                         (closure.engine:box-height box) -2d0))
+                       thereis
+                       (loop for x from (round (+ (closure.engine:box-x box) 2d0))
+                               below (round (+ (closure.engine:box-x box) 50d0))
+                             thereis
+                             (multiple-value-bind (r g b)
+                                 (png-rgb path x y)
+                               (and (< (abs (- r 117)) 25)
+                                    (< (abs (- g 117)) 25)
+                                    (< (abs (- b 117)) 25)))))))
+             (dark-ink (box)
+               (when box
+                 (loop for y from (round (+ (closure.engine:box-y box) 2d0))
+                         below (round (+ (closure.engine:box-y box)
+                                         (closure.engine:box-height box) -2d0))
+                       thereis
+                       (loop for x from (round (+ (closure.engine:box-x box) 2d0))
+                               below (round (+ (closure.engine:box-x box) 40d0))
+                             thereis
+                             (multiple-value-bind (r g b)
+                                 (png-rgb path x y)
+                               (< (+ r g b) 80)))))))
+      (let ((a (closure.engine:find-box root "a"))
+            (b (closure.engine:find-box root "b"))
+            (c (closure.engine:find-box root "c")))
+        (check "placeholder fields" (and a b c))
+        (check "an empty field paints its placeholder gray"
+               (gray-ink a))
+        (check "a value stays darker than the placeholder"
+               (dark-ink b))
+        (check "an empty textarea paints its placeholder gray"
+               (gray-ink c))))))
+
 (defun test-disabled ()
   (let* ((html "<button id='a' disabled>OK</button><button id='b'>OK</button><input id='c' disabled value='Hi'><input id='d' disabled value='Hi' style='color:#c00'>")
          (path "/tmp/closure-engine-disabled.png")
@@ -6105,6 +6148,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-placeholder)
   (test-disabled)
   (test-dir-attr)
   (test-hidden-attr)
