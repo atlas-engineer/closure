@@ -497,6 +497,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A datetime-local field shows mm/dd/yyyy, --:-- -- and the same calendar.
 - Placeholder hyphens are solid dark bars, the dash Chromium paints.
 - Those dashes sit on Chromium's row for both the time field and the date line.
+- Each placeholder dash is five pixels wide, the bar Chromium paints.
 
 ## Next
 

@@ -1145,8 +1145,8 @@ because the monospace dash glyph only covers part of the pixel."
       (loop for ch across text
             for adv = (text-advance (string ch) fs fam wt fst)
             do (if (char= ch #\-)
-                   (let* ((bw (min adv 5d0))
-                          (bx (+ pen (/ (max 0d0 (- adv bw)) 2d0)))
+                   (let* ((bw 5d0)
+                          (bx (float (floor (+ pen (/ (max 0d0 (- adv bw)) 2d0))) 1d0))
                           ;; Five pixels above the baseline lands on the row
                           ;; Chromium uses for both the time field and the
                           ;; date line.
