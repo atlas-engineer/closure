@@ -568,6 +568,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An image with only alt leaves 16px for Chromium's broken-image icon.
 - A popover stays hidden. An author display still shows it.
 - table-layout:fixed keeps the table width. Automatic layout still grows for nowrap.
+- Audio with controls is Chromium's 300 by 54 bar. Without controls it stays hidden.
 
 ## Next
 

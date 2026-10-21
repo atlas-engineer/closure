@@ -1423,6 +1423,45 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-audio-controls ()
+  (let* ((root (closure.engine:layout-html
+                "<audio id='n'></audio>
+                 <audio id='c' controls></audio>
+                 <audio id='w' controls style='width:120px'></audio>
+                 <p>A<audio id='h' controls></audio>B</p>"
+                :width 500 :height 160
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (plain (closure.engine:find-box root "n"))
+         (bar (closure.engine:find-box root "c"))
+         (narrow (closure.engine:find-box root "w"))
+         (between (closure.engine:find-box root "h")))
+    (labels ((text (word)
+               (let ((found nil))
+                 (labels ((walk (b)
+                            (when b
+                              (when (and (eq (closure.engine::box-kind b) :text)
+                                         (string= (or (closure.engine::box-text b) "") word))
+                                (setf found b))
+                              (dolist (c (closure.engine::box-children b)) (walk c)))))
+                   (walk root))
+                 found)))
+      (let ((a (text "A"))
+            (b (text "B")))
+        (check "audio boxes" (and (null plain) bar narrow between a b))
+        (check "audio controls are 300 by 54"
+               (and bar
+                    (~ (closure.engine:box-width bar) 300d0)
+                    (~ (closure.engine:box-height bar) 54d0)))
+        (check "an author width wins on audio controls"
+               (and narrow
+                    (~ (closure.engine:box-width narrow) 120d0)
+                    (~ (closure.engine:box-height narrow) 54d0)))
+        (check "audio controls sit between the words"
+               (and a b between
+                    (> (closure.engine:box-x between) (closure.engine:box-x a))
+                    (> (closure.engine:box-x b)
+                       (+ (closure.engine:box-x between) 200d0))))))))
+
 (defun test-table-layout-fixed ()
   (let* ((root (closure.engine:layout-html
                 "<table id='f' style='table-layout:fixed;width:80px'><tr><td id='a' style='white-space:nowrap'>VERYLONGWORD</td><td id='b'>B</td></tr></table>
@@ -7426,6 +7465,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-audio-controls)
   (test-table-layout-fixed)
   (test-popover)
   (test-details-no-summary)
