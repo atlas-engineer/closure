@@ -3139,6 +3139,16 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
       (check "the progress track has a rounded end" (> r 200)))
     (multiple-value-bind (r g b) (png-rgb path 120 8)
       (check "the progress track is gray" (and (> r 200) (> g 200) (> b 200) (< r 250))))
+    (multiple-value-bind (r g b) (png-rgb path 10 4)
+      (check "the progress fill has a fringe"
+             (and (< (abs (- r 59)) 30)
+                  (< (abs (- g 117)) 30)
+                  (< (abs (- b 186)) 30))))
+    (multiple-value-bind (r g b) (png-rgb path 10 20)
+      (check "the meter fringe is gray"
+             (and (< (abs (- r 203)) 30)
+                  (< (abs (- g 203)) 30)
+                  (< (abs (- b 203)) 30))))
     (multiple-value-bind (r g b) (png-rgb path 10 24)
       (check "the meter fill is green" (and (< r 40) (> g 80) (< b 40))))))
 

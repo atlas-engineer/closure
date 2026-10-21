@@ -490,6 +490,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An empty time field's placeholder is Chromium's dark gray, not the border gray.
 - A used margin truncates to 1/64px, so 0.83em of 24px is 19.90625 and the time field shares Chromium's pixel.
 - A range track has Chromium's one-pixel fringe, blue beside the fill and gray beside the rest.
+- Progress and meter bars use that same fringe, and a meter's fringe stays gray.
 
 ## Next
 
