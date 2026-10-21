@@ -816,12 +816,14 @@ on spaces so a line fits MAX-W."
                               (stroke-line)
                               (cairo-set-dash cr (cffi:null-pointer) 0 0d0)))
                            ((eq style :dotted)
-                            (cffi:with-foreign-object (dash :double 2)
-                              (setf (cffi:mem-aref dash :double 0) width
-                                    (cffi:mem-aref dash :double 1) width)
-                              (cairo-set-dash cr dash 2 0d0)
-                              (stroke-line)
-                              (cairo-set-dash cr (cffi:null-pointer) 0 0d0)))
+                            ;; Chromium's dotted underline is a 2px square
+                            ;; with a 2px gap, on whole pixels.
+                            (let ((y0 (float (floor y) 1d0))
+                                  (ink (color-or (computed-text-decoration-color st) st)))
+                              (loop for px = (float (floor (box-x box)) 1d0)
+                                      then (+ px 4d0)
+                                    while (< px (+ (box-x box) (box-w box)))
+                                    do (fill-rect cr px y0 2d0 2d0 ink))))
                            ((eq style :wavy)
                             (let* ((x0 (box-x box))
                                    (x1 (+ x0 (box-w box)))

@@ -5424,6 +5424,31 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-dotted-underline ()
+  (let* ((path "/tmp/closure-engine-dotted.png")
+         (root (closure.engine:render-html
+                "<abbr id='a' title='abbreviation'>abcd</abbr>"
+                :width 120 :height 40
+                :stylesheet "body{margin:0}"
+                :output path))
+         (box (closure.engine:find-box root "a"))
+         (hit nil))
+    (check "dotted abbr" box)
+    (when box
+      (loop for y from (round (closure.engine:box-y box))
+              to (round (+ (closure.engine:box-y box)
+                           (closure.engine:box-height box)
+                           4d0))
+            do (let ((bits (loop for x from (round (closure.engine:box-x box))
+                                 below (round (+ (closure.engine:box-x box) 16d0))
+                                 collect (multiple-value-bind (r g b) (png-rgb path x y)
+                                           (< (+ r g b) 200)))))
+                 (when (and (nth 0 bits) (nth 1 bits)
+                            (not (nth 2 bits)) (not (nth 3 bits))
+                            (nth 4 bits) (nth 5 bits))
+                   (setf hit t)))))
+    (check "an abbr title is a 2px dotted underline" hit)))
+
 (defun test-optgroup-list ()
   (let* ((path "/tmp/closure-engine-optgroup.png")
          (root (closure.engine:render-html
@@ -6405,6 +6430,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-dotted-underline)
   (test-optgroup-list)
   (test-fieldset-disabled)
   (test-progress-indeterminate)

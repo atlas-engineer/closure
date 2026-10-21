@@ -538,6 +538,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An indeterminate progress paints a short blue bar. A value of zero stays empty.
 - A disabled fieldset fades its controls. A control in the first legend stays enabled.
 - A list select shows an optgroup label in bold, indents its options, and grays a disabled group.
+- A dotted underline is Chromium's 2px squares with a 2px gap.
 
 ## Next
 
