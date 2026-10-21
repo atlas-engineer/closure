@@ -628,6 +628,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A math table sizes each column to its widest cell and centers the cell contents. A row is at least the math strut.
 - Postscripts sit to the right of a multiscript base and prescripts sit to the left. Each pair shares a column.
 - mpadded width sets the advance. lspace shifts the contents right and voffset shifts them up. A leading plus is ignored.
+- An annotation is hidden. A math action shows its first child and hides the rest.
 
 ## Next
 

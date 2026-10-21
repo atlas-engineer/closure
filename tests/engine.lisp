@@ -5073,6 +5073,34 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                       (closure.engine:box-width x3))
                    0.6d0)))))
 
+(defun test-math-hidden ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'>A<math><semantics><mi id='z'>z</mi><annotation id='n'>NOTE</annotation></semantics></math>
+                 <math><maction actiontype='toggle'><mi id='f'>first</mi><mi id='s'>second</mi></maction></math>B</p>"
+                :width 300 :height 40
+                :stylesheet "body{margin:0}"))
+         (z (closure.engine:find-box root "z"))
+         (note (closure.engine:find-box root "n"))
+         (first (closure.engine:find-box root "f"))
+         (second (closure.engine:find-box root "s"))
+         (texts nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (closure.engine::box-text b))
+                   (push (closure.engine::box-text b) texts))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "the visible math is shown"
+           (and z first))
+    (check "an annotation is not laid out"
+           (and (null note)
+                (not (member "NOTE" texts :test #'string=))))
+    (check "a math action keeps only its first child"
+           (and (null second)
+                (not (member "second" texts :test #'string=))
+                (member "first" texts :test #'string=)))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -9072,6 +9100,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-table)
   (test-math-multiscripts)
   (test-math-padded)
+  (test-math-hidden)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)

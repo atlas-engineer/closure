@@ -60,6 +60,8 @@ script element after style and layout. Left unset until that engine exists.")
    mmultiscripts > :nth-child(n+2) { font-size: 71%; }
    ruby > rt { font-size: 50%; }
    rp { display: none; }
+   annotation, annotation-xml { display: none; }
+   maction > :not(:first-child) { display: none; }
    sub { vertical-align: sub; font-size: smaller; }
    sup { vertical-align: super; font-size: smaller; }
    a:link { color: #0000ee; text-decoration: underline; }
