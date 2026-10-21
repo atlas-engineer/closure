@@ -457,6 +457,8 @@ from the Lisp engine without calling Node or another browser engine.
   50 by 27.
 - A time input is 103 by 24: 98px of content, 1px of left padding, and a
   2px inset border.
+- Progress paints a blue bar and meter a green bar, each across half the
+  track when the value is half of the range.
 
 ## Next
 

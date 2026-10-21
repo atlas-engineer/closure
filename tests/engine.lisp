@@ -2942,6 +2942,21 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-gauge-paint ()
+  (let ((path "/tmp/closure-engine-gauge.png"))
+    (closure.engine:render-html
+     "<progress value='0.5' max='1'></progress><meter value='0.5'></meter>"
+     :width 200 :height 40
+     :stylesheet "body{margin:0} progress,meter{display:block}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 10 8)
+      (declare (ignore g))
+      (check "the progress fill is blue" (and (< r 40) (> b 200))))
+    (multiple-value-bind (r g b) (png-rgb path 120 8)
+      (check "the progress track is gray" (and (> r 200) (> g 200) (> b 200) (< r 250))))
+    (multiple-value-bind (r g b) (png-rgb path 10 24)
+      (check "the meter fill is green" (and (< r 40) (> g 80) (< b 40))))))
+
 (defun test-time-input ()
   (let* ((root (closure.engine:layout-html
                 "<input id='t' type='time'>"
@@ -4934,6 +4949,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-gauge-paint)
   (test-time-input)
   (test-input-widgets)
   (test-check-submit)
