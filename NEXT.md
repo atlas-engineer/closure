@@ -600,6 +600,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An image height percentage is a share of its container. An author height still wins.
 - A canvas width or height percentage is that many pixels. An author size still wins.
 - An svg width or height percentage is a share of its container. An author size still wins.
+- An image button percentage is a share of its container. A text field ignores it.
 
 ## Next
 

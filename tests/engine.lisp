@@ -6363,6 +6363,39 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-input-image-percent ()
+  (let* ((src "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (root (closure.engine:layout-html
+                (format nil "<div style='width:200px;height:80px'>
+                   <input id='both' type='image' src='~A' width='50%' height='25%'>
+                   <input id='w' type='image' src='~A' width='50%'>
+                   <input id='px' type='image' src='~A' width='40' height='10'>
+                   <input id='own' type='image' src='~A' width='50%' height='25%' style='width:30px;height:8px'>
+                   <input id='text' width='50%' value='Hi'>
+                 </div>" src src src src)
+                :width 400 :height 200
+                :stylesheet "body{margin:0}"))
+         (both (closure.engine:find-box root "both"))
+         (w (closure.engine:find-box root "w"))
+         (px (closure.engine:find-box root "px"))
+         (own (closure.engine:find-box root "own"))
+         (text (closure.engine:find-box root "text")))
+    (check "image button percentage boxes" (and both w px own text))
+    (check "an image button percentage is a share of its container"
+           (and (~ (closure.engine:box-width both) 100d0)
+                (~ (closure.engine:box-height both) 20d0)))
+    (check "an image button width percentage keeps the image ratio"
+           (and (~ (closure.engine:box-width w) 100d0)
+                (~ (closure.engine:box-height w) 100d0)))
+    (check "an image button pixel size stays in pixels"
+           (and (~ (closure.engine:box-width px) 40d0)
+                (~ (closure.engine:box-height px) 10d0)))
+    (check "an author size wins over an image button percentage"
+           (and (~ (closure.engine:box-width own) 30d0)
+                (~ (closure.engine:box-height own) 8d0)))
+    (check "a text field ignores a width percentage"
+           (~ (closure.engine:box-width text) 177d0))))
+
 (defun test-svg-percent ()
   (let* ((root (closure.engine:layout-html
                 "<div style='width:200px;height:40px'>
@@ -8206,6 +8239,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-input-image-percent)
   (test-svg-percent)
   (test-canvas-percent)
   (test-img-percent-height)

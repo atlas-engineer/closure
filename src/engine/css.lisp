@@ -1932,11 +1932,13 @@
           (push (list (car pair) (cdr pair) d '(1 0 0 0)) found))))
     ;; width and height attributes beat the user-agent size and lose to author CSS.
     (when (and (not pseudo)
-               (member (dom-element-tag element)
-                       '("iframe" "object" "embed" "canvas" "video" "marquee"
-                         "img" "image" "svg"
-                         "table" "td" "th" "tr" "col" "colgroup" "hr")
-                       :test #'string-equal))
+               (or (member (dom-element-tag element)
+                           '("iframe" "object" "embed" "canvas" "video" "marquee"
+                             "img" "image" "svg"
+                             "table" "td" "th" "tr" "col" "colgroup" "hr")
+                           :test #'string-equal)
+                   (and (string-equal (dom-element-tag element) "input")
+                        (string-equal (or (dom-attr element "type") "") "image"))))
       (dolist (name '("width" "height"))
         (let ((raw (html-dimension-raw (dom-attr element name))))
           ;; A canvas width or height is a pixel count. 50% is 50 pixels.
