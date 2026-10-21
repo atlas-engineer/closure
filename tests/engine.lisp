@@ -2756,6 +2756,29 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-bgcolor ()
+  (let* ((html "<table><tr><td id='c' bgcolor='#c00' style='width:40px;height:20px'>X</td>
+                      <td id='s' bgcolor='#c00' style='width:40px;height:20px;background:#00c'>Y</td></tr></table>")
+         (path "/tmp/closure-engine-bgcolor.png")
+         (root (closure.engine:render-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (cell (closure.engine:find-box root "c"))
+         (styled (closure.engine:find-box root "s")))
+    (check "bgcolor boxes" (and cell styled))
+    (multiple-value-bind (r g b)
+        (png-rgb path
+                 (round (+ (closure.engine:box-x cell) 30))
+                 (round (+ (closure.engine:box-y cell) 8)))
+      (check "a cell bgcolor paints the cell"
+             (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b)
+        (png-rgb path
+                 (round (+ (closure.engine:box-x styled) 30))
+                 (round (+ (closure.engine:box-y styled) 8)))
+      (check "an author background wins over bgcolor"
+             (and (< r 40) (< g 40) (> b 180))))))
+
 (defun test-table-cell-attrs ()
   (let* ((html "<table id='t' cellspacing='10' cellpadding='8'><tr><td id='a'>One</td></tr></table>")
          (root (closure.engine:layout-html html :width 200
@@ -5539,6 +5562,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-ruby-rtc)
   (test-ruby-rb)
   (test-ruby)
+  (test-bgcolor)
   (test-table-cell-attrs)
   (test-table-border-attr)
   (test-frameset)

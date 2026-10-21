@@ -2212,6 +2212,17 @@ the smaller fixed table."
                  '(10d0 12d0 13d0 16d0 20d0 26d0 39d0)
                  '(10d0 13d0 16d0 18d0 24d0 32d0 48d0)))))))
 
+(defun apply-bgcolor-presentational (element style specified)
+  "bgcolor on body, table, row, and cell. An author background wins."
+  (when (and (not (gethash :background-color specified))
+             (member (dom-element-tag element)
+                     '("body" "table" "tr" "td" "th") :test #'string-equal))
+    (let ((raw (dom-attr element "bgcolor")))
+      (when (and raw (plusp (length (string-trim '(#\space #\newline #\tab) raw))))
+        (let ((c (parse-color-tokens (css-tokenize raw))))
+          (when (and c (listp c))
+            (setf (computed-background style) c)))))))
+
 (defun apply-font-presentational (element style specified)
   "The font element's size, color, and face attributes. An author rule wins."
   (when (string-equal (dom-element-tag element) "font")
@@ -2254,7 +2265,8 @@ the smaller fixed table."
                      (apply-longhand style prop (second item) parent-size)))
                  best)
         (unless pseudo
-          (apply-font-presentational element style best))))
+          (apply-font-presentational element style best)
+          (apply-bgcolor-presentational element style best))))
     (if pseudo
         (setf (dom-element-style element) previous)
         (setf (dom-element-style element) style))
