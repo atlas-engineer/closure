@@ -2123,7 +2123,8 @@
                   (dolist (pair (expand-declaration :color raw))
                     (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))))
         (when (member (dom-element-tag element)
-                    '("body" "table" "tr" "td" "th" "col" "colgroup") :test #'string-equal)
+                    '("body" "table" "tr" "td" "th" "thead" "tbody" "tfoot"
+                      "col" "colgroup") :test #'string-equal)
         (let ((bg (string-trim '(#\space #\newline #\tab #\return)
                                (or (dom-attr element "background") ""))))
           (when (plusp (length bg))
@@ -2666,7 +2667,8 @@ The nearer attribute wins. An author vertical-align still wins."
   "bgcolor on body, table, row, and cell. An author background wins."
   (when (and (not (gethash :background-color specified))
              (member (dom-element-tag element)
-                     '("body" "table" "tr" "td" "th" "col" "colgroup" "marquee")
+                     '("body" "table" "tr" "td" "th" "thead" "tbody" "tfoot"
+                       "col" "colgroup" "marquee")
                      :test #'string-equal))
     (let ((raw (dom-attr element "bgcolor")))
       (when (and raw (plusp (length (string-trim '(#\space #\newline #\tab) raw))))

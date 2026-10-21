@@ -589,6 +589,7 @@ from the Lisp engine without calling Node or another browser engine.
 - valign on a row group raises or lowers the cells. A cell's own valign still wins.
 - A column bgcolor paints behind its cells. A cell or row background still covers it.
 - A column background image paints behind its cells. A cell background still covers it.
+- A row group bgcolor or background paints behind its rows. A cell background still covers it.
 
 ## Next
 

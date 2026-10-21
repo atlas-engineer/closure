@@ -2488,6 +2488,42 @@ outside the border box, so the box is content plus padding plus one border."
              (dom-element-style parent)
              (eq (computed-visibility (dom-element-style parent)) :collapse)))))
 
+(defun append-row-group-backgrounds (kids rows row-boxes)
+  "A thead, tbody, or tfoot background sits behind its rows."
+  (let ((groups nil))
+    (loop for row in rows
+          for cells in row-boxes
+          when cells
+          do (let ((parent (and (dom-element-p row) (dom-node-parent row))))
+               (when (row-group-p parent)
+                 (let ((found (assoc parent groups)))
+                   (if found
+                       (setf (cdr found) (append (cdr found) cells))
+                       (push (cons parent (copy-list cells)) groups))))))
+    (dolist (pair (nreverse groups) kids)
+      (let* ((group (car pair))
+             (cells (cdr pair))
+             (st (dom-element-style group))
+             (img (and st (computed-background-image st)))
+             (bg (and st (computed-background st))))
+        (when (and cells
+                   (or (stringp img)
+                       (and (consp bg) (not (eq (car bg) :px)))))
+          (let* ((x0 (reduce #'min cells :key #'box-x))
+                 (y0 (reduce #'min cells :key #'box-y))
+                 (x1 (reduce #'max cells :key (lambda (k) (+ (box-x k) (box-w k)))))
+                 (y1 (reduce #'max cells :key (lambda (k) (+ (box-y k) (box-h k))))))
+            (setf kids
+                  (append kids
+                          (list (make-box :kind :block
+                                          :element group
+                                          :tag (dom-element-tag group)
+                                          :style st
+                                          :id (dom-element-id group)
+                                          :x x0 :y y0
+                                          :w (- x1 x0)
+                                          :h (- y1 y0)))))))))))
+
 (defun collapsed-column-flags (el ncols)
   "True for each column whose col or colgroup is visibility:collapse."
   (let ((flags (make-array ncols :initial-element nil))
@@ -3155,7 +3191,8 @@ The remaining columns share what is left of the table."
                   (setf cap placed)
                   (incf yy (box-h placed)))))
             (when cap (push cap kids))
-            ;; Column backgrounds paint behind row backgrounds and cells.
+            (setf kids (append-row-group-backgrounds kids rows row-boxes))
+            ;; Column backgrounds paint behind row groups, rows, and cells.
             (dolist (col (place-column-boxes el (remove-if-not
                                                  (lambda (k)
                                                    (member (or (box-tag k) "") '("td" "th") :test #'string=))
