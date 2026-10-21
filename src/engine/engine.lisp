@@ -97,7 +97,8 @@ script element after style and layout. Left unset until that engine exists.")
    input[type=file] { width: 253px; height: 21px; padding: 0; border: none; }
    input[type=range] { width: 129px; height: 16px; padding: 0; border: none; }
    input[type=color] { box-sizing: border-box; width: 50px; height: 27px; padding: 1px 2px; border: 1px solid #767676; }
-   input[type=time] { width: 98px; height: 20px; padding: 0 0 0 1px; border: 2px inset #ccc; }
+   input[type=time] { box-sizing: border-box; width: 103px; height: 24px; padding: 0 0 0 4px;
+     border: 1px solid #767676; font-family: monospace; }
    select { background: #efefef; border: 1px solid #767676; padding: 0; }
    textarea { font-family: monospace; background: #fff; border: 1px solid #767676; padding: 2px; width: 175px; height: 34px; }")
 

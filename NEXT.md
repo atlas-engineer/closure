@@ -469,6 +469,7 @@ from the Lisp engine without calling Node or another browser engine.
 - That border is not painted again across the fieldset's text line.
 - File, range, color, and time share Chromium's baselines. The line is 28.5px.
 - A fieldset groove is a dark pixel beside the border color, not one dark stroke.
+- An empty time input shows --:-- -- and a clock inside a gray border.
 
 ## Next
 

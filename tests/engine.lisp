@@ -3024,6 +3024,23 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 10 24)
       (check "the meter fill is green" (and (< r 40) (> g 80) (< b 40))))))
 
+(defun test-time-paint ()
+  (let ((path "/tmp/closure-engine-time.png"))
+    (closure.engine:render-html
+     "<input type='time'>"
+     :width 120 :height 40
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 0 12)
+      (check "a time input has a gray border"
+             (and (< (abs (- r 118)) 20) (< (abs (- g 118)) 20) (< (abs (- b 118)) 20))))
+    (multiple-value-bind (r g b) (png-rgb path 8 11)
+      (check "an empty time input shows its placeholder"
+             (not (and (> r 250) (> g 250) (> b 250)))))
+    (multiple-value-bind (r g b) (png-rgb path 90 6)
+      (declare (ignore g b))
+      (check "a time input paints a clock" (< r 80)))))
+
 (defun test-time-input ()
   (let* ((root (closure.engine:layout-html
                 "<input id='t' type='time'>"
@@ -5064,6 +5081,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)
+  (test-time-paint)
   (test-time-input)
   (test-control-baseline)
   (test-input-widgets)
