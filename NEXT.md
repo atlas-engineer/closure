@@ -445,6 +445,8 @@ from the Lisp engine without calling Node or another browser engine.
   attributes also size an iframe and an object, unless author CSS sets them.
 - A frameset fills the viewport. Columns and rows use pixels, percentages,
   or stars, and the default border leaves a 6px gap. noframes is hidden.
+- An rb element is the ruby base. For WWW with the annotation note, that
+  box is 45.31 by 17 at the same x as the ruby.
 
 ## Next
 

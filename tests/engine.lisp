@@ -2646,6 +2646,21 @@ b</div>"
         (check "address has no extra indent"
                (and block (~ (closure.engine:box-x block) 0d0)))))))
 
+(defun test-ruby-rb ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'>X<ruby id='r'><rb id='b'>WWW</rb><rt id='t'>note</rt></ruby>Y</p>"
+                :width 800 :height 80
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (rb (closure.engine:find-box root "b"))
+         (ruby (closure.engine:find-box root "r")))
+    (check "an rb box covers the ruby base"
+           (and rb ruby
+                (~ (closure.engine:box-x rb) 11.56d0 0.2d0)
+                (~ (closure.engine:box-y rb) 8d0)
+                (~ (closure.engine:box-width rb) 45.31d0 0.2d0)
+                (~ (closure.engine:box-height rb) 17d0)
+                (~ (closure.engine:box-x rb) (closure.engine:box-x ruby) 0.2d0)))))
+
 (defun test-ruby ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'>X<ruby id='r'>字<rt id='t'>annotation</rt></ruby>Y</p>"
@@ -4819,6 +4834,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-ruby-rb)
   (test-ruby)
   (test-frameset)
   (test-embed-size)

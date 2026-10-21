@@ -677,6 +677,20 @@ then adds one pixel: size/5 for sub, size/3 for super."
                         (member (dom-element-tag n) '("rt" "rp") :test #'string=))))
          (write-string (ruby-plain-text (dom-node-children n) :skip-annot skip-annot) out))))))
 
+(defun ruby-sole-base (el)
+  "The rb element when it is the ruby's only base text."
+  (let ((rb nil)
+        (extra nil))
+    (dolist (c (dom-node-children el))
+      (cond
+        ((and (dom-element-p c)
+              (member (dom-element-tag c) '("rt" "rp") :test #'string-equal)))
+        ((and (dom-element-p c) (string-equal (dom-element-tag c) "rb"))
+         (if rb (setf extra t) (setf rb c)))
+        ((and (dom-text-p c) (whitespace-only-p (dom-text-text c))))
+        (t (setf extra t))))
+    (and rb (not extra) rb)))
+
 (defun layout-ruby-box (el)
   "Base text with its annotation above it. A long annotation overhangs by half its font size on each side."
   (let* ((style (dom-element-style el))
@@ -706,6 +720,7 @@ then adds one pixel: size/5 for sub, size/3 for super."
          (base-h (+ base-asc (font-descent fs fam wt fst)))
          (ann-asc (font-ascent afs afam awt afst))
          (ann-h (+ ann-asc (font-descent afs afam awt afst)))
+         (base-el (or (ruby-sole-base el) el))
          (box (make-box :kind :inline :style style :element el
                         :tag (dom-element-tag el) :id (dom-element-id el)
                         :w ruby-w :h (+ ann-extra base-h)
@@ -719,7 +734,9 @@ then adds one pixel: size/5 for sub, size/3 for super."
                       :w ann-w :h ann-h :baseline ann-asc)
             kids))
     (when (plusp (length base-text))
-      (push (make-box :kind :text :style style :element el :text base-text
+      (push (make-box :kind :text :style style :element base-el :text base-text
+                      :tag (unless (eq base-el el) (dom-element-tag base-el))
+                      :id (unless (eq base-el el) (dom-element-id base-el))
                       :x (/ (- ruby-w base-w) 2d0) :y ann-extra
                       :w base-w :h base-h :baseline base-asc)
             kids))
