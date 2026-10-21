@@ -1342,6 +1342,47 @@ The script is the smaller second child."
                                 (or (box-baseline base) 0d0))
                   :children (list base script))))))
 
+(defun display-math-p (el)
+  "True when EL is inside a display=block math element."
+  (loop for node = (dom-node-parent el) then (dom-node-parent node)
+        while (dom-element-p node)
+        thereis (and (string-equal (dom-element-tag node) "math")
+                     (dom-element-style node)
+                     (eq (computed-display (dom-element-style node)) :block))))
+
+(defun layout-math-underover-limits (el)
+  "Display-style limits: overscript, base, underscript, each centered."
+  (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
+         (base-el (first kids))
+         (under-el (second kids))
+         (over-el (third kids))
+         (st (dom-element-style el))
+         (em (if st (computed-font-size st) 16d0)))
+    (when (and base-el under-el over-el)
+      (let* ((base (math-token-box base-el))
+             (under (math-token-box under-el))
+             (over (math-token-box over-el))
+             (gap (* em 0.15d0))
+             (w (max (box-w base) (box-w under) (box-w over))))
+        (setf (box-y over) 0d0
+              (box-y base) (+ (box-h over) gap)
+              (box-y under) (+ (box-y base) (box-h base) gap)
+              (box-x base) (/ (max 0d0 (- w (box-w base))) 2d0)
+              (box-x under) (/ (max 0d0 (- w (box-w under))) 2d0)
+              (box-x over) (/ (max 0d0 (- w (box-w over))) 2d0))
+        (make-box :kind :inline :style st :element el
+                  :tag (dom-element-tag el) :id (dom-element-id el)
+                  :w w
+                  :h (+ (box-y under) (box-h under))
+                  :baseline (+ (box-y base) (or (box-baseline base) 0d0))
+                  :children (list base under over))))))
+
+(defun layout-math-underover (el)
+  "Inline limits sit beside the base. Display limits stack above and below it."
+  (if (display-math-p el)
+      (layout-math-underover-limits el)
+      (layout-math-subsup el)))
+
 (defun math-piece (el)
   "One child of a square root: a script, a fraction, or a token."
   (cond
@@ -1353,6 +1394,8 @@ The script is the smaller second child."
      (layout-math-fraction el))
     ((member (dom-element-tag el) '("mover" "munder") :test #'string=)
      (layout-math-limit el))
+    ((string-equal (dom-element-tag el) "munderover")
+     (layout-math-underover el))
     (t (math-token-box el))))
 
 (defun layout-math-sqrt (el)
@@ -1613,6 +1656,15 @@ The script is the smaller second child."
                    (push b current)
                    (incf current-w (box-w b))
                    (setf previous (dom-element-style el)))))
+             (emit-math-underover (el)
+               (let ((b (layout-math-underover el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-math-limit (el)
                (let ((b (layout-math-limit el)))
                  (when b
@@ -1704,6 +1756,8 @@ The script is the smaller second child."
                        (emit-math-subsup n))
                       ((member (dom-element-tag n) '("mover" "munder") :test #'string=)
                        (emit-math-limit n))
+                      ((string= (dom-element-tag n) "munderover")
+                       (emit-math-underover n))
                       ((string= (dom-element-tag n) "mfrac")
                        (emit-math-fraction n))
                       ((string= (dom-element-tag n) "msqrt")

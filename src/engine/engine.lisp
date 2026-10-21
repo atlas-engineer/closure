@@ -54,7 +54,8 @@ script element after style and layout. Left unset until that engine exists.")
    msup > :nth-child(2), msub > :nth-child(2),
    msubsup > :nth-child(2), msubsup > :nth-child(3) { font-size: 71%; }
    mfrac > :nth-child(1), mfrac > :nth-child(2) { font-size: 71%; }
-   mover > :nth-child(2), munder > :nth-child(2) { font-size: 71%; }
+   mover > :nth-child(2), munder > :nth-child(2),
+   munderover > :nth-child(2), munderover > :nth-child(3) { font-size: 71%; }
    mroot > :nth-child(2) { font-size: 50.41%; }
    ruby > rt { font-size: 50%; }
    rp { display: none; }

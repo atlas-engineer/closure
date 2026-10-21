@@ -4776,6 +4776,45 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                          (closure.engine:box-height under-base)))
                    (* 16d0 0.15d0) 0.3d0)))))
 
+(defun test-math-underover ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><math><munderover id='s'><mo id='b'>+</mo><mi id='u'>i</mi><mi id='o'>n</mi></munderover></math></p>
+                 <math id='d' display='block'><munderover id='m'><mo id='db'>+</mo><mi id='du'>i</mi><mi id='do'>n</mi></munderover></math>"
+                :width 200 :height 100
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (base (closure.engine:find-box root "b"))
+         (under (closure.engine:find-box root "u"))
+         (over (closure.engine:find-box root "o"))
+         (dbase (closure.engine:find-box root "db"))
+         (dunder (closure.engine:find-box root "du"))
+         (dover (closure.engine:find-box root "do")))
+    (check "underover boxes" (and base under over dbase dunder dover))
+    (check "an inline limit sits beside the base"
+           (and base under over
+                (~ (closure.engine:box-x under) (closure.engine:box-x over) 0.3d0)
+                (~ (closure.engine:box-x under)
+                   (+ (closure.engine:box-x base) (closure.engine:box-width base))
+                   0.3d0)
+                (< (closure.engine:box-y over) (closure.engine:box-y under))))
+    (check "a display limit stacks and stays centered"
+           (and dbase dunder dover
+                (< (closure.engine:box-y dover) (closure.engine:box-y dbase))
+                (< (closure.engine:box-y dbase) (closure.engine:box-y dunder))
+                (~ (+ (closure.engine:box-x dover)
+                      (/ (closure.engine:box-width dover) 2d0))
+                   (+ (closure.engine:box-x dbase)
+                      (/ (closure.engine:box-width dbase) 2d0))
+                   0.4d0)
+                (~ (+ (closure.engine:box-x dunder)
+                      (/ (closure.engine:box-width dunder) 2d0))
+                   (+ (closure.engine:box-x dbase)
+                      (/ (closure.engine:box-width dbase) 2d0))
+                   0.4d0)
+                (~ (- (closure.engine:box-y dbase)
+                      (+ (closure.engine:box-y dover)
+                         (closure.engine:box-height dover)))
+                   (* 16d0 0.15d0) 0.3d0)))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8767,6 +8806,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-display)
   (test-math-subsup)
   (test-math-limit)
+  (test-math-underover)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)
