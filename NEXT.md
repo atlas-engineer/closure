@@ -422,8 +422,11 @@ from the Lisp engine without calling Node or another browser engine.
   and output is an inline word.
 - A picture shows its image at the given size, and the line grows to fit
   it. A map and its areas take no space between the words around them.
+- A col covers its cell and a colgroup covers the row. A slot's fallback
+  is ordinary text. A datalist is not shown.
 
 ## Next
 
-1. The done condition is not met. Rare tags such as slot, colgroup, and
-   datalist are still missing from the sample page.
+1. The done condition is not met. The sample page now includes the tags
+   that paint, but a real document still needs more of the web than this
+   viewport.

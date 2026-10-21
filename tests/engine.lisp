@@ -1041,6 +1041,35 @@
       (walk box))
     out))
 
+(defun test-slot-columns ()
+  (let* ((root (closure.engine:layout-html
+                "<table id='t'><colgroup id='cg'><col id='c1'><col id='c2'></colgroup><tr><td id='a'>One</td><td id='b'>Two</td></tr></table>
+                 <p>host <slot id='sl'>fallback</slot> end</p>
+                 <datalist id='dl'><option>Rome</option></datalist>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0}"))
+         (a (closure.engine:find-box root "a"))
+         (c1 (closure.engine:find-box root "c1"))
+         (cg (closure.engine:find-box root "cg"))
+         (dl (closure.engine:find-box root "dl"))
+         (fallback nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (string= (or (closure.engine::box-text b) "") "fallback"))
+                   (setf fallback b))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "columns and slot" (and a c1 cg fallback (not dl)))
+    (check "a col covers its cell"
+           (and a c1
+                (~ (closure.engine:box-x c1) (closure.engine:box-x a))
+                (~ (closure.engine:box-width c1) (closure.engine:box-width a))))
+    (check "a colgroup covers every column"
+           (and cg c1 (>= (closure.engine:box-width cg) (closure.engine:box-width c1))))
+    (check "a slot's fallback is ordinary text"
+           (and fallback (> (closure.engine:box-width fallback) 20d0)))))
+
 (defun test-picture-map ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'><picture><img id='im' src='missing.png' alt='s' width='20' height='20'></picture> tail</p>
@@ -4436,6 +4465,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-size-lengths)
   (test-background-size-percent)
   (test-background-position-percent)
+  (test-slot-columns)
   (test-picture-map)
   (test-dialog-search)
   (test-iframe-object)

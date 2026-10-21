@@ -1827,6 +1827,67 @@ outside the border box, so the box is content plus padding plus one border."
                                                          0d0))
      (* gap (max 0 (1- span)))))
 
+(defun table-column-specs (el)
+  "Col elements in source order, each as (element span colgroup-or-nil)."
+  (let ((specs nil))
+    (dolist (c (dom-node-children el))
+      (when (dom-element-p c)
+        (cond
+          ((string= (dom-element-tag c) "col")
+           (push (list c (max 1 (or (ignore-errors (parse-integer (or (dom-attr c "span") "1"))) 1)) nil)
+                 specs))
+          ((string= (dom-element-tag c) "colgroup")
+           (let ((inner (remove-if-not (lambda (k)
+                                         (and (dom-element-p k)
+                                              (string= (dom-element-tag k) "col")))
+                                       (dom-node-children c))))
+             (if inner
+                 (dolist (k inner)
+                   (push (list k (max 1 (or (ignore-errors (parse-integer (or (dom-attr k "span") "1"))) 1)) c)
+                         specs))
+                 (push (list c (max 1 (or (ignore-errors (parse-integer (or (dom-attr c "span") "1"))) 1)) c)
+                       specs)))))))
+    (nreverse specs)))
+
+(defun place-column-boxes (el cells)
+  "Boxes for col and colgroup that cover the same area as the columns."
+  (let* ((specs (table-column-specs el))
+         (top (and cells (reduce #'min cells :key #'box-y)))
+         (ordered (and top
+                       (sort (remove-if-not (lambda (k) (< (abs (- (box-y k) top)) 0.5d0)) cells)
+                             #'< :key #'box-x)))
+         (boxes nil)
+         (groups nil)
+         (i 0))
+    (dolist (spec specs)
+      (destructuring-bind (node span group) spec
+        (let ((slice (loop for k from 0 below span
+                           for cell = (nth (+ i k) ordered)
+                           when cell collect cell)))
+          (when slice
+            (let* ((x0 (reduce #'min slice :key #'box-x))
+                   (y0 (reduce #'min slice :key #'box-y))
+                   (right (reduce #'max slice :key (lambda (k) (+ (box-x k) (box-w k)))))
+                   (bottom (reduce #'max slice :key (lambda (k) (+ (box-y k) (box-h k)))))
+                   (col-box (make-box :kind :table-column :style (dom-element-style node)
+                                      :element node :tag (dom-element-tag node)
+                                      :id (dom-element-id node)
+                                      :x x0 :y y0 :w (- right x0) :h (- bottom y0))))
+              (push col-box boxes)
+              (when (and group (not (eq group node)))
+                (let ((existing (find group groups :key #'box-element)))
+                  (if existing
+                      (let ((edge (max (+ (box-x existing) (box-w existing))
+                                       (+ (box-x col-box) (box-w col-box)))))
+                        (setf (box-x existing) (min (box-x existing) (box-x col-box))
+                              (box-w existing) (- edge (box-x existing))))
+                      (push (make-box :kind :table-column :style (dom-element-style group)
+                                      :element group :tag "colgroup" :id (dom-element-id group)
+                                      :x x0 :y y0 :w (- right x0) :h (- bottom y0))
+                            groups))))))
+          (incf i span))))
+    (nreconc groups (nreverse boxes))))
+
 (defun layout-table (el x y avail-w avail-h containing)
   (declare (ignore avail-h containing))
   (let* ((style (dom-element-style el))
@@ -1965,6 +2026,11 @@ outside the border box, so the box is content plus padding plus one border."
                   (setf cap placed)
                   (incf yy (box-h placed)))))
             (when cap (push cap kids))
+            (dolist (col (place-column-boxes el (remove-if-not
+                                                 (lambda (k)
+                                                   (member (or (box-tag k) "") '("td" "th") :test #'string=))
+                                                 kids)))
+              (push col kids))
             (setf (box-x box) (+ x ml)
                   (box-y box) y
                   (box-w box) bw

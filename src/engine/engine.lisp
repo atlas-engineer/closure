@@ -72,6 +72,8 @@ script element after style and layout. Left unset until that engine exists.")
    summary { display: list-item; list-style-type: disclosure-closed; list-style-position: inside; }
    search { display: block; }
    output { display: inline; }
+   datalist { display: none; }
+   slot { display: contents; }
    dialog { display: none; position: absolute; top: 13px; border: 3px solid #000; padding: 1em; background: #fff; }
    dialog[open] { display: block; }
    img, video, canvas, svg, object, input, select, textarea, iframe { display: inline-block; }
