@@ -1919,7 +1919,23 @@
                                       :raw (format nil "~Dpx" px)
                                       :origin :author :order 0)))
             (dolist (pair (expand-declaration :height (css-decl-raw decl)))
-              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
+              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))
+      (let ((color (string-trim '(#\space #\newline #\tab #\return)
+                                (or (dom-attr element "color") ""))))
+        (when (and (plusp (length color))
+                   (expand-declaration :background-color color))
+          (let ((decl (make-css-decl :property :background-color :raw color
+                                     :origin :author :order 0)))
+            (dolist (pair (expand-declaration :background-color color))
+              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))
+            (dolist (prop '(:border-top-color :border-right-color
+                            :border-bottom-color :border-left-color))
+              (dolist (pair (expand-declaration prop color))
+                (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))
+            (dolist (prop '(:border-top-style :border-right-style
+                            :border-bottom-style :border-left-style))
+              (dolist (pair (expand-declaration prop "solid"))
+                (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
     ;; nowrap on a cell loses to an author white-space.
     (when (and (not pseudo)
                (member (dom-element-tag element) '("td" "th") :test #'string-equal)

@@ -5424,6 +5424,39 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-hr-color ()
+  (let* ((html "<hr id='a' color='#c00'><hr id='b' color='blue' size='6'><hr id='c' color='#c00' style='border-top-color:#0a0;border-right-color:#0a0;border-bottom-color:#0a0;border-left-color:#0a0'>")
+         (path "/tmp/closure-engine-hr-color.png")
+         (root (closure.engine:render-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (as (and a (closure.engine::box-style a)))
+         (bs (and b (closure.engine::box-style b)))
+         (cs (and c (closure.engine::box-style c))))
+    (check "colored rules" (and a b c as bs cs))
+    (check "hr color makes a solid rule in that color"
+           (and as
+                (eq (closure.engine::computed-bts as) :solid)
+                (> (first (closure.engine::computed-btc as)) 0.7d0)
+                (< (second (closure.engine::computed-btc as)) 0.1d0)
+                (> (first (closure.engine::computed-background as)) 0.7d0)))
+    (check "a sized colored rule keeps the size and the color"
+           (and b bs
+                (~ (closure.engine:box-height b) 6d0)
+                (> (third (closure.engine::computed-background bs)) 0.7d0)))
+    (check "an author border color wins and the rule background stays"
+           (and cs
+                (> (second (closure.engine::computed-btc cs)) 0.5d0)
+                (> (first (closure.engine::computed-background cs)) 0.7d0)))
+    (let ((x (round (+ (closure.engine:box-x a) 4d0)))
+          (y (round (closure.engine:box-y a))))
+      (multiple-value-bind (r g b) (png-rgb path x y)
+        (check "the colored rule is painted red"
+               (and (> r 180) (< g 40) (< b 40)))))))
+
 (defun test-image-border ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (html (format nil "<img id='a' border='2' width='20' height='20' src='~A'><img id='b' border='0' width='20' height='20' src='~A'><img id='c' border='4' style='border:1px solid #0a0' width='20' height='20' src='~A'>"
@@ -5971,6 +6004,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-hr-color)
   (test-image-border)
   (test-hspace)
   (test-br-clear)
