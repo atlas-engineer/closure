@@ -3040,6 +3040,20 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 10 24)
       (check "the meter fill is green" (and (< r 40) (> g 80) (< b 40))))))
 
+(defun test-text-input-border ()
+  (let ((path "/tmp/closure-engine-text-border.png"))
+    (closure.engine:render-html
+     "<input value='Hi'>"
+     :width 200 :height 40
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 20 0)
+      (check "a text input's top edge is gray"
+             (and (< (abs (- r 118)) 8) (< (abs (- g 118)) 8) (< (abs (- b 118)) 8))))
+    (multiple-value-bind (r g b) (png-rgb path 20 1)
+      (check "the inside of a text input stays white"
+             (and (> r 250) (> g 250) (> b 250))))))
+
 (defun test-time-paint ()
   (let ((path "/tmp/closure-engine-time.png"))
     (closure.engine:render-html
@@ -5113,6 +5127,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)
+  (test-text-input-border)
   (test-time-paint)
   (test-time-input)
   (test-control-baseline)

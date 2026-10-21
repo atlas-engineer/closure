@@ -150,8 +150,8 @@ color. The top of that groove crosses the legend and stops behind it."
                                    (not (member style '(:dashed :dotted))))
                               ;; A centered 1px stroke spills into the next pixel.
                               ;; Fill the border row Chromium snaps to.
-                              (let ((px (float (ceiling x1) 1d0))
-                                    (py (float (ceiling y1) 1d0)))
+                              (let ((px (float (round x1) 1d0))
+                                    (py (float (round y1) 1d0)))
                                 (if (>= ww hh)
                                     (cairo-rectangle cr px py (max 1d0 ww) (max 1d0 bw))
                                     (cairo-rectangle cr px py (max 1d0 bw) (max 1d0 hh)))

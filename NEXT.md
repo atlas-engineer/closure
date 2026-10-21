@@ -476,6 +476,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A range has Chromium's 2px side margin, so the controls after it sit 4px farther right.
 - A 1px border fills one pixel instead of a stroke that spills into the next row.
 - A fieldset's bottom groove uses the last pixel whose center is inside the box.
+- A text input's border is a one-pixel gray line, the same edge Chromium paints.
 
 ## Next
 
