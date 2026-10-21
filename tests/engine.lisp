@@ -2756,6 +2756,38 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-align-attr ()
+  (let* ((html "<div id='d' align='center' style='width:200px'><span id='w'>Hi</span></div>
+                <table id='t' align='center'><tr><td id='c' align='right' style='width:80px'>X</td></tr></table>
+                <img id='i' align='right' src='file:///home/jmercouris/Source/closure/screenshots/square.png' width='20' height='20'>")
+         (root (closure.engine:layout-html html :width 200
+                                          :stylesheet "body{margin:0}"))
+         (word (closure.engine:find-box root "w"))
+         (table (closure.engine:find-box root "t"))
+         (cell (closure.engine:find-box root "c"))
+         (image (closure.engine:find-box root "i")))
+    (check "align boxes" (and word table cell image))
+    (check "align=center centers the line"
+           (and word (> (closure.engine:box-x word) 60d0)))
+    (check "align=center centers the table"
+           (and table (> (closure.engine:box-x table) 20d0)
+                (< (+ (closure.engine:box-x table) (closure.engine:box-width table)) 180d0)))
+    (check "align=right puts the cell text on the right"
+           (and cell
+                (labels ((find-x (b)
+                           (when b
+                             (if (and (eq (closure.engine::box-kind b) :text)
+                                      (string= (or (closure.engine::box-text b) "") "X"))
+                                 b
+                                 (some #'find-x (closure.engine::box-children b))))))
+                  (let ((hit (find-x cell)))
+                    (and hit (> (closure.engine:box-x hit)
+                                (+ (closure.engine:box-x cell) 40d0)))))))
+    (check "align=right floats an image"
+           (and image (eq (closure.engine::computed-float
+                           (closure.engine::box-style image))
+                          :right)))))
+
 (defun test-bgcolor ()
   (let* ((html "<table><tr><td id='c' bgcolor='#c00' style='width:40px;height:20px'>X</td>
                       <td id='s' bgcolor='#c00' style='width:40px;height:20px;background:#00c'>Y</td></tr></table>")
@@ -5562,6 +5594,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-ruby-rtc)
   (test-ruby-rb)
   (test-ruby)
+  (test-align-attr)
   (test-bgcolor)
   (test-table-cell-attrs)
   (test-table-border-attr)

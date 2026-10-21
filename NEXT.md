@@ -512,6 +512,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A table border attribute draws an outset frame and an inset edge on each cell, at Chromium's size.
 - cellspacing and cellpadding set the gap and the cell padding Chromium uses.
 - bgcolor on a body, table, row, or cell paints that background. An author background wins.
+- align centers a line or a table, moves cell text, and floats a replaced element.
 
 ## Next
 

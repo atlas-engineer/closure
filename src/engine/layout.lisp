@@ -2320,6 +2320,15 @@ of that width, both Chromium's gray. An author border is left alone."
                   (box-w box) bw
                   (box-h box) (+ (- yy y bt pt) bt bb pt pb)
                   (box-children box) (nreverse kids))
+            ;; align=center on an auto-width table. solve-width only
+            ;; centers a table whose width was set in CSS.
+            (when (and (not specified)
+                       (eq (computed-ml style) :auto)
+                       (eq (computed-mr style) :auto))
+              (let ((shift (/ (max 0d0 (- avail-w (box-w box))) 2d0)))
+                (incf (box-x box) shift)
+                (dolist (k (box-children box))
+                  (translate-box k shift 0d0))))
             box)))))))
 
 (defun frameset-gap (el)

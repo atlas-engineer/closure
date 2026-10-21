@@ -2212,6 +2212,33 @@ the smaller fixed table."
                  '(10d0 12d0 13d0 16d0 20d0 26d0 39d0)
                  '(10d0 13d0 16d0 18d0 24d0 32d0 48d0)))))))
 
+(defun apply-align-presentational (element style specified)
+  "align sets text alignment, centers a table, or floats a replaced element."
+  (let ((raw (dom-attr element "align")))
+    (when (and raw (plusp (length (string-trim '(#\space #\newline #\tab) raw))))
+      (let ((tag (string-downcase (dom-element-tag element)))
+            (value (string-downcase (string-trim '(#\space #\newline #\tab) raw))))
+        (cond
+          ((and (string= tag "table")
+                (string= value "center")
+                (not (gethash :margin-left specified))
+                (not (gethash :margin-right specified)))
+           (setf (computed-ml style) :auto
+                 (computed-mr style) :auto))
+          ((and (member tag '("img" "iframe" "embed" "object") :test #'string=)
+                (not (gethash :float specified)))
+           (cond ((string= value "left") (setf (computed-float style) :left))
+                 ((string= value "right") (setf (computed-float style) :right))))
+          ((and (not (gethash :text-align specified))
+                (member tag '("div" "p" "h1" "h2" "h3" "h4" "h5" "h6"
+                              "td" "th" "caption" "tr" "center")
+                        :test #'string=))
+           (let ((align (cond ((string= value "center") :center)
+                              ((string= value "right") :right)
+                              ((string= value "justify") :justify)
+                              ((string= value "left") :left))))
+             (when align (setf (computed-text-align style) align)))))))))
+
 (defun apply-bgcolor-presentational (element style specified)
   "bgcolor on body, table, row, and cell. An author background wins."
   (when (and (not (gethash :background-color specified))
@@ -2266,7 +2293,8 @@ the smaller fixed table."
                  best)
         (unless pseudo
           (apply-font-presentational element style best)
-          (apply-bgcolor-presentational element style best))))
+          (apply-bgcolor-presentational element style best)
+          (apply-align-presentational element style best))))
     (if pseudo
         (setf (dom-element-style element) previous)
         (setf (dom-element-style element) style))
