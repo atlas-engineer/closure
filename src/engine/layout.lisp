@@ -1178,6 +1178,41 @@ so each character takes an equal share of the extra width."
     (setf (box-children box) (nreverse kids))
     box))
 
+(defun math-operator-form (el)
+  "prefix, infix, or postfix. The form attribute wins. Otherwise the
+operator's place among its siblings decides."
+  (let ((raw (string-downcase (string-trim '(#\space #\newline #\tab #\return)
+                                           (or (dom-attr el "form") "")))))
+    (if (member raw '("prefix" "infix" "postfix") :test #'string=)
+        raw
+        (let* ((parent (dom-node-parent el))
+               (sibs (and (dom-element-p parent)
+                          (remove-if-not
+                           (lambda (c)
+                             (and (dom-element-p c)
+                                  (dom-element-style c)
+                                  (not (eq (computed-display (dom-element-style c)) :none))))
+                           (dom-node-children parent)))))
+          (cond
+            ((or (null sibs) (eq el (first sibs))) "prefix")
+            ((eq el (car (last sibs))) "postfix")
+            (t "infix"))))))
+
+(defun math-operator-gaps (el)
+  "lspace and rspace, in ems. An infix operator keeps 5/18 em on each
+side, and a comma keeps a thin space after it. Fences and a prefix or
+postfix operator stay tight."
+  (let ((text (string-trim '(#\space #\newline #\tab #\return) (inline-text el)))
+        (form (math-operator-form el)))
+    (cond
+      ((member text '("(" ")" "[" "]" "{" "}" "|") :test #'string=)
+       (values 0d0 0d0))
+      ((string= text ",")
+       (values 0d0 (/ 3d0 18d0)))
+      ((or (string= form "prefix") (string= form "postfix"))
+       (values 0d0 0d0))
+      (t (values (/ 5d0 18d0) (/ 5d0 18d0))))))
+
 (defun layout-inline-run (nodes x y width style &key (float-inset 0d0) (float-avoid 0d0) (float-span 0d0) avail-h)
   (let ((font (computed-font-size style))
         (family (computed-font-family style))
@@ -1323,6 +1358,16 @@ so each character takes an equal share of the extra width."
                    (push tb current)
                    (incf current-w step)
                    (setf previous use))))
+             (emit-gap (px element)
+               (when (and px (> px 0.01d0))
+                 (push (make-box :kind :text :style (and (dom-element-p element)
+                                                         (dom-element-style element))
+                                 :text ""
+                                 :element element
+                                 :tag (and (dom-element-p element) (dom-element-tag element))
+                                 :w px :advance px :h 0d0 :baseline 0d0)
+                       current)
+                 (incf current-w px)))
              (emit-ruby (el)
                (let ((b (layout-ruby-box el)))
                  (when b
@@ -1394,6 +1439,13 @@ so each character takes an equal share of the extra width."
                        (break-line (and (dom-element-style n)
                                         (computed-clear (dom-element-style n)))))
                       ((string= (dom-element-tag n) "wbr"))
+                      ((string= (dom-element-tag n) "mo")
+                       (let ((st (dom-element-style n)))
+                         (multiple-value-bind (ls rs) (math-operator-gaps n)
+                           (let ((em (if st (computed-font-size st) 16d0)))
+                             (emit-gap (* ls em) n)
+                             (feed-inline (dom-node-children n) st n)
+                             (emit-gap (* rs em) n)))))
                       ((eq (computed-display (dom-element-style n)) :contents)
                        (feed-inline (dom-node-children n) st element))
                       ((and (string-equal (dom-element-tag n) "bdo")

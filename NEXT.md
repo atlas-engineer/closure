@@ -612,6 +612,7 @@ from the Lisp engine without calling Node or another browser engine.
 - Text stays between a left float and a right float. It continues underneath them.
 - An hr with a width is centered. align=left keeps it at the start, and an author margin still wins.
 - A reset button paints Reset and a submit button paints Submit when they have no value. An author value still wins.
+- A math identifier is italic, and an infix operator keeps space on each side. A fence and a prefix operator stay tight.
 
 ## Next
 

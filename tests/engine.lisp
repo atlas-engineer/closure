@@ -4488,6 +4488,65 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
         (check "a valueless button stays blank"
                (and (> r 200) (> g 200) (> b 200)))))))
 
+(defun test-math-operator ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'>A<math><mi id='x'>x</mi><mo>+</mo><mi id='y'>y</mi></math>B</p>
+                 <p style='margin:0'>A<math><mo>(</mo><mi id='i'>x</mi><mo>)</mo></math>B</p>
+                 <p style='margin:0'>A<math><mo>-</mo><mi id='z'>z</mi></math>B</p>
+                 <p style='margin:0'>A<math><mi id='u'>u</mi><mo>,</mo><mi id='v'>v</mi></math>B</p>"
+                :width 400 :height 120
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (texts nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (closure.engine::box-text b)
+                            (plusp (length (closure.engine::box-text b))))
+                   (push b texts))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (flet ((glyph (s)
+             (find s texts :key #'closure.engine::box-text :test #'string= :from-end t)))
+      (let ((x (glyph "x"))
+            (plus (glyph "+"))
+            (open (glyph "("))
+            (inner (find "x" texts :key #'closure.engine::box-text :test #'string=))
+            (minus (glyph "-"))
+            (zee (glyph "z"))
+            (comma (glyph ","))
+            (vee (glyph "v")))
+        (check "math glyphs" (and x plus open inner minus zee comma vee))
+        (check "an identifier is italic"
+               (and x (eq (closure.engine::computed-font-style
+                           (closure.engine::box-style x))
+                          :italic)))
+        (check "an infix plus keeps a thick space"
+               (and x plus
+                    (~ (- (closure.engine:box-x plus)
+                          (+ (closure.engine:box-x x)
+                             (closure.engine:box-width x)))
+                       (/ (* 5d0 16d0) 18d0)
+                       0.2d0)))
+        (check "a fence stays against its identifier"
+               (and open inner
+                    (~ (+ (closure.engine:box-x open)
+                          (closure.engine:box-width open))
+                       (closure.engine:box-x inner)
+                       0.2d0)))
+        (check "a prefix minus stays against its identifier"
+               (and minus zee
+                    (~ (+ (closure.engine:box-x minus)
+                          (closure.engine:box-width minus))
+                       (closure.engine:box-x zee)
+                       0.2d0)))
+        (check "a comma keeps a thin space after it"
+               (and comma vee
+                    (~ (- (closure.engine:box-x vee)
+                          (+ (closure.engine:box-x comma)
+                             (closure.engine:box-width comma)))
+                       (/ (* 3d0 16d0) 18d0)
+                       0.2d0)))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8471,6 +8530,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-image-input)
   (test-select-list)
   (test-button-label)
+  (test-math-operator)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)
