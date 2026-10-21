@@ -3045,6 +3045,30 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 39 10)
       (check "the select paints a dark arrow" (and (< r 40) (< g 40) (< b 40))))))
 
+(defun test-button-border ()
+  (let ((path "/tmp/closure-engine-button-border.png"))
+    (closure.engine:render-html
+     "<button>OK</button>"
+     :width 80 :height 30
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 8 0)
+      (check "a button edge is the gray hairline"
+             (and (< (abs (- r 118)) 16)
+                  (< (abs (- g 118)) 16)
+                  (< (abs (- b 118)) 16))))
+    (multiple-value-bind (r g b) (png-rgb path 8 1)
+      (check "the button interior stays the button gray"
+             (and (> r 220) (> g 220) (> b 220) (< r 250))))
+    (multiple-value-bind (r g b) (png-rgb path 8 20)
+      (check "the button bottom edge is the same hairline"
+             (and (< (abs (- r 118)) 16)
+                  (< (abs (- g 118)) 16)
+                  (< (abs (- b 118)) 16))))
+    (multiple-value-bind (r g b) (png-rgb path 0 0)
+      (check "the button corner is rounded"
+             (and (> r 200) (> g 200) (> b 200))))))
+
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
     (closure.engine:render-html
@@ -5194,6 +5218,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-check-line)
   (test-check-paint)
   (test-select-arrow)
+  (test-button-border)
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)

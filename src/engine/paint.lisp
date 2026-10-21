@@ -1143,6 +1143,37 @@ It does not apply when borders are collapsed."
             (cairo-line-to cr (+ cx 2.4d0) (+ cy 1.2d0))
             (cairo-stroke cr)))))))
 
+(defun paint-button-border (cr box)
+  "Chromium's button, submit, and reset controls compute a 2px outset border
+but paint a 1px gray rounded edge around the background."
+  (let ((st (box-style box))
+        (el (box-element box))
+        (tag (or (box-tag box) "")))
+    (when (and st el
+               (or (string= tag "button")
+                   (and (string= tag "input")
+                        (member (string-downcase (or (dom-attr el "type") ""))
+                                '("submit" "reset" "button") :test #'string=)))
+               (eq (computed-bts st) :outset)
+               (> (box-w box) 4d0) (> (box-h box) 4d0))
+      (multiple-value-bind (bt br bb bl) (border4 st)
+        (declare (ignore br bb bl))
+        (when (<= 1.5d0 bt 2.5d0)
+          (let* ((x (float (round (box-x box)) 1d0))
+                 (y (float (round (box-y box)) 1d0))
+                 (w (float (round (box-w box)) 1d0))
+                 (h (float (round (box-h box)) 1d0))
+                 (bg (background-style box)))
+            (set-color cr (color-bytes 118 118 118))
+            (rounded-rect cr x y w h 2d0)
+            (cairo-fill cr)
+            (set-color cr (if bg
+                              (color-or (computed-background bg) bg)
+                              (color-bytes 239 239 239)))
+            (rounded-rect cr (+ x 1d0) (+ y 1d0) (- w 2d0) (- h 2d0) 1d0)
+            (cairo-fill cr))
+          t)))))
+
 (defun paint-iframe-border (cr box)
   "Chromium paints the default iframe as inset gray: 154 on the top and left,
 238 on the bottom and right, snapped to the pixels inside the border box."
@@ -1229,7 +1260,8 @@ It does not apply when borders are collapsed."
             (paint-inset-shadow cr box)
             (paint-background-image cr box)
             (unless (or (paint-default-hr cr box)
-                        (paint-iframe-border cr box))
+                        (paint-iframe-border cr box)
+                        (paint-button-border cr box))
               (paint-border cr box))
             (paint-outline cr box)
             (paint-gauge cr box)
