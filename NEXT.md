@@ -482,6 +482,7 @@ from the Lisp engine without calling Node or another browser engine.
 - The range track is a rounded bar, so the ends are not square.
 - A progress or meter track is a 6px rounded bar centered in the control.
 - An iframe border is Chromium's inset gray, 154 on the top and left and 238 on the bottom and right.
+- A solid border fills its own pixels, so a 3px dialog edge does not fringe into the next row.
 
 ## Next
 

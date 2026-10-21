@@ -1205,6 +1205,23 @@
                   (< (abs (- g 238)) 20)
                   (< (abs (- b 238)) 20))))))
 
+(defun test-solid-border-rows ()
+  (let ((path "/tmp/closure-engine-solid-border.png"))
+    (closure.engine:render-html
+     "<div style='margin-top:0.2px;border:3px solid #000;width:40px;height:10px'></div>"
+     :width 80 :height 30
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 10 0)
+      (declare (ignore g b))
+      (check "a 3px border starts on a solid pixel" (< r 20)))
+    (multiple-value-bind (r g b) (png-rgb path 10 2)
+      (declare (ignore g b))
+      (check "a 3px border fills its third pixel" (< r 20)))
+    (multiple-value-bind (r g b) (png-rgb path 10 3)
+      (declare (ignore g b))
+      (check "a 3px border does not spill into the next row" (> r 250)))))
+
 (defun test-iframe-object ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'><iframe id='f'></iframe> <object id='o'></object></p><p><bdi id='b'>bdi</bdi> <data id='d'>data</data></p>"
@@ -5178,6 +5195,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-border-ridge)
   (test-border-inset)
   (test-border-outset)
+  (test-solid-border-rows)
   (test-outline-offset)
   (test-box-shadow)
   (test-inset-shadow)

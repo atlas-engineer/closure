@@ -146,10 +146,9 @@ color. The top of that groove crosses the legend and stops behind it."
                                   (cairo-move-to cr xx y1)
                                   (cairo-line-to cr xx (+ y1 hh))))
                             (cairo-stroke cr))
-                          (if (and (<= bw 1.01d0)
-                                   (not (member style '(:dashed :dotted))))
-                              ;; A centered 1px stroke spills into the next pixel.
-                              ;; Fill the border row Chromium snaps to.
+                          (if (not (member style '(:dashed :dotted)))
+                              ;; A centered stroke spills into the rows beside the
+                              ;; border. Fill the whole pixels Chromium snaps to.
                               (let ((px (float (round x1) 1d0))
                                     (py (float (round y1) 1d0)))
                                 (if (>= ww hh)
