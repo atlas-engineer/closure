@@ -582,6 +582,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An iframe whose src is an image paints that image at the top left.
 - A frame src paints its image or document inside the frame.
 - A frame marginwidth and marginheight replace the body margin. An author margin still wins.
+- An iframe marginwidth and marginheight inset the document the same way. An author margin still wins.
 
 ## Next
 

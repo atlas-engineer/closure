@@ -1423,6 +1423,30 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-iframe-margin ()
+  (let* ((out "/tmp/closure-engine-iframe-margin.png")
+         (html "<iframe id='z' srcdoc='<div style=&quot;width:20px;height:10px;background:red&quot;></div>' marginwidth='0' marginheight='0' width='80' height='40'></iframe>
+                <iframe id='m' srcdoc='<div style=&quot;width:20px;height:10px;background:red&quot;></div>' marginwidth='16' marginheight='6' width='80' height='40'></iframe>
+                <iframe id='a' srcdoc='<body style=&quot;margin:20px&quot;><div style=&quot;width:10px;height:10px;background:red&quot;></div>' marginwidth='0' marginheight='0' width='80' height='60'></iframe>")
+         (root (closure.engine:render-html html :width 120 :height 200 :output out
+                                          :stylesheet "body{margin:0}"))
+         (zero (closure.engine:find-box root "z"))
+         (margin (closure.engine:find-box root "m"))
+         (own (closure.engine:find-box root "a")))
+    (labels ((red-p (box dx dy)
+               (multiple-value-bind (r g b)
+                   (png-rgb out
+                            (round (+ (closure.engine:box-x box) dx))
+                            (round (+ (closure.engine:box-y box) dy)))
+                 (and (> r 180) (< g 40) (< b 40)))))
+      (check "iframe margin boxes" (and zero margin own))
+      (check "iframe margin 0 puts the document inside the border"
+             (red-p zero 4 4))
+      (check "iframe marginwidth and marginheight inset the document"
+             (and (red-p margin 20 10) (not (red-p margin 4 4))))
+      (check "an author margin wins over the iframe margin"
+             (and (red-p own 24 24) (not (red-p own 4 4)))))))
+
 (defun test-frame-margin ()
   (let* ((doc "file:///home/jmercouris/Source/closure/screenshots/frame.html")
          (author "/tmp/closure-engine-frame-margin.html")
@@ -7771,6 +7795,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-iframe-margin)
   (test-frame-margin)
   (test-frame-src)
   (test-iframe-image)

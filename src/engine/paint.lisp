@@ -1746,7 +1746,8 @@ An author margin in the framed document still wins."
   (when (and (box-element box) (string= (or (box-tag box) "") "iframe"))
     (unless (paint-iframe-image cr box)
       (multiple-value-bind (html base) (iframe-source (box-element box))
-        (paint-clipped-document cr box html base)))))
+        (paint-clipped-document cr box html base
+                                (frame-margin-style (box-element box)))))))
 
 (defun paint-replaced-html (cr box)
   "Paint an HTML document inside an object or embed."
