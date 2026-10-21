@@ -7899,6 +7899,28 @@ mono two</pre>")
         (check "noshade fills the bar gray"
                (and (< (abs (- r 128)) 30) (< (abs (- g 128)) 30) (< (abs (- b 128)) 30)))))))
 
+(defun test-hr-width-center ()
+  (let* ((root (closure.engine:layout-html
+                "<hr id='w' width='80'>
+                 <hr id='p' width='50%'>
+                 <hr id='a' width='80' style='margin-left:0'>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0}"))
+         (narrow (closure.engine:find-box root "w"))
+         (pct (closure.engine:find-box root "p"))
+         (author (closure.engine:find-box root "a")))
+    (check "width rules" (and narrow pct author))
+    (check "a width attribute centers the rule"
+           (and narrow
+                (~ (closure.engine:box-width narrow) 82d0)
+                (~ (closure.engine:box-x narrow) 159d0)))
+    (check "a percentage width is centered too"
+           (and pct
+                (~ (closure.engine:box-width pct) 202d0)
+                (~ (closure.engine:box-x pct) 99d0)))
+    (check "an author margin wins over the centered rule"
+           (and author (~ (closure.engine:box-x author) 0d0)))))
+
 (defun test-svg-text ()
   (let ((path "/tmp/closure-engine-svg-text.png"))
     (closure.engine:render-html
@@ -8292,6 +8314,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-list-type-attr)
   (test-nowrap-attr)
   (test-hr-size)
+  (test-hr-width-center)
   (test-q)
   (test-blockquote)
   (test-nested-q)

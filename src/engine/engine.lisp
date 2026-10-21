@@ -89,7 +89,7 @@ script element after style and layout. Left unset until that engine exists.")
    audio[controls] { display: inline-block; width: 300px; height: 54px; background: #f1f3f4; border-radius: 27px; }
    progress { display: inline-block; width: 160px; height: 16px; vertical-align: -0.2em; }
    meter { display: inline-block; width: 80px; height: 16px; vertical-align: -0.2em; }
-   hr { display: block; margin-top: 0.5em; margin-bottom: 0.5em; border: 1px inset #808080; }
+   hr { display: block; margin-top: 0.5em; margin-bottom: 0.5em; margin-left: auto; margin-right: auto; border: 1px inset #808080; }
    center { text-align: center; }
    button, input, select, textarea { font-family: sans-serif; font-size: smaller; }
    button { display: inline-block; background: #efefef; border: 2px outset #efefef; padding: 1px 6px; }

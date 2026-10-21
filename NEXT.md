@@ -610,6 +610,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A circle list marker is a hollow ring. It does not grow a line to the text.
 - A long ruby annotation widens the base. Each character takes an equal share.
 - Text stays between a left float and a right float. It continues underneath them.
+- An hr with a width is centered. align=left keeps it at the start, and an author margin still wins.
 
 ## Next
 
