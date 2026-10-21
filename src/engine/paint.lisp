@@ -1372,6 +1372,34 @@ but paint a 1px gray rounded edge around the background."
             (cairo-fill cr))
           t)))))
 
+(defun paint-frameset-bar (cr x y w h vertical)
+  "Chromium's frameset border: a gray bar, darker on the leading edge and black on the trailing edge."
+  (let ((edge (color-bytes 170 170 170))
+        (mid (color-bytes 208 208 208))
+        (ink (color-bytes 0 0 0)))
+    (fill-rect cr x y w h mid)
+    (if vertical
+        (progn
+          (fill-rect cr x y 1d0 h edge)
+          (fill-rect cr (+ x w -1d0) y 1d0 h ink))
+        (progn
+          (fill-rect cr x y w 1d0 edge)
+          (fill-rect cr x (+ y h -1d0) w 1d0 ink)))))
+
+(defun paint-frameset-borders (cr box)
+  "The gap between frames. border=0 leaves no gap, so nothing is painted."
+  (when (string= (or (box-tag box) "") "frameset")
+    (loop for a in (box-children box)
+          for b in (rest (box-children box))
+          do (let* ((ax (+ (box-x a) (box-w a)))
+                    (ay (+ (box-y a) (box-h a)))
+                    (vertical (> (- (box-x b) ax) 0.5d0))
+                    (gap (if vertical (- (box-x b) ax) (- (box-y b) ay))))
+               (when (> gap 0.5d0)
+                 (if vertical
+                     (paint-frameset-bar cr ax (box-y box) gap (box-h box) t)
+                     (paint-frameset-bar cr (box-x box) ay (box-w box) gap nil)))))))
+
 (defun paint-iframe-border (cr box)
   "Chromium paints the default iframe as inset gray: 154 on the top and left,
 238 on the bottom and right, snapped to the pixels inside the border box."
@@ -1468,6 +1496,7 @@ but paint a 1px gray rounded edge around the background."
                         (paint-iframe-border cr box)
                         (paint-button-border cr box))
               (paint-border cr box))
+            (paint-frameset-borders cr box)
             (paint-outline cr box)
             (paint-gauge cr box)
             (paint-range cr box)

@@ -2789,6 +2789,27 @@ b</div>"
                 (~ (closure.engine:box-width sa) 529d0)
                 (~ (closure.engine:box-x sb) 535d0)
                 (~ (closure.engine:box-width sb) 265d0)))
+    (let ((path "/tmp/closure-engine-frameset.png"))
+      (closure.engine:render-html
+       "<frameset cols='100,*'><frame></frame><frame></frame></frameset>"
+       :width 200 :height 80
+       :output path)
+      (multiple-value-bind (r g b) (png-rgb path 100 20)
+        (check "the frameset border starts dark gray"
+               (and (< (abs (- r 170)) 12)
+                    (< (abs (- g 170)) 12)
+                    (< (abs (- b 170)) 12))))
+      (multiple-value-bind (r g b) (png-rgb path 102 20)
+        (check "the frameset border is gray"
+               (and (< (abs (- r 208)) 12)
+                    (< (abs (- g 208)) 12)
+                    (< (abs (- b 208)) 12))))
+      (multiple-value-bind (r g b) (png-rgb path 105 20)
+        (check "the frameset border ends black"
+               (and (< r 20) (< g 20) (< b 20))))
+      (multiple-value-bind (r g b) (png-rgb path 90 20)
+        (check "a frame stays empty beside the border"
+               (and (> r 240) (> g 240) (> b 240)))))
     (check "a nested frameset fills its cell, and border 0 has no gap"
            (and na r1 r2
                 (~ (closure.engine:box-width na) 100d0)
