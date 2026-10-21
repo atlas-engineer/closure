@@ -2942,6 +2942,29 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-check-submit ()
+  (let* ((root (closure.engine:layout-html
+                "<input id='c' type='checkbox'><input id='r' type='radio'><input id='s' type='submit' value='Go'><input id='z' type='reset' value='Reset'>"
+                :width 400 :height 40
+                :stylesheet "body{margin:0}"))
+         (check (closure.engine:find-box root "c"))
+         (radio (closure.engine:find-box root "r"))
+         (submit (closure.engine:find-box root "s"))
+         (reset (closure.engine:find-box root "z")))
+    (check "checkbox, radio, and buttons" (and check radio submit reset))
+    (check "a checkbox and a radio are 13 by 13"
+           (and check radio
+                (~ (closure.engine:box-width check) 13d0)
+                (~ (closure.engine:box-height check) 13d0)
+                (~ (closure.engine:box-width radio) 13d0)
+                (~ (closure.engine:box-height radio) 13d0)))
+    (check "submit and reset shrink to their labels"
+           (and submit reset
+                (~ (closure.engine:box-width submit) 34.48d0 0.15d0)
+                (~ (closure.engine:box-height submit) 21d0)
+                (~ (closure.engine:box-width reset) 53.25d0 0.15d0)
+                (~ (closure.engine:box-height reset) 21d0)))))
+
 (defun test-open-details ()
   (let* ((root (closure.engine:layout-html
                 "<details id='d' open><summary id='s'>Summary</summary><p id='h'>Hidden</p></details>"
@@ -4878,6 +4901,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-check-submit)
   (test-open-details)
   (test-fieldset-details)
   (test-smaller-headings)

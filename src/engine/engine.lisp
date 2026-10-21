@@ -92,6 +92,8 @@ script element after style and layout. Left unset until that engine exists.")
    button, input, select, textarea { font-family: sans-serif; font-size: smaller; }
    button { display: inline-block; background: #efefef; border: 2px outset #efefef; padding: 1px 6px; }
    input { background: #fff; border: 2px inset #ccc; padding: 1px 2px; width: 169px; height: 15px; }
+   input[type=submit], input[type=reset], input[type=button] {
+     background: #efefef; border: 2px outset #efefef; padding: 1px 6px; width: auto; height: auto; }
    select { background: #efefef; border: 1px solid #767676; padding: 0; }
    textarea { font-family: monospace; background: #fff; border: 1px solid #767676; padding: 2px; width: 175px; height: 34px; }")
 
