@@ -1635,34 +1635,67 @@ srcdoc wins over src. about:blank and a missing file stay empty."
               (when (and text (plusp (length text)))
                 (values text abs))))))))
 
-(defun paint-iframe-srcdoc (cr box)
-  "Paint an iframe srcdoc or src document inside the content box, clipped there."
+(defun html-url-p (url)
+  "True when URL's path ends in .html or .htm."
+  (let* ((q (position #\? url))
+         (h (position #\# url))
+         (path (string-downcase (subseq url 0 (or (and q h (min q h)) q h (length url))))))
+    (or (and (>= (length path) 5) (string= (subseq path (- (length path) 5)) ".html"))
+        (and (>= (length path) 4) (string= (subseq path (- (length path) 4)) ".htm")))))
+
+(defun replaced-html-source (el)
+  "HTML for an object or embed whose resource is a document, and its base URL."
+  (let* ((tag (and (dom-element-p el) (dom-element-tag el)))
+         (raw (cond ((string-equal tag "object") (dom-attr el "data"))
+                    ((string-equal tag "embed") (dom-attr el "src"))
+                    (t nil)))
+         (abs (and raw (plusp (length (string-trim '(#\space) raw)))
+                   (resolve-url raw *document-base*))))
+    (when (and abs
+               (member (url-scheme abs) '("http" "https" "file") :test #'string=)
+               (html-url-p abs))
+      (let ((text (fetch-css-text abs)))
+        (when (and text (plusp (length text)))
+          (values text abs))))))
+
+(defun paint-clipped-document (cr box html base)
+  "Lay HTML out in BOX's content box and paint it clipped there."
   (when (and (< *iframe-depth* 2)
-             (box-element box)
-             (string= (or (box-tag box) "") "iframe")
+             html (plusp (length html))
              (box-style box))
+    (multiple-value-bind (bt br bb bl) (border4 (box-style box))
+      (multiple-value-bind (pt pr pb pl) (pad4 (box-style box) (box-w box))
+        (let ((cw (max 0d0 (- (box-w box) bl br pl pr)))
+              (ch (max 0d0 (- (box-h box) bt bb pt pb))))
+          (when (and (> cw 1d0) (> ch 1d0))
+            (let* ((cx (+ (box-x box) bl pl))
+                   (cy (+ (box-y box) bt pt))
+                   (inner (let ((*iframe-depth* (1+ *iframe-depth*))
+                                (*navigation-enabled* nil))
+                            (declare (special *navigation-enabled*))
+                            (nth-value 0
+                                       (layout-html html :width cw :height ch
+                                                    :base (or base *document-base*))))))
+              (when inner
+                (translate-box inner cx cy)
+                (cairo-save cr)
+                (cairo-rectangle cr cx cy cw ch)
+                (cairo-clip cr)
+                (paint-box cr inner)
+                (cairo-restore cr)))))))))
+
+(defun paint-iframe-srcdoc (cr box)
+  "Paint an iframe srcdoc or src document inside the content box."
+  (when (and (box-element box) (string= (or (box-tag box) "") "iframe"))
     (multiple-value-bind (html base) (iframe-source (box-element box))
-      (when (and html (plusp (length html)))
-        (multiple-value-bind (bt br bb bl) (border4 (box-style box))
-          (multiple-value-bind (pt pr pb pl) (pad4 (box-style box) (box-w box))
-            (let ((cw (max 0d0 (- (box-w box) bl br pl pr)))
-                  (ch (max 0d0 (- (box-h box) bt bb pt pb))))
-              (when (and (> cw 1d0) (> ch 1d0))
-                (let* ((cx (+ (box-x box) bl pl))
-                       (cy (+ (box-y box) bt pt))
-                       (inner (let ((*iframe-depth* (1+ *iframe-depth*))
-                                    (*navigation-enabled* nil))
-                                (declare (special *navigation-enabled*))
-                                (nth-value 0
-                                           (layout-html html :width cw :height ch
-                                                        :base (or base *document-base*))))))
-                  (when inner
-                    (translate-box inner cx cy)
-                    (cairo-save cr)
-                    (cairo-rectangle cr cx cy cw ch)
-                    (cairo-clip cr)
-                    (paint-box cr inner)
-                    (cairo-restore cr)))))))))))
+      (paint-clipped-document cr box html base))))
+
+(defun paint-replaced-html (cr box)
+  "Paint an HTML document inside an object or embed."
+  (when (and (box-element box)
+             (member (or (box-tag box) "") '("object" "embed") :test #'string=))
+    (multiple-value-bind (html base) (replaced-html-source (box-element box))
+      (paint-clipped-document cr box html base))))
 
 (defun paint-box (cr box &optional (scroll-y 0d0))
   (when (and box (or (null (box-style box))
@@ -1735,6 +1768,7 @@ srcdoc wins over src. about:blank and a missing file stay empty."
                 (paint-control cr box))
               (paint-textarea-grip cr box)
               (paint-iframe-srcdoc cr box)
+              (paint-replaced-html cr box)
               (when (and (box-style box)
                          (member (computed-overflow (box-style box)) '(:hidden :clip :scroll :auto)))
                 (cairo-rectangle cr (box-x box) (box-y box) (box-w box) (box-h box))

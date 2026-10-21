@@ -577,6 +577,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A srcset density descriptor picks 1x on this screen. 2x is left for a denser display.
 - An iframe srcdoc paints that document inside the frame.
 - An iframe src paints that document. srcdoc still wins when both are set.
+- An object or embed whose resource is an HTML document paints that document.
 
 ## Next
 

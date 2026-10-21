@@ -1423,6 +1423,26 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-object-html ()
+  (let* ((url "file:///home/jmercouris/Source/closure/screenshots/frame.html")
+         (out "/tmp/closure-engine-object-html.png")
+         (html (format nil "<object id='o' data='~A' width='80' height='40'></object>
+                         <embed id='e' src='~A' width='80' height='40'>"
+                      url url))
+         (root (closure.engine:render-html html :width 400 :height 80 :output out
+                                          :stylesheet "body{margin:0}"))
+         (obj (closure.engine:find-box root "o"))
+         (emb (closure.engine:find-box root "e")))
+    (labels ((red-p (box)
+               (multiple-value-bind (r g b)
+                   (png-rgb out
+                            (round (+ (closure.engine:box-x box) 20))
+                            (round (+ (closure.engine:box-y box) 20)))
+                 (and (> r 180) (< g 40) (< b 40)))))
+      (check "html object and embed" (and obj emb))
+      (check "object data paints the html document" (red-p obj))
+      (check "embed src paints the html document" (red-p emb)))))
+
 (defun test-iframe-src ()
   (let* ((dir (uiop:ensure-directory-pathname #P"/tmp/closure-cmp/"))
          (frame (merge-pathnames "frame-src.html" dir))
@@ -7655,6 +7675,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-object-html)
   (test-iframe-src)
   (test-iframe-srcdoc)
   (test-srcset-density)
