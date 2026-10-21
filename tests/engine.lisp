@@ -3111,6 +3111,9 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
              (and (< r 180) (< g 180) (< b 180))))
     (multiple-value-bind (r g b) (png-rgb path 17 8)
       (check "the legend leaves a gap in the top border"
+             (and (> r 250) (> g 250) (> b 250))))
+    (multiple-value-bind (r g b) (png-rgb path 100 24)
+      (check "the field text does not repeat the fieldset border"
              (and (> r 250) (> g 250) (> b 250))))))
 
 (defun test-fieldset-details ()

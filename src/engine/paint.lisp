@@ -44,7 +44,9 @@ the gap in that border."
 (defun paint-border (cr box)
   (let* ((st (box-style box))
          (x (box-x box)) (y (box-y box)) (w (box-w box)) (h (box-h box)))
-    (when (and st (> w 0d0) (> h 0d0))
+    ;; Anonymous line boxes share the parent's style. The border belongs to
+    ;; the element, so a fieldset rule must not be painted again on its text.
+    (when (and st (box-element box) (> w 0d0) (> h 0d0))
       (multiple-value-bind (bt br bb bl) (border4 st)
         (flet ((side (bw color style x1 y1 ww hh)
                  (when (and (> bw 0d0) (not (member style '(:none :hidden nil))))
