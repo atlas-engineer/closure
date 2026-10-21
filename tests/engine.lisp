@@ -6363,6 +6363,22 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-img-percent ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (root (closure.engine:layout-html
+                (format nil "<div style='width:200px'><img id='i' src='~A' width='50%' height='10'><img id='own' src='~A' width='50%' style='width:40px' height='10'></div>"
+                       png png)
+                :width 400 :height 40
+                :stylesheet "body{margin:0}"))
+         (i (closure.engine:find-box root "i"))
+         (own (closure.engine:find-box root "own")))
+    (check "percent image boxes" (and i own))
+    (check "an image percentage is of its container"
+           (and i (~ (closure.engine:box-width i) 100d0)
+                (~ (closure.engine:box-height i) 10d0)))
+    (check "an author width wins over an image percentage"
+           (and own (~ (closure.engine:box-width own) 40d0)))))
+
 (defun test-cell-percent ()
   (let* ((root (closure.engine:layout-html
                 "<table width='100' cellspacing='0'><tr><td id='a' width='25%'>A</td><td id='b' width='75%'>B</td></tr></table>
@@ -8120,6 +8136,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-img-percent)
   (test-cell-percent)
   (test-col-percent)
   (test-align-middle)

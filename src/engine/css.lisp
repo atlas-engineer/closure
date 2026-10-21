@@ -1934,6 +1934,7 @@
     (when (and (not pseudo)
                (member (dom-element-tag element)
                        '("iframe" "object" "embed" "canvas" "video" "marquee"
+                         "img" "image"
                          "table" "td" "th" "tr" "col" "colgroup" "hr")
                        :test #'string-equal))
       (dolist (name '("width" "height"))

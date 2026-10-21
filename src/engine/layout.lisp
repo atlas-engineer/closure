@@ -111,9 +111,12 @@ is 19.92, and Chromium lays that out as 19.90625."
                :test #'string=)))
 
 (defun attr-px (el name)
-  (let ((a (and (dom-element-p el) (dom-attr el name))))
-    (when (and a (plusp (length a)))
-      (let ((n (ignore-errors (parse-integer a :junk-allowed t))))
+  "A pixel length from an HTML attribute. A percentage is left for CSS."
+  (let* ((a (and (dom-element-p el) (dom-attr el name)))
+         (s (and a (string-trim '(#\space #\newline #\tab #\return) a))))
+    (when (and s (plusp (length s))
+               (not (char= (char s (1- (length s))) #\%)))
+      (let ((n (ignore-errors (parse-integer s :junk-allowed t))))
         (when n (float n 1d0))))))
 
 (defun svg-viewbox-ratio (el)

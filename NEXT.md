@@ -596,6 +596,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A percentage or pixel column width is kept when the table width is set.
 - A first-row cell percentage or pixel width sets that column the same way.
 - A later row's percentage widths set the columns when earlier rows do not.
+- An image width percentage is a share of its container. An author width still wins.
 
 ## Next
 
