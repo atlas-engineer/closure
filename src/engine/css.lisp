@@ -2358,6 +2358,32 @@ the smaller fixed table."
                  '(10d0 12d0 13d0 16d0 20d0 26d0 39d0)
                  '(10d0 13d0 16d0 18d0 24d0 32d0 48d0)))))))
 
+(defun apply-textarea-presentational (element style)
+  "cols and rows size a textarea from the monospace cell, plus Chromium's
+scrollbar gutter. An author width or height is left alone."
+  (when (and style (string-equal (dom-element-tag element) "textarea"))
+    (labels ((count-of (name)
+               (let* ((raw (string-trim '(#\space #\newline #\tab #\return)
+                                        (or (dom-attr element name) "")))
+                      (n (and (plusp (length raw))
+                              (ignore-errors (parse-integer raw :junk-allowed t)))))
+                 (and n (> n 0) n))))
+      (let ((cols (count-of "cols"))
+            (rows (count-of "rows")))
+        (when (and cols (numberp (computed-width style))
+                   (< (abs (- (computed-width style) 175d0)) 0.5d0))
+          (setf (computed-width style)
+                (+ (* cols (text-advance "0"
+                                         (computed-font-size style)
+                                         (computed-font-family style)
+                                         (computed-font-weight style)
+                                         (computed-font-style style)))
+                   15d0)))
+        (when (and rows (numberp (computed-height style))
+                   (< (abs (- (computed-height style) 34d0)) 0.5d0))
+          (setf (computed-height style)
+                (* rows (used-line-height style))))))))
+
 (defun apply-hr-presentational (element style)
   "noshade flattens the rule to a solid gray bar. size=1 keeps only the top edge."
   (when (and style (string-equal (dom-element-tag element) "hr"))
@@ -2479,7 +2505,8 @@ the smaller fixed table."
           (apply-bgcolor-presentational element style best)
           (apply-align-presentational element style best)
           (apply-valign-presentational element style best)
-          (apply-hr-presentational element style))))
+          (apply-hr-presentational element style)
+          (apply-textarea-presentational element style))))
     (if pseudo
         (setf (dom-element-style element) previous)
         (setf (dom-element-style element) style))

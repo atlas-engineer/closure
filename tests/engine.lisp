@@ -5424,6 +5424,30 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-textarea-size ()
+  (let* ((html "<textarea id='d'></textarea>
+                <textarea id='a' cols='40' rows='4'></textarea>
+                <textarea id='b' cols='10' rows='2'></textarea>
+                <textarea id='c' cols='40' rows='4' style='width:80px;height:30px'></textarea>")
+         (root (closure.engine:layout-html html :width 600 :stylesheet "body{margin:0}"))
+         (d (closure.engine:find-box root "d"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c")))
+    (check "sized textareas" (and d a b c))
+    (check "the default textarea is 181 by 40"
+           (and d (~ (closure.engine:box-width d) 181d0)
+                (~ (closure.engine:box-height d) 40d0)))
+    (check "cols and rows grow the textarea"
+           (and a b
+                (> (closure.engine:box-width a) (+ (closure.engine:box-width b) 100d0))
+                (> (closure.engine:box-height a) (+ (closure.engine:box-height b) 20d0))
+                (~ (closure.engine:box-width b) 101d0 4d0)
+                (~ (closure.engine:box-height a) 74d0 4d0)))
+    (check "an author size wins over cols and rows"
+           (and c (~ (closure.engine:box-width c) 86d0)
+                (~ (closure.engine:box-height c) 36d0)))))
+
 (defun test-placeholder ()
   (let* ((html "<input id='a' placeholder='Name'><input id='b' placeholder='Name' value='Hi'><textarea id='c' placeholder='Note'></textarea>")
          (path "/tmp/closure-engine-placeholder.png")
@@ -6148,6 +6172,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-textarea-size)
   (test-placeholder)
   (test-disabled)
   (test-dir-attr)
