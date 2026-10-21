@@ -5424,6 +5424,31 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-reversed-list ()
+  (let* ((html "<ol reversed><li id='a'>A</li><li id='b'>B</li><li id='c'>C</li></ol>
+                <ol reversed start='5'><li id='d'>A</li><li id='e'>B</li></ol>
+                <ol reversed type='a'><li id='f'>A</li><li id='g'>B</li></ol>
+                <ol><li id='h'>A</li><li id='i'>B</li></ol>")
+         (root (closure.engine:layout-html html :width 200 :stylesheet "body{margin:0}"))
+         (marker (lambda (id)
+                   (let ((box (closure.engine:find-box root id)))
+                     (and box (closure.engine::box-marker box))))))
+    (check "reversed markers"
+           (and (funcall marker "a") (funcall marker "h")))
+    (check "reversed counts down from the length"
+           (and (string= (funcall marker "a") "3.")
+                (string= (funcall marker "b") "2.")
+                (string= (funcall marker "c") "1.")))
+    (check "reversed start counts down from that number"
+           (and (string= (funcall marker "d") "5.")
+                (string= (funcall marker "e") "4.")))
+    (check "reversed letters count down too"
+           (and (string= (funcall marker "f") "b.")
+                (string= (funcall marker "g") "a.")))
+    (check "a forward list still starts at one"
+           (and (string= (funcall marker "h") "1.")
+                (string= (funcall marker "i") "2.")))))
+
 (defun test-hr-color ()
   (let* ((html "<hr id='a' color='#c00'><hr id='b' color='blue' size='6'><hr id='c' color='#c00' style='border-top-color:#0a0;border-right-color:#0a0;border-bottom-color:#0a0;border-left-color:#0a0'>")
          (path "/tmp/closure-engine-hr-color.png")
@@ -6004,6 +6029,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-reversed-list)
   (test-hr-color)
   (test-image-border)
   (test-hspace)

@@ -525,6 +525,7 @@ from the Lisp engine without calling Node or another browser engine.
 - hspace and vspace put margin around an image. An author margin wins on that side.
 - border on an image draws a solid black frame. An author border wins.
 - color on a rule paints it solid in that color. An author border color wins.
+- reversed counts an ordered list down from its length, or from start.
 
 ## Next
 
