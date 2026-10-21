@@ -1958,6 +1958,16 @@
           (dolist (prop '(:margin-top :margin-bottom))
             (let ((decl (make-css-decl :property prop :raw v :origin :author :order 0)))
               (dolist (pair (expand-declaration prop v))
+                (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))
+        (let* ((raw (string-trim '(#\space #\newline #\tab #\return)
+                                 (or (dom-attr element "border") "")))
+               (n (and (plusp (length raw))
+                       (ignore-errors (parse-integer raw :junk-allowed t)))))
+          (when (and n (>= n 0))
+            (let ((decl (make-css-decl :property :border
+                                       :raw (format nil "~Dpx solid" n)
+                                       :origin :author :order 0)))
+              (dolist (pair (expand-declaration :border (css-decl-raw decl)))
                 (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
     ;; ol/ul/li type loses to an author list-style-type.
     (when (and (not pseudo)

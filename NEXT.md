@@ -523,6 +523,7 @@ from the Lisp engine without calling Node or another browser engine.
 - type on a list or item sets the marker: letters, roman numerals, or a square. An author list style wins.
 - br clear drops the next line below the float. An author clear wins.
 - hspace and vspace put margin around an image. An author margin wins on that side.
+- border on an image draws a solid black frame. An author border wins.
 
 ## Next
 
