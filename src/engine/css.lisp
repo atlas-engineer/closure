@@ -63,6 +63,7 @@
   (overflow-wrap :normal)
   (word-break :normal)
   (border-collapse :separate)
+  (table-layout :auto)
   (border-spacing-x 0d0)
   (border-spacing-y 0d0)
   (caption-side :top)
@@ -131,7 +132,7 @@
  "border-top-width" "border-right-width" "border-bottom-width" "border-left-width"
  "border-top-style" "border-right-style" "border-bottom-style" "border-left-style"
  "border-top-color" "border-right-color" "border-bottom-color" "border-left-color"
- "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
+ "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "table-layout" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
  "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "background-clip" "background-origin" "object-fit" "object-position"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
  "text-align" "direction" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-underline-offset" "text-decoration-thickness" "text-decoration-style" "text-shadow" "white-space" "tab-size" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
@@ -1016,6 +1017,7 @@
       ((:overflow-wrap :word-wrap) (kw '("normal" "break-word" "anywhere")))
       ((:word-break) (kw '("normal" "break-all" "keep-all" "break-word")))
       ((:border-collapse) (kw '("separate" "collapse")))
+      ((:table-layout) (kw '("auto" "fixed")))
       ((:caption-side) (kw '("top" "bottom")))
       ((:empty-cells) (kw '("show" "hide")))
       ((:border-spacing)
@@ -2362,6 +2364,7 @@
           (when value (setf (computed-overflow-wrap style) value)))
          (:word-break (when value (setf (computed-word-break style) value)))
          (:border-collapse (when value (setf (computed-border-collapse style) value)))
+         (:table-layout (when value (setf (computed-table-layout style) value)))
          (:caption-side (when value (setf (computed-caption-side style) value)))
          (:empty-cells (when value (setf (computed-empty-cells style) value)))
          (:border-spacing

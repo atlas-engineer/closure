@@ -2651,6 +2651,53 @@ supplies the width, defaulting to 1px. An author border is left alone."
                     (setf (computed-btc style) gray (computed-brc style) gray
                           (computed-bbc style) gray (computed-blc style) gray)))))))))))
 
+(defun fixed-column-widths (el rows ncols inner space-x gap avail-w)
+  "Column widths for table-layout:fixed. Col and first-row widths are kept.
+The remaining columns share what is left of the table."
+  (let* ((cols (make-array ncols :initial-element nil))
+         (spacing (if (> space-x 0d0)
+                      (* space-x (1+ ncols))
+                      (* gap (max 0 (1- ncols)))))
+         (room (max 0d0 (- inner spacing)))
+         (col-i 0))
+    (dolist (spec (table-column-specs el))
+      (destructuring-bind (node span group) spec
+        (declare (ignore group))
+        (when (string-equal (dom-element-tag node) "col")
+          (let ((w (and (dom-element-style node)
+                        (definite-length (computed-width (dom-element-style node))
+                                         avail-w))))
+            (when (numberp w)
+              (loop for i from 0 below span
+                    for col = (+ col-i i)
+                    when (< col ncols)
+                    do (setf (aref cols col) w)))))
+        (incf col-i span)))
+    (let ((col 0)
+          (first (car rows)))
+      (when first
+        (dolist (cell (row-cells first))
+          (let* ((span (cell-colspan cell))
+                 (st (and (dom-element-p cell) (dom-element-style cell)))
+                 (w (and st (= span 1)
+                         (definite-length (computed-width st) avail-w))))
+            (when (and (numberp w) (< col ncols) (null (aref cols col)))
+              (setf (aref cols col) w))
+            (incf col span)))))
+    (let ((missing 0)
+          (used 0d0))
+      (dotimes (i ncols)
+        (if (numberp (aref cols i))
+            (incf used (aref cols i))
+            (incf missing)))
+      (let ((share (if (> missing 0)
+                       (/ (max 0d0 (- room used)) missing)
+                       0d0)))
+        (dotimes (i ncols)
+          (unless (numberp (aref cols i))
+            (setf (aref cols i) share)))))
+    cols))
+
 (defun layout-table (el x y avail-w avail-h containing)
   (declare (ignore containing))
   (apply-table-border-attr el)
@@ -2670,14 +2717,19 @@ supplies the width, defaulting to 1px. An author border is left alone."
                  (space-y (if collapse 0d0 (computed-border-spacing-y style)))
                  (gap (if collapse 0d0 (if (> space-x 0d0) space-x (computed-column-gap style))))
                  (specified (numberp (definite-length (computed-width style) avail-w)))
-                 (cols (if specified
-                           (let* ((around (if (> space-x 0d0)
-                                              (* space-x (1+ ncols))
-                                              (* gap (max 0 (1- ncols)))))
-                                  (share (max 1d0 (/ (max 0d0 (- cw around))
-                                                     (max 1 ncols)))))
-                             (make-array ncols :initial-element share))
-                           (measure-table-columns rows ncols)))
+                 (fixed-layout (and specified
+                                    (eq (computed-table-layout style) :fixed)))
+                 (cols (cond
+                         (fixed-layout
+                          (fixed-column-widths el rows ncols cw space-x gap avail-w))
+                         (specified
+                          (let* ((around (if (> space-x 0d0)
+                                             (* space-x (1+ ncols))
+                                             (* gap (max 0 (1- ncols)))))
+                                 (share (max 1d0 (/ (max 0d0 (- cw around))
+                                                    (max 1 ncols)))))
+                            (make-array ncols :initial-element share)))
+                         (t (measure-table-columns rows ncols))))
                  (cap-el (table-caption el))
                  (cap-min (if (and cap-el (not specified))
                               (element-min-content-width cap-el)
@@ -2722,6 +2774,8 @@ supplies the width, defaulting to 1px. An author border is left alone."
                       bw (+ cw bl br pl pr)))))
             ;; nowrap content is wider than a specified column, so the
             ;; table grows the way Chromium's automatic layout does.
+            ;; table-layout:fixed keeps the given width.
+            (unless fixed-layout
             (let ((grow 0d0))
               (dolist (row rows)
                 (let ((col 0))
@@ -2738,7 +2792,7 @@ supplies the width, defaulting to 1px. An author border is left alone."
                     (incf col (cell-colspan cell)))))
               (when (> grow 0d0)
                 (incf cw grow)
-                (incf bw grow)))
+                (incf bw grow))))
             (let ((col-collapsed (collapsed-column-flags el ncols))
                   (removed 0d0)
                   (nvis 0))

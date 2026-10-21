@@ -1423,6 +1423,38 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-table-layout-fixed ()
+  (let* ((root (closure.engine:layout-html
+                "<table id='f' style='table-layout:fixed;width:80px'><tr><td id='a' style='white-space:nowrap'>VERYLONGWORD</td><td id='b'>B</td></tr></table>
+                 <table id='u' style='width:80px'><tr><td id='c' style='white-space:nowrap'>VERYLONGWORD</td><td id='d'>B</td></tr></table>
+                 <table id='w' style='table-layout:fixed;width:200px'><col style='width:40px'><tr><td id='e'>A</td><td id='g' style='width:80px'>B</td><td id='h'>C</td></tr></table>"
+                :width 400 :height 120
+                :stylesheet "body{margin:0} table{border-spacing:0} td{padding:0}"))
+         (fixed (closure.engine:find-box root "f"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (auto (closure.engine:find-box root "u"))
+         (c (closure.engine:find-box root "c"))
+         (wide (closure.engine:find-box root "w"))
+         (e (closure.engine:find-box root "e"))
+         (g (closure.engine:find-box root "g"))
+         (h (closure.engine:find-box root "h")))
+    (check "fixed table boxes" (and fixed a b auto c wide e g h))
+    (check "a fixed table keeps its width"
+           (and fixed a b
+                (~ (closure.engine:box-width fixed) 80d0 1d0)
+                (~ (closure.engine:box-width a) 40d0 1d0)
+                (~ (closure.engine:box-width b) 40d0 1d0)))
+    (check "an automatic table grows for nowrap"
+           (and auto c (> (closure.engine:box-width auto) 100d0)
+                (> (closure.engine:box-width c) (closure.engine:box-width a))))
+    (check "fixed columns use col and first-row widths"
+           (and wide e g h
+                (~ (closure.engine:box-width wide) 200d0 1d0)
+                (~ (closure.engine:box-width e) 40d0 1d0)
+                (~ (closure.engine:box-width g) 80d0 1d0)
+                (~ (closure.engine:box-width h) 80d0 1d0)))))
+
 (defun test-popover ()
   (labels ((text-box (root word)
              (let ((found nil))
@@ -7394,6 +7426,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-table-layout-fixed)
   (test-popover)
   (test-details-no-summary)
   (test-image-one-axis)
