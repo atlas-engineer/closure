@@ -495,6 +495,7 @@ from the Lisp engine without calling Node or another browser engine.
 - The date field leaves room for Chromium's calendar, a gray frame with a black header.
 - Month and week fields use the same calendar and their own placeholders.
 - A datetime-local field shows mm/dd/yyyy, --:-- -- and the same calendar.
+- Placeholder hyphens are solid dark bars, the dash Chromium paints.
 
 ## Next
 
