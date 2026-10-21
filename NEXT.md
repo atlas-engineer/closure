@@ -595,6 +595,7 @@ from the Lisp engine without calling Node or another browser engine.
 - align=middle centers text and a rule the way align=center does. A table stays put.
 - A percentage or pixel column width is kept when the table width is set.
 - A first-row cell percentage or pixel width sets that column the same way.
+- A later row's percentage widths set the columns when earlier rows do not.
 
 ## Next
 

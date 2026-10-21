@@ -2928,21 +2928,31 @@ widths are kept. Columns without one share what remains."
                       do (setf (aref cols col) px
                                (aref kinds col) kind))))))
         (incf col-i span)))
-    ;; A first-row cell width sets a column the col elements left empty.
-    (let ((first (car (table-rows el)))
-          (col 0))
-      (when first
-        (dolist (cell (row-cells first))
-          (let* ((span (cell-colspan cell))
-                 (st (and (dom-element-p cell) (dom-element-style cell)))
-                 (raw (and st (computed-width st)))
-                 (px (and st (= span 1) (definite-length raw room))))
-            (when (and (numberp px) (< col ncols) (null (aref kinds col)))
-              (setf any t
-                    (aref cols col) px
-                    (aref kinds col) (if (and (consp raw) (eq (car raw) :%))
-                                         :percent :pixel)))
-            (incf col span)))))
+    ;; A cell width sets a column the col elements left empty. The first
+    ;; specified width wins, including one that appears on a later row.
+    (let ((covered (make-array ncols :initial-element 0)))
+      (dolist (row (table-rows el))
+        (let ((col 0))
+          (dolist (cell (row-cells row))
+            (loop while (and (< col ncols) (> (aref covered col) 0))
+                  do (incf col))
+            (when (< col ncols)
+              (let* ((span (cell-colspan cell))
+                     (st (and (dom-element-p cell) (dom-element-style cell)))
+                     (raw (and st (computed-width st)))
+                     (px (and st (= span 1) (definite-length raw room))))
+                (when (and (numberp px) (null (aref kinds col)))
+                  (setf any t
+                        (aref cols col) px
+                        (aref kinds col) (if (and (consp raw) (eq (car raw) :%))
+                                             :percent :pixel)))
+                (dotimes (i span)
+                  (when (< (+ col i) ncols)
+                    (setf (aref covered (+ col i)) (cell-rowspan cell row))))
+                (incf col span)))))
+        (dotimes (i ncols)
+          (when (> (aref covered i) 0)
+            (decf (aref covered i))))))
     (unless any
       (return-from specified-column-widths
         (make-array ncols :initial-element (max 1d0 (/ room (max 1 ncols))))))

@@ -6366,20 +6366,26 @@ mono two</pre>")
 (defun test-cell-percent ()
   (let* ((root (closure.engine:layout-html
                 "<table width='100' cellspacing='0'><tr><td id='a' width='25%'>A</td><td id='b' width='75%'>B</td></tr></table>
-                 <table width='100' cellspacing='0'><tr><td id='c' width='40'>A</td><td id='d'>B</td></tr></table>"
+                 <table width='100' cellspacing='0'><tr><td id='c' width='40'>A</td><td id='d'>B</td></tr></table>
+                 <table width='100' cellspacing='0'><tr><td id='e'>A</td><td id='f'>B</td></tr><tr><td id='g' width='25%'>C</td><td id='h' width='75%'>D</td></tr></table>"
                 :width 200 :height 80
                 :stylesheet "body{margin:0} td{padding:0}"))
          (a (closure.engine:find-box root "a"))
          (b (closure.engine:find-box root "b"))
          (c (closure.engine:find-box root "c"))
-         (d (closure.engine:find-box root "d")))
-    (check "cell percent boxes" (and a b c d))
+         (d (closure.engine:find-box root "d"))
+         (g (closure.engine:find-box root "g"))
+         (h (closure.engine:find-box root "h")))
+    (check "cell percent boxes" (and a b c d g h))
     (check "a cell percentage is a share of the table"
            (and (~ (closure.engine:box-width a) 25d0)
                 (~ (closure.engine:box-width b) 75d0)))
     (check "a cell pixel width keeps its size"
            (and (~ (closure.engine:box-width c) 40d0)
-                (~ (closure.engine:box-width d) 60d0)))))
+                (~ (closure.engine:box-width d) 60d0)))
+    (check "a later row's percentages set the columns"
+           (and (~ (closure.engine:box-width g) 25d0)
+                (~ (closure.engine:box-width h) 75d0)))))
 
 (defun test-col-percent ()
   (let* ((root (closure.engine:layout-html
