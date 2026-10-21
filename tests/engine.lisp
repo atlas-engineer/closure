@@ -4957,6 +4957,51 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                   (~ (closure.engine:box-width wide) 12d0 0.1d0)
                   (~ (closure.engine:box-height wide) 0d0 0.1d0))))))
 
+(defun test-math-table ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><math><mtable id='t'>
+                 <mtr id='r1'><mtd id='a'>a</mtd><mtd id='b'>bb</mtd></mtr>
+                 <mtr id='r2'><mtd id='c'>ccc</mtd><mtd id='d'>d</mtd></mtr>
+                 </mtable></math></p>"
+                :width 300 :height 80
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (table (closure.engine:find-box root "t"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (d (closure.engine:find-box root "d"))
+         (r2 (closure.engine:find-box root "r2"))
+         (texts nil))
+    (labels ((walk (box)
+               (when box
+                 (when (and (eq (closure.engine::box-kind box) :text)
+                            (member (closure.engine::box-text box) '("a" "ccc") :test #'string=))
+                   (push box texts))
+                 (dolist (k (closure.engine::box-children box)) (walk k)))))
+      (walk root))
+    (let ((ae (find "a" texts :key #'closure.engine::box-text :test #'string=)))
+      (check "table boxes" (and table a b c d r2 ae))
+      (check "a column is as wide as its widest cell"
+             (and a c b d
+                  (~ (closure.engine:box-width a) (closure.engine:box-width c) 0.2d0)
+                  (> (closure.engine:box-width a) (closure.engine:box-width ae))
+                  (~ (closure.engine:box-x b)
+                     (+ (closure.engine:box-x a) (closure.engine:box-width a))
+                     0.2d0)))
+      (check "the short entry is centered in the column"
+             (and a ae
+                  (~ (+ (closure.engine:box-x ae)
+                        (/ (closure.engine:box-width ae) 2d0))
+                     (+ (closure.engine:box-x a)
+                        (/ (closure.engine:box-width a) 2d0))
+                     0.6d0)))
+      (check "rows stack and keep the math strut"
+             (and a r2
+                  (~ (closure.engine:box-height a) (* 16d0 (/ 25.34d0 16d0)) 0.4d0)
+                  (~ (closure.engine:box-y r2)
+                     (+ (closure.engine:box-y a) (closure.engine:box-height a))
+                     0.2d0))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8953,6 +8998,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-color)
   (test-math-size)
   (test-math-space)
+  (test-math-table)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)

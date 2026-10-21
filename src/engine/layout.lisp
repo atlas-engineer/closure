@@ -1364,6 +1364,99 @@ The script is the smaller second child."
               :tag (dom-element-tag el) :id (dom-element-id el)
               :w (max 0d0 w) :h (max 0d0 (+ h d)) :baseline (max 0d0 h))))
 
+(defun math-cell-content (mtd)
+  "The contents of a math cell, shrunk to the line they occupy."
+  (let* ((st (or (dom-element-style mtd)
+                 (and (dom-element-p (dom-node-parent mtd))
+                      (dom-element-style (dom-node-parent mtd)))))
+         (flow (layout-inline-run (dom-node-children mtd) 0d0 0d0 800d0 st))
+         (kids nil)
+         (w 0d0))
+    (dolist (line (box-children flow))
+      (dolist (c (box-children line))
+        (translate-box c (box-x line) (box-y line))
+        (setf w (max w (+ (box-x c) (box-w c))))
+        (push c kids)))
+    (make-box :kind :inline :w w :h (box-h flow)
+              :baseline (or (and kids (box-baseline (car kids))) 0d0)
+              :children (nreverse kids))))
+
+(defun layout-math-table (el)
+  "Rows and columns. A column is as wide as its widest cell, and each cell's
+contents are centered. A row is at least the math strut."
+  (let* ((rows (remove-if-not (lambda (c)
+                                (and (dom-element-p c)
+                                     (member (dom-element-tag c) '("mtr" "mlabeledtr")
+                                             :test #'string=)))
+                              (dom-node-children el)))
+         (st (dom-element-style el))
+         (em (if st (computed-font-size st) 16d0))
+         (min-row (* em (/ 25.34d0 16d0)))
+         (grid nil)
+         (ncols 0))
+    (dolist (row rows)
+      (let ((cells nil))
+        (dolist (cell (dom-node-children row))
+          (when (and (dom-element-p cell)
+                     (string-equal (dom-element-tag cell) "mtd"))
+            (push (cons cell (math-cell-content cell)) cells)))
+        (setf cells (nreverse cells))
+        (setf ncols (max ncols (length cells)))
+        (push cells grid)))
+    (setf grid (nreverse grid))
+    (when (and grid (> ncols 0))
+      (let ((cols (make-array ncols :initial-element 0d0))
+            (row-h nil))
+        (dolist (cells grid)
+          (loop for i from 0
+                for (nil . content) in cells
+                do (setf (aref cols i) (max (aref cols i) (box-w content)))))
+        (dolist (cells grid)
+          (push (max min-row
+                     (reduce #'max cells
+                             :key (lambda (pair) (box-h (cdr pair)))
+                             :initial-value 0d0))
+                row-h))
+        (setf row-h (nreverse row-h))
+        (let ((table-w (reduce #'+ cols))
+              (y 0d0)
+              (row-boxes nil))
+          (loop for cells in grid
+                for row in rows
+                for rh in row-h
+                do (let ((x 0d0)
+                         (cell-boxes nil))
+                     (loop for i from 0
+                           for (cell . content) in cells
+                           for cw = (aref cols i)
+                           do (let ((dx (/ (max 0d0 (- cw (box-w content))) 2d0))
+                                    (dy (/ (max 0d0 (- rh (box-h content))) 2d0)))
+                                (dolist (c (box-children content))
+                                  (translate-box c dx dy))
+                                (push (make-box :kind :inline
+                                                :style (dom-element-style cell)
+                                                :element cell
+                                                :tag "mtd"
+                                                :id (dom-element-id cell)
+                                                :x x :y y :w cw :h rh
+                                                :baseline (+ dy (or (box-baseline content) 0d0))
+                                                :children (box-children content))
+                                      cell-boxes))
+                              (incf x cw))
+                     (push (make-box :kind :block
+                                     :style (dom-element-style row)
+                                     :element row
+                                     :tag (dom-element-tag row)
+                                     :id (dom-element-id row)
+                                     :y y :w table-w :h rh
+                                     :children (nreverse cell-boxes))
+                           row-boxes)
+                     (incf y rh)))
+          (make-box :kind :inline :style st :element el
+                    :tag (dom-element-tag el) :id (dom-element-id el)
+                    :w table-w :h y :baseline (/ y 2d0)
+                    :children (nreverse row-boxes)))))))
+
 (defun layout-math-enclose (el)
   "The enclosure is the size of its contents. The notation is painted on that box."
   (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
@@ -1706,6 +1799,15 @@ The script is the smaller second child."
                    (push b current)
                    (incf current-w (box-w b))
                    (setf previous (dom-element-style el)))))
+             (emit-math-table (el)
+               (let ((b (layout-math-table el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-math-space (el)
                (let ((b (layout-math-space el)))
                  (when b
@@ -1830,6 +1932,8 @@ The script is the smaller second child."
                        (emit-math-enclose n))
                       ((string= (dom-element-tag n) "mspace")
                        (emit-math-space n))
+                      ((string= (dom-element-tag n) "mtable")
+                       (emit-math-table n))
                       ((string= (dom-element-tag n) "mfrac")
                        (emit-math-fraction n))
                       ((string= (dom-element-tag n) "msqrt")
