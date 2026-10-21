@@ -5424,6 +5424,42 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-row-group-collapse ()
+  (let* ((root (closure.engine:layout-html
+                "<table id='g'><thead style='visibility:collapse'><tr style='visibility:visible'><td id='a'>A</td></tr></thead><tbody><tr><td id='b'>B</td></tr></tbody></table>
+                 <table id='m'><tbody style='visibility:collapse'><tr><td id='c'>C</td></tr><tr><td id='d'>D</td></tr></tbody><tbody><tr><td id='e'>E</td></tr></tbody></table>
+                 <table id='s'><tr><td id='p'>P</td></tr><tr style='visibility:collapse'><td id='q'>Q</td></tr></table>"
+                :width 300 :height 160
+                :stylesheet "body{margin:0} td{border:1px solid #000;padding:0;height:18px}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (d (closure.engine:find-box root "d"))
+         (e (closure.engine:find-box root "e"))
+         (p (closure.engine:find-box root "p"))
+         (q (closure.engine:find-box root "q"))
+         (group (closure.engine:find-box root "g"))
+         (multi (closure.engine:find-box root "m"))
+         (same (closure.engine:find-box root "s")))
+    (check "row group collapse boxes" (and a b c d e p q group multi same))
+    (check "a collapsed row group removes its rows"
+           (and a b (< (closure.engine:box-height a) 1d0)
+                (~ (- (closure.engine:box-y b) (closure.engine:box-y a)) 2d0 0.6d0)
+                (~ (closure.engine:box-height group) 26d0 1d0)))
+    (check "collapsed rows in one group share a position"
+           (and c d e
+                (< (closure.engine:box-height c) 1d0)
+                (< (closure.engine:box-height d) 1d0)
+                (~ (closure.engine:box-y d) (closure.engine:box-y c) 0.6d0)
+                (~ (- (closure.engine:box-y e) (closure.engine:box-y c)) 2d0 0.6d0)
+                (~ (closure.engine:box-height multi) 26d0 1d0)))
+    (check "a collapsed row drops the gap before it"
+           (and p q
+                (< (closure.engine:box-height q) 1d0)
+                (~ (- (closure.engine:box-y q) (closure.engine:box-y p))
+                   (closure.engine:box-height p) 0.6d0)
+                (~ (closure.engine:box-height same) 24d0 1d0)))))
+
 (defun test-colgroup-collapse ()
   (let* ((root (closure.engine:layout-html
                 "<table id='t'><colgroup span='2' style='visibility:collapse'></colgroup><col><tr><td id='a'>A</td><td id='b'>B</td><td id='c'>C</td></tr></table>"
@@ -6839,6 +6875,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-row-group-collapse)
   (test-colgroup-collapse)
   (test-col-collapse)
   (test-row-collapse)

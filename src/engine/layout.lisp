@@ -2194,6 +2194,22 @@ outside the border box, so the box is content plus padding plus one border."
   (and node (dom-element-style node)
        (eq (computed-visibility (dom-element-style node)) :collapse)))
 
+(defun row-group-p (el)
+  (and (dom-element-p el)
+       (or (member (dom-element-tag el) '("thead" "tbody" "tfoot") :test #'string=)
+           (and (dom-element-style el)
+                (member (computed-display (dom-element-style el))
+                        '(:table-header-group :table-row-group :table-footer-group))))))
+
+(defun row-collapsed-p (row)
+  "A row is collapsed when it or its row group has visibility:collapse."
+  (let ((parent (and (dom-element-p row) (dom-node-parent row))))
+    (or (and (dom-element-style row)
+             (eq (computed-visibility (dom-element-style row)) :collapse))
+        (and (row-group-p parent)
+             (dom-element-style parent)
+             (eq (computed-visibility (dom-element-style parent)) :collapse)))))
+
 (defun collapsed-column-flags (el ncols)
   "True for each column whose col or colgroup is visibility:collapse."
   (let ((flags (make-array ncols :initial-element nil))
@@ -2618,8 +2634,10 @@ supplies the width, defaulting to 1px. An author border is left alone."
                  (row-boxes nil)
                  (rowspans nil)
                  (covered (make-array ncols :initial-element 0)))
-            (dolist (row rows)
-              (let ((xx (+ x ml bl pl (if (> space-x 0d0) space-x 0d0)))
+            (loop for row-tail on rows
+                  for row = (car row-tail)
+                  for next-row = (cadr row-tail)
+                  do (let ((xx (+ x ml bl pl (if (> space-x 0d0) space-x 0d0)))
                     (col 0)
                     (rh 0d0)
                     (cells nil)
@@ -2669,10 +2687,12 @@ supplies the width, defaulting to 1px. An author border is left alone."
                                  (definite-length (computed-height (dom-element-style row)) nil))))
                   (when (and (numberp want) (> want rh))
                     (setf rh want)))
-                ;; visibility:collapse removes the row, including its gap.
-                (let ((collapsed (and (dom-element-style row)
-                                      (eq (computed-visibility (dom-element-style row))
-                                          :collapse))))
+                ;; visibility:collapse removes the row. The gap after it goes
+                ;; away only when the next row is in the same group.
+                (let* ((collapsed (row-collapsed-p row))
+                       (drop-gap (and next-row
+                                      (eq (dom-node-parent row) (dom-node-parent next-row))
+                                      (or collapsed (row-collapsed-p next-row)))))
                   (when collapsed
                     (setf rh 0d0))
                 (push rh row-heights)
@@ -2704,12 +2724,11 @@ supplies the width, defaulting to 1px. An author border is left alone."
                   (dolist (cb cells) (inset-collapsed-cell cb)))
                 (setf kids (append (nreverse cells) kids))
                 (setf prev-row cells)
-                (incf yy (+ rh (if collapsed
-                                   0d0
-                                   (cond
-                                     (collapse 0d0)
-                                     ((> space-y 0d0) space-y)
-                                     (t (computed-row-gap style)))))))))
+                (incf yy (+ rh (cond
+                                 (collapse 0d0)
+                                 (drop-gap 0d0)
+                                 ((> space-y 0d0) space-y)
+                                 (t (computed-row-gap style))))))))
             (setf row-heights (nreverse row-heights))
             (setf row-boxes (nreverse row-boxes))
             ;; A table height taller than the rows shares the extra equally.
