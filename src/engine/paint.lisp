@@ -622,6 +622,42 @@ and gaps between known stops are split evenly."
                                          (computed-font-style st))))
           (cairo-show-text cr label))))))
 
+(defun paint-password (cr box)
+  "One disc per character. Chromium's mask is 0.35em apart and sits above the baseline."
+  (let ((el (box-element box))
+        (st (box-style box)))
+    (when (and el st (string= (or (box-tag box) "") "input")
+               (string-equal (or (dom-attr el "type") "") "password"))
+      (let ((value (or (dom-attr el "value") "")))
+        (when (plusp (length value))
+          (multiple-value-bind (bt br bb bl) (border4 st)
+            (multiple-value-bind (pt pr pb pl) (pad4 st (box-w box))
+              (declare (ignore pr))
+              (let* ((size (computed-font-size st))
+                     (pitch (* size 0.35d0))
+                     (radius (* size 0.125d0))
+                     (ascent (font-ascent size
+                                          (computed-font-family st)
+                                          (computed-font-weight st)
+                                          (computed-font-style st)))
+                     (cy (+ (box-y box) bt pt ascent (* size -0.31d0)))
+                     ;; Half a step in, plus a fraction, lands the first disc
+                     ;; on the pixel Chromium uses.
+                     (x0 (+ (box-x box) bl pl (/ pitch 2d0) 0.7d0)))
+                (set-color cr (computed-color st))
+                (cairo-save cr)
+                (cairo-rectangle cr
+                                 (+ (box-x box) bl pl)
+                                 (+ (box-y box) bt pt)
+                                 (max 0d0 (- (box-w box) bl br pl pr))
+                                 (max 0d0 (- (box-h box) bt bb pt pb)))
+                (cairo-clip cr)
+                (loop for i from 0 below (length value)
+                      for x = (+ x0 (* (float i 1d0) pitch))
+                      do (cairo-arc cr x cy radius 0d0 (* 2d0 pi))
+                         (cairo-fill cr))
+                (cairo-restore cr)))))))))
+
 (defun paint-textarea-grip (cr box)
   "Two diagonal marks in the bottom-right corner, the grip Chromium paints."
   (when (and (string= (or (box-tag box) "") "textarea")
@@ -1392,7 +1428,8 @@ but paint a 1px gray rounded edge around the background."
             (paint-select-arrow cr box)
             (paint-check cr box)
             (paint-time-input cr box)
-            (paint-date-input cr box)))
+            (paint-date-input cr box)
+            (paint-password cr box)))
         (paint-marker cr box)
         (if (eq (box-kind box) :text)
             (paint-text-box cr box)

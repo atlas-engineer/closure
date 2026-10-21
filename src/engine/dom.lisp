@@ -227,9 +227,15 @@
       ((string= tag "textarea") (dom-text-content el))
       ((string= tag "input")
        (let ((type (string-downcase (or (dom-attr el "type") "text"))))
-         (if (member type '("color" "range" "file") :test #'string=)
-             ""
-             (or (dom-attr el "value") (dom-attr el "placeholder") ""))))
+         (cond
+           ((member type '("color" "range" "file") :test #'string=) "")
+           ;; A password's discs are painted separately. A placeholder stays text.
+           ((string= type "password")
+            (let ((value (dom-attr el "value")))
+              (if (and value (plusp (length value)))
+                  ""
+                  (or (dom-attr el "placeholder") ""))))
+           (t (or (dom-attr el "value") (dom-attr el "placeholder") "")))))
       (t ""))))
 
 (defun element-children (node)

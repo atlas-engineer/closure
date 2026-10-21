@@ -3103,6 +3103,31 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
       (check "the grip leaves the field white beside it"
              (and (> r 250) (> g 250) (> b 250))))))
 
+(defun test-password-paint ()
+  (let ((path "/tmp/closure-engine-password.png"))
+    (closure.engine:render-html
+     "<input type='password' value='secret'>"
+     :width 200 :height 40
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 6 9)
+      (check "a password paints a disc for each character"
+             (and (< r 20) (< g 20) (< b 20))))
+    (multiple-value-bind (r g b) (png-rgb path 11 9)
+      (check "the next password disc is painted"
+             (and (< r 20) (< g 20) (< b 20))))
+    (multiple-value-bind (r g b) (png-rgb path 8 9)
+      (check "password discs stay separate"
+             (and (> r 240) (> g 240) (> b 240))))
+    (closure.engine:render-html
+     "<input type='password'>"
+     :width 200 :height 40
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 6 9)
+      (check "an empty password stays blank"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
     (closure.engine:render-html
@@ -5339,6 +5364,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-select-arrow)
   (test-button-border)
   (test-textarea-grip)
+  (test-password-paint)
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)
