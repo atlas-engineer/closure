@@ -2756,6 +2756,49 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-table-size-attr ()
+  (let* ((html "<table id='wide' width='180'><tr><td id='wc'>A</td></tr></table>
+                <table id='half' width='50%'><tr><td>B</td></tr></table>
+                <table id='cell'><tr><td id='c' width='80'>C</td></tr></table>
+                <table id='row'><tr height='40'><td id='r'>D</td></tr></table>
+                <table id='grown' height='50'><tr><td id='g'>E</td></tr></table>
+                <table id='cols'><col width='60'><tr><td id='k'>F</td></tr></table>
+                <table id='css' width='180' style='width:90px'><tr><td>G</td></tr></table>
+                <hr id='rule' width='120'>")
+         (root (closure.engine:layout-html html :width 200
+                                          :stylesheet "body{margin:0}"))
+         (wide (closure.engine:find-box root "wide"))
+         (cell (closure.engine:find-box root "wc"))
+         (half (closure.engine:find-box root "half"))
+         (c (closure.engine:find-box root "c"))
+         (r (closure.engine:find-box root "r"))
+         (grown (closure.engine:find-box root "grown"))
+         (g (closure.engine:find-box root "g"))
+         (k (closure.engine:find-box root "k"))
+         (css (closure.engine:find-box root "css"))
+         (rule (closure.engine:find-box root "rule")))
+    (check "sized tables" (and wide cell half c r grown g k css rule))
+    (check "table width is the attribute"
+           (and wide (~ (closure.engine:box-width wide) 180d0)))
+    (check "the cell inside that table keeps the spacing"
+           (and cell (~ (closure.engine:box-width cell) 176d0)))
+    (check "a percentage table width uses the viewport"
+           (and half (~ (closure.engine:box-width half) 100d0)))
+    (check "a cell width is the content width"
+           (and c (~ (closure.engine:box-width c) 82d0)))
+    (check "a row height is the attribute"
+           (and r (~ (closure.engine:box-height r) 40d0)))
+    (check "a table height stretches the row"
+           (and grown g
+                (~ (closure.engine:box-height grown) 50d0)
+                (~ (closure.engine:box-height g) 46d0)))
+    (check "a col width is the column"
+           (and k (~ (closure.engine:box-width k) 60d0)))
+    (check "an author width wins over the attribute"
+           (and css (~ (closure.engine:box-width css) 90d0)))
+    (check "an hr width is the attribute"
+           (and rule (~ (closure.engine:box-width rule) 122d0)))))
+
 (defun test-valign-attr ()
   (let* ((html "<table>
                   <tr><td id='top' style='height:40px'>A</td></tr>
@@ -5622,6 +5665,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-ruby-rtc)
   (test-ruby-rb)
   (test-ruby)
+  (test-table-size-attr)
   (test-valign-attr)
   (test-align-attr)
   (test-bgcolor)

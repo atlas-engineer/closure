@@ -514,6 +514,7 @@ from the Lisp engine without calling Node or another browser engine.
 - bgcolor on a body, table, row, or cell paints that background. An author background wins.
 - align centers a line or a table, moves cell text, and floats a replaced element.
 - valign on a cell or its row raises the text to the middle or drops it to the bottom.
+- width and height on a table, row, cell, column, or rule set the size Chromium uses.
 
 ## Next
 

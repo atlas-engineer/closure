@@ -1883,7 +1883,10 @@
           (push (list (car pair) (cdr pair) d '(1 0 0 0)) found))))
     ;; width and height attributes beat the user-agent size and lose to author CSS.
     (when (and (not pseudo)
-               (member (dom-element-tag element) '("iframe" "object" "embed") :test #'string-equal))
+               (member (dom-element-tag element)
+                       '("iframe" "object" "embed"
+                         "table" "td" "th" "tr" "col" "colgroup" "hr")
+                       :test #'string-equal))
       (dolist (name '("width" "height"))
         (let ((raw (html-dimension-raw (dom-attr element name))))
           (when raw
