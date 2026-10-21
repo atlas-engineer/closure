@@ -5424,6 +5424,27 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-hidden-attr ()
+  (let* ((html "<p id='a' hidden>secret</p><p id='b'>shown</p><span id='d' hidden>xxxx</span><span id='e'>y</span><p id='c' hidden style='display:block'>forced</p><p id='u' hidden='until-found'>later</p>")
+         (root (closure.engine:layout-html html :width 200
+                                          :stylesheet "body{margin:0} p{margin:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (d (closure.engine:find-box root "d"))
+         (e (closure.engine:find-box root "e"))
+         (c (closure.engine:find-box root "c"))
+         (u (closure.engine:find-box root "u")))
+    (check "hidden leaves no box" (and (null a) (null d) b e c u))
+    (check "the next block starts where the hidden one would have"
+           (and b (< (closure.engine:box-y b) 4d0)))
+    (check "a hidden span does not push the next word"
+           (and e (< (closure.engine:box-x e) 4d0)))
+    (check "an author display wins over hidden"
+           (and c (> (closure.engine:box-width c) 20d0)
+                (eq (closure.engine::computed-display (closure.engine::box-style c)) :block)))
+    (check "hidden=until-found stays in the layout"
+           (and u (> (closure.engine:box-height u) 0d0)))))
+
 (defun test-reversed-list ()
   (let* ((html "<ol reversed><li id='a'>A</li><li id='b'>B</li><li id='c'>C</li></ol>
                 <ol reversed start='5'><li id='d'>A</li><li id='e'>B</li></ol>
@@ -6029,6 +6050,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-hidden-attr)
   (test-reversed-list)
   (test-hr-color)
   (test-image-border)

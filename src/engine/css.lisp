@@ -1994,6 +1994,15 @@
                                      :origin :author :order 0)))
             (dolist (pair (expand-declaration :list-style-type mapped))
               (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
+    ;; hidden loses to an author display. until-found stays visible.
+    (when (and (not pseudo) (dom-attr element "hidden"))
+      (let ((raw (string-downcase (string-trim '(#\space #\newline #\tab #\return)
+                                               (or (dom-attr element "hidden") "")))))
+        (unless (string= raw "until-found")
+          (let ((decl (make-css-decl :property :display :raw "none"
+                                     :origin :author :order 0)))
+            (dolist (pair (expand-declaration :display "none"))
+              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
     found))
 
 (defun list-type-name (raw)
