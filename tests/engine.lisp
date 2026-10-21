@@ -3444,6 +3444,38 @@ b</div>"
                    (/ (- (closure.engine:box-width rt) (closure.engine:box-width glyph)) 2d0)
                    0.2d0)))))
 
+(defun test-ruby-spread ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><ruby id='r'>ab<rt id='t'>verylongnote</rt></ruby></p>"
+                :width 200 :height 40
+                :stylesheet "body{margin:0}"))
+         (ruby (closure.engine:find-box root "r"))
+         (rt (closure.engine:find-box root "t"))
+         (letters nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (member (or (closure.engine::box-text b) "") '("a" "b")
+                                    :test #'string=))
+                   (push b letters))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (setf letters (sort letters #'< :key #'closure.engine:box-x))
+    (check "spread ruby boxes" (and ruby rt (= (length letters) 2)))
+    (check "a long annotation sets the ruby width"
+           (and ruby rt
+                (~ (closure.engine:box-width ruby) (closure.engine:box-width rt) 0.5d0)
+                (~ (closure.engine:box-x rt) (closure.engine:box-x ruby) 0.5d0)))
+    (let* ((a (first letters))
+           (b (second letters))
+           (lead (- (closure.engine:box-x a) (closure.engine:box-x ruby)))
+           (trail (- (+ (closure.engine:box-x ruby) (closure.engine:box-width ruby))
+                     (+ (closure.engine:box-x b) (closure.engine:box-width b))))
+           (gap (- (closure.engine:box-x b)
+                   (+ (closure.engine:box-x a) (closure.engine:box-width a)))))
+      (check "base letters share the extra width"
+             (and a b (> lead 1d0) (~ lead trail 0.6d0) (~ gap (* 2d0 lead) 1d0))))))
+
 (defun test-ruby ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'>X<ruby id='r'>字<rt id='t'>annotation</rt></ruby>Y</p>"
@@ -3468,9 +3500,15 @@ b</div>"
     (check "a ruby line is taller than a normal line"
            (and p (> (closure.engine:box-height p) 20d0)
                 (~ (closure.engine:box-height p) 26d0 0.6d0)))
-    (check "a long annotation overhangs the ruby box"
-           (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
-                (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
+    (check "a long annotation widens the ruby"
+           (and ruby rt
+                (~ (closure.engine:box-width ruby) (closure.engine:box-width rt) 0.5d0)
+                (~ (closure.engine:box-x rt) (closure.engine:box-x ruby) 0.5d0)))
+    (check "a single base glyph is centered under a long annotation"
+           (and base ruby
+                (> (closure.engine:box-x base) (+ (closure.engine:box-x ruby) 1d0))
+                (< (+ (closure.engine:box-x base) (closure.engine:box-width base))
+                   (- (+ (closure.engine:box-x ruby) (closure.engine:box-width ruby)) 1d0))))))
 
 (defun test-table-size-attr ()
   (let* ((html "<table id='wide' width='180'><tr><td id='wc'>A</td></tr></table>
@@ -8302,6 +8340,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-ruby-annotation-box)
   (test-ruby-rtc)
   (test-ruby-rb)
+  (test-ruby-spread)
   (test-ruby)
   (test-table-size-attr)
   (test-valign-attr)

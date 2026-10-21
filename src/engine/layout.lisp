@@ -1066,7 +1066,8 @@ then adds one pixel: size/5 for sub, size/3 for super."
     (and rb (not extra) rb)))
 
 (defun layout-ruby-box (el)
-  "Base text with its annotation above it. A long annotation overhangs by half its font size on each side."
+  "Base text with its annotation above it. A long annotation widens the base
+so each character takes an equal share of the extra width."
   (let* ((style (dom-element-style el))
          (rt (find-if (lambda (c)
                         (and (dom-element-p c) (string= (dom-element-tag c) "rt")))
@@ -1098,9 +1099,10 @@ then adds one pixel: size/5 for sub, size/3 for super."
          (rtc-w (if (plusp (length rtc-text)) (text-advance rtc-text fs fam wt fst) 0d0))
          (ann-w (if (plusp (length ann-text)) (text-advance ann-text afs afam awt afst) 0d0))
          (ann-extra (if (plusp (length ann-text)) afs 0d0))
-         (ruby-w (if (plusp rtc-w)
-                     (+ base-w rtc-w)
-                     (max base-w (max 0d0 (- ann-w ann-extra)))))
+         (ruby-w (cond
+                   ((plusp rtc-w) (+ base-w rtc-w))
+                   ((> ann-w base-w) ann-w)
+                   (t base-w)))
          (base-asc (font-ascent fs fam wt fst))
          (base-h (+ base-asc (font-descent fs fam wt fst)))
          (ann-asc (font-ascent afs afam awt afst))
@@ -1127,13 +1129,27 @@ then adds one pixel: size/5 for sub, size/3 for super."
                                                   :w ann-w :h ann-h :baseline ann-asc)))
               kids)))
     (when (plusp (length base-text))
-      (push (make-box :kind :text :style style :element base-el :text base-text
-                      :tag (unless (eq base-el el) (dom-element-tag base-el))
-                      :id (unless (eq base-el el) (dom-element-id base-el))
-                      :x (if (plusp rtc-w) 0d0 (/ (- ruby-w base-w) 2d0))
-                      :y ann-extra
-                      :w base-w :h base-h :baseline base-asc)
-            kids))
+      (if (and (not (plusp rtc-w)) (> ann-w base-w))
+          (let ((extra (/ (- ruby-w base-w) (length base-text)))
+                (pen 0d0))
+            (loop for i from 0 below (length base-text)
+                  for ch = (subseq base-text i (1+ i))
+                  for adv = (text-advance ch fs fam wt fst)
+                  for slot = (+ adv extra)
+                  do (push (make-box :kind :text :style style :element base-el
+                                     :text ch
+                                     :x (+ pen (/ (max 0d0 (- slot adv)) 2d0))
+                                     :y ann-extra
+                                     :w adv :h base-h :baseline base-asc)
+                           kids)
+                     (incf pen slot)))
+          (push (make-box :kind :text :style style :element base-el :text base-text
+                          :tag (unless (eq base-el el) (dom-element-tag base-el))
+                          :id (unless (eq base-el el) (dom-element-id base-el))
+                          :x (if (plusp rtc-w) 0d0 (/ (- ruby-w base-w) 2d0))
+                          :y ann-extra
+                          :w base-w :h base-h :baseline base-asc)
+                kids)))
     (when (plusp (length rtc-text))
       (push (make-box :kind :text :style style :element rtc :text rtc-text
                       :tag (dom-element-tag rtc) :id (dom-element-id rtc)
