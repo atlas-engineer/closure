@@ -5424,6 +5424,29 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-dir-attr ()
+  (let* ((html "<div id='box' dir='rtl' style='width:200px'><span id='a'>One</span> <span id='b'>Two</span></div>
+                <div dir='ltr' style='width:200px'><span id='c'>One</span></div>
+                <div dir='rtl' style='direction:ltr;width:200px'><span id='e'>One</span></div>")
+         (root (closure.engine:layout-html html :width 300 :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "box"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (e (closure.engine:find-box root "e")))
+    (check "direction boxes" (and box a b c e))
+    (check "dir=rtl places the line on the right, still in source order"
+           (and a b
+                (eq (closure.engine::computed-direction (closure.engine::box-style box)) :rtl)
+                (> (closure.engine:box-x a) 100d0)
+                (> (closure.engine:box-x b) (closure.engine:box-x a))
+                (> (+ (closure.engine:box-x b) (closure.engine:box-width b)) 180d0)))
+    (check "dir=ltr stays on the left"
+           (and c (< (closure.engine:box-x c) 5d0)))
+    (check "an author direction wins over dir"
+           (and e (< (closure.engine:box-x e) 5d0)
+                (eq (closure.engine::computed-direction (closure.engine::box-style e)) :ltr)))))
+
 (defun test-hidden-attr ()
   (let* ((html "<p id='a' hidden>secret</p><p id='b'>shown</p><span id='d' hidden>xxxx</span><span id='e'>y</span><p id='c' hidden style='display:block'>forced</p><p id='u' hidden='until-found'>later</p>")
          (root (closure.engine:layout-html html :width 200
@@ -6050,6 +6073,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-dir-attr)
   (test-hidden-attr)
   (test-reversed-list)
   (test-hr-color)

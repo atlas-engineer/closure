@@ -47,6 +47,7 @@
   (line-height nil)
   (line-height-mult nil)
   (text-align :start)
+  (direction :ltr)
   (text-indent 0d0)
   (letter-spacing 0d0)
   (word-spacing 0d0)
@@ -132,7 +133,7 @@
  "border-radius" "border-collapse" "border-spacing" "caption-side" "empty-cells" "box-sizing" "outline" "outline-width" "outline-style" "outline-color" "outline-offset" "box-shadow"
  "color" "background" "background-color" "background-image" "background-repeat" "background-position" "background-size" "background-clip" "background-origin" "object-fit" "object-position"
  "font" "font-size" "font-weight" "font-style" "font-family" "line-height"
- "text-align" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-underline-offset" "text-decoration-thickness" "text-decoration-style" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
+ "text-align" "direction" "text-indent" "letter-spacing" "word-spacing" "text-transform" "text-decoration" "text-decoration-color" "text-underline-offset" "text-decoration-thickness" "text-decoration-style" "text-shadow" "white-space" "text-overflow" "overflow-wrap" "word-wrap" "word-break" "vertical-align" "opacity" "visibility" "overflow" "z-index"
  "flex" "flex-direction" "flex-wrap" "flex-grow" "flex-shrink" "flex-basis"
  "justify-content" "align-items" "align-content" "align-self" "order" "gap"
  "row-gap" "column-gap"
@@ -977,6 +978,7 @@
               (cons :mult (tok-number (car tokens))))
              (t (len))))
       ((:text-align) (kw '("start" "end" "left" "right" "center" "justify")))
+      ((:direction) (kw '("ltr" "rtl")))
       ((:text-transform) (kw '("none" "uppercase" "lowercase" "capitalize")))
       ((:text-indent) (len))
       ((:text-underline-offset)
@@ -1994,6 +1996,15 @@
                                      :origin :author :order 0)))
             (dolist (pair (expand-declaration :list-style-type mapped))
               (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
+    ;; dir sets direction. An author direction wins.
+    (when (and (not pseudo) (dom-attr element "dir"))
+      (let ((raw (string-downcase (string-trim '(#\space #\newline #\tab #\return)
+                                               (or (dom-attr element "dir") "")))))
+        (when (member raw '("ltr" "rtl") :test #'string=)
+          (let ((decl (make-css-decl :property :direction :raw raw
+                                     :origin :author :order 0)))
+            (dolist (pair (expand-declaration :direction raw))
+              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
     ;; hidden loses to an author display. until-found stays visible.
     (when (and (not pseudo) (dom-attr element "hidden"))
       (let ((raw (string-downcase (string-trim '(#\space #\newline #\tab #\return)
@@ -2186,6 +2197,7 @@
              (setf (computed-line-height style) (len value))
              (setf (computed-line-height-mult style) nil))))
          (:text-align (setf (computed-text-align style) value))
+         (:direction (when value (setf (computed-direction style) value)))
          (:text-transform (when value (setf (computed-text-transform style) value)))
          (:text-indent
           (setf (computed-text-indent style)
@@ -2297,6 +2309,7 @@
       (setf (computed-line-height s) (computed-line-height parent))
       (setf (computed-line-height-mult s) (computed-line-height-mult parent))
       (setf (computed-text-align s) (computed-text-align parent))
+      (setf (computed-direction s) (computed-direction parent))
       (setf (computed-text-transform s) (computed-text-transform parent))
       (setf (computed-text-indent s) (computed-text-indent parent))
       (setf (computed-letter-spacing s) (computed-letter-spacing parent))

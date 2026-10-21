@@ -527,6 +527,7 @@ from the Lisp engine without calling Node or another browser engine.
 - color on a rule paints it solid in that color. An author border color wins.
 - reversed counts an ordered list down from its length, or from start.
 - hidden removes an element. An author display wins, and until-found stays visible.
+- dir=rtl aligns the line to the right and keeps source order. An author direction wins.
 
 ## Next
 

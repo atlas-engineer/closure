@@ -1167,10 +1167,14 @@ then adds one pixel: size/5 for sub, size/3 for super."
                                               (/ room gaps)
                                               0d0)))
                                       0d0))
-                   (xx (+ x fudge indent (cond
-                                           ((member align '(:center)) (/ slack 2d0))
-                                           ((member align '(:right :end)) slack)
-                                           (t 0d0))))
+                   (xx (let ((rtl (eq (computed-direction style) :rtl)))
+                         (+ x fudge indent (cond
+                                             ((eq align :center) (/ slack 2d0))
+                                             ((or (eq align :right)
+                                                  (and (eq align :end) (not rtl))
+                                                  (and (eq align :start) rtl))
+                                              slack)
+                                             (t 0d0)))))
                    (top (- parent-asc))
                    ;; Line gap sits below the descent, so the strut is the
                    ;; full line height, not just the glyphs.
