@@ -1041,6 +1041,29 @@
       (walk box))
     out))
 
+(defun test-dialog-search ()
+  (let* ((root (closure.engine:layout-html
+                "<dialog id='c'>Dialog</dialog><dialog id='d' open>Dialog</dialog><search id='s'>Search</search><p><output id='o'>42</output></p>"
+                :width 400 :height 200
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (closed (closure.engine:find-box root "c"))
+         (open (closure.engine:find-box root "d"))
+         (search (closure.engine:find-box root "s"))
+         (output (closure.engine:find-box root "o")))
+    (check "dialog and search" (and (not closed) open search output))
+    (check "an open dialog is centered, 13px down, and one padded line tall"
+           (and open
+                (~ (closure.engine:box-y open) 13d0)
+                (~ (closure.engine:box-height open) 56d0)
+                (~ (closure.engine:box-x open)
+                   (/ (- 400d0 (closure.engine:box-width open)) 2d0)
+                   0.5d0)))
+    (check "search is a full-width block"
+           (and search (~ (closure.engine:box-width search) 400d0)
+                (~ (closure.engine:box-height search) 18d0)))
+    (check "output is an inline word"
+           (and output (~ (closure.engine:box-width output) 16d0 0.5d0)))))
+
 (defun test-iframe-object ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'><iframe id='f'></iframe> <object id='o'></object></p><p><bdi id='b'>bdi</bdi> <data id='d'>data</data></p>"
@@ -4382,6 +4405,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-size-lengths)
   (test-background-size-percent)
   (test-background-position-percent)
+  (test-dialog-search)
   (test-iframe-object)
   (test-form-metrics)
   (test-form-controls)

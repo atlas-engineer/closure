@@ -417,8 +417,11 @@ from the Lisp engine without calling Node or another browser engine.
   label at 49 by 19, and a textarea is 181 by 40.
 - An iframe is 300 by 150 inside a 2px border, and an object is 300 by
   150 on the same baseline. bdi, bdo, and data are ordinary inline words.
+- A closed dialog is hidden. An open dialog is a centered white box with
+  a 3px border and 1em of padding, 13px from the top. search is a block
+  and output is an inline word.
 
 ## Next
 
-1. The done condition is not met. A few embedded and interactive tags,
-   including dialog and picture, are still missing from the sample page.
+1. The done condition is not met. A handful of tags, including picture
+   and map, still need a sample and a comparison.

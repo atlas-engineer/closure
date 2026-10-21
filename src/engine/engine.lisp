@@ -70,6 +70,10 @@ script element after style and layout. Left unset until that engine exists.")
               padding: 0.35em 0.75em 0.625em; }
    legend { padding-left: 2px; padding-right: 2px; }
    summary { display: list-item; list-style-type: disclosure-closed; list-style-position: inside; }
+   search { display: block; }
+   output { display: inline; }
+   dialog { display: none; position: absolute; top: 13px; border: 3px solid #000; padding: 1em; background: #fff; }
+   dialog[open] { display: block; }
    img, video, canvas, svg, object, input, select, textarea, iframe { display: inline-block; }
    iframe { width: 300px; height: 150px; border: 2px solid #000; }
    object { width: 300px; height: 150px; }
