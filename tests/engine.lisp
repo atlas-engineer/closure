@@ -6363,6 +6363,33 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-row-group-valign ()
+  (let* ((root (closure.engine:layout-html
+                "<table><tbody valign='bottom'><tr><td id='b' style='height:40px'>Hi</td></tr></tbody></table>
+                 <table><thead valign='top'><tr><td id='t' style='height:40px'>Hi</td></tr></thead></table>
+                 <table><tbody valign='bottom'><tr><td id='own' valign='top' style='height:40px'>Hi</td></tr></tbody></table>"
+                :width 200 :height 200
+                :stylesheet "body{margin:0} td{padding:0}"))
+         (b (closure.engine:find-box root "b"))
+         (top (closure.engine:find-box root "t"))
+         (own (closure.engine:find-box root "own")))
+    (labels ((glyph-y (box)
+               (dolist (child (closure.engine::box-children box))
+                 (if (eq (closure.engine::box-kind child) :text)
+                     (return-from glyph-y (closure.engine:box-y child))
+                     (let ((y (glyph-y child)))
+                       (when y (return-from glyph-y y)))))))
+      (check "row group valign boxes" (and b top own))
+      (check "tbody valign=bottom sits below thead valign=top"
+             (and b top
+                  (> (- (glyph-y b) (closure.engine:box-y b))
+                     (+ (- (glyph-y top) (closure.engine:box-y top)) 8))))
+      (check "a cell valign wins over the row group"
+             (and own top
+                  (~ (- (glyph-y own) (closure.engine:box-y own))
+                     (- (glyph-y top) (closure.engine:box-y top))
+                     2d0))))))
+
 (defun test-row-group-align ()
   (let* ((root (closure.engine:layout-html
                 "<table><tbody align='center'><tr><td id='c' width='80'>Hi</td></tr></tbody></table>
@@ -7874,6 +7901,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-row-group-valign)
   (test-row-group-align)
   (test-input-image-align)
   (test-replaced-align)

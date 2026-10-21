@@ -2566,16 +2566,28 @@ scrollbar gutter. An author width or height is left alone."
   (let ((item (gethash prop specified)))
     (and item (eq (css-decl-origin (third item)) :author))))
 
+(defun presentational-valign (el)
+  "A valign attribute, or NIL when the element has none."
+  (let ((raw (and (dom-element-p el) (dom-attr el "valign"))))
+    (when (and raw (plusp (length (string-trim '(#\space #\newline #\tab) raw))))
+      raw)))
+
 (defun apply-valign-presentational (element style specified)
-  "valign on a cell, or on its row, sets vertical-align. An author value wins."
+  "valign on a cell, its row, or its row group sets vertical-align.
+The nearer attribute wins. An author vertical-align still wins."
   (when (and (not (author-specified-p specified :vertical-align))
              (member (dom-element-tag element) '("td" "th") :test #'string-equal))
     (let* ((row (dom-node-parent element))
-           (raw (or (dom-attr element "valign")
+           (group (and (dom-element-p row) (dom-node-parent row)))
+           (raw (or (presentational-valign element)
                     (and (dom-element-p row)
                          (string-equal (dom-element-tag row) "tr")
-                         (dom-attr row "valign")))))
-      (when (and raw (plusp (length (string-trim '(#\space #\newline #\tab) raw))))
+                         (presentational-valign row))
+                    (and (dom-element-p group)
+                         (member (dom-element-tag group) '("thead" "tbody" "tfoot")
+                                 :test #'string-equal)
+                         (presentational-valign group)))))
+      (when raw
         (let* ((value (string-downcase (string-trim '(#\space #\newline #\tab) raw)))
                (align (cond ((string= value "middle") :middle)
                             ((string= value "bottom") :bottom)
