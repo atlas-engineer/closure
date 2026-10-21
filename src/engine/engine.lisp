@@ -30,7 +30,7 @@ script element after style and layout. Left unset until that engine exists.")
    h4 { font-size: 1em; margin-top: 1.33em; margin-bottom: 1.33em; }
    h5 { font-size: 0.83em; margin-top: 1.67em; margin-bottom: 1.67em; }
    h6 { font-size: 0.67em; margin-top: 2.33em; margin-bottom: 2.33em; }
-   p, ul, ol, menu, dir, dl, blockquote, pre { margin-top: 1em; margin-bottom: 1em; }
+   p, ul, ol, menu, dir, dl, blockquote, pre, listing, xmp, plaintext { margin-top: 1em; margin-bottom: 1em; }
    ul, ol, menu, dir { padding-left: 40px; }
    dd { margin-left: 40px; }
    blockquote { margin-left: 40px; margin-right: 40px; }
@@ -55,8 +55,9 @@ script element after style and layout. Left unset until that engine exists.")
    sup { vertical-align: super; font-size: smaller; }
    a { color: #0000ee; }
    a:link { text-decoration: underline; }
-   code, kbd, samp, tt, pre { font-family: monospace; font-size: 13px; }
-   pre { white-space: pre; }
+   code, kbd, samp, tt, pre, listing, xmp, plaintext { font-family: monospace; font-size: 13px; }
+   pre, listing, xmp, plaintext { display: block; white-space: pre; }
+   abbr[title], acronym[title] { text-decoration: underline dotted; }
    nobr { white-space: nowrap; }
    marquee { display: inline-block; width: 100%; white-space: nowrap; overflow: hidden; }
    table { display: table; border-spacing: 2px; }

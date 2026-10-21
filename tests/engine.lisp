@@ -2674,6 +2674,55 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-listing-abbr ()
+  (let* ((root (closure.engine:layout-html
+                "<p><abbr id='a' title='B'>abbr</abbr> <acronym id='c' title='A'>acro</acronym> <abbr id='b'>no</abbr></p><listing id='ls'>one
+two</listing><xmp id='xm'>one
+two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
+                :width 1024 :height 400
+                :stylesheet "body{margin:0}"))
+         (abbr (closure.engine:find-box root "a"))
+         (acro (closure.engine:find-box root "c"))
+         (bare (closure.engine:find-box root "b"))
+         (listing (closure.engine:find-box root "ls"))
+         (xmp (closure.engine:find-box root "xm"))
+         (narrow (closure.engine:find-box root "n"))
+         (nobr-right (labels ((edge (b)
+                                (let ((here (if (and b
+                                                     (string= (or (closure.engine::box-tag b) "") "nobr")
+                                                     (closure.engine::box-text b))
+                                                (+ (closure.engine:box-x b)
+                                                   (closure.engine:box-width b))
+                                                0d0)))
+                                  (dolist (c (and b (closure.engine::box-children b)))
+                                    (setf here (max here (edge c))))
+                                  here)))
+                       (edge root))))
+    (check "listing, xmp, abbr, and nobr" (and abbr acro bare listing xmp narrow))
+    (check "a titled abbr and acronym are dotted underlines"
+           (and abbr acro bare
+                (eq (closure.engine::computed-text-decoration (closure.engine::box-style abbr))
+                    :underline)
+                (eq (closure.engine::computed-text-decoration-style (closure.engine::box-style abbr))
+                    :dotted)
+                (eq (closure.engine::computed-text-decoration-style (closure.engine::box-style acro))
+                    :dotted)
+                (eq (closure.engine::computed-text-decoration (closure.engine::box-style bare))
+                    :none)
+                (~ (closure.engine:box-width abbr) 28.44d0 0.1d0)
+                (~ (closure.engine:box-width acro) 27.53d0 0.1d0)))
+    (check "listing and xmp are two monospace lines with a 13px margin"
+           (and listing xmp
+                (~ (closure.engine:box-y listing) 50d0)
+                (~ (closure.engine:box-height listing) 34d0)
+                (~ (closure.engine:box-y xmp) 97d0)
+                (~ (closure.engine:box-height xmp) 34d0)
+                (~ (closure.engine::computed-font-size (closure.engine::box-style listing)) 13d0)))
+    (check "nobr stays on one line and overflows a narrow paragraph"
+           (and narrow
+                (~ (closure.engine:box-height narrow) 18d0)
+                (~ nobr-right 57.33d0 0.1d0)))))
+
 (defun test-font-marquee ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'><strike id='s'>strike</strike></p><p id='g'><font id='f' size='7' color='red'>font</font> <font id='r' size='+2'>plus</font> <font id='m' size='3' face='monospace'>mono</font></p><p id='q'><marquee id='mq'>scroll</marquee></p><p><font id='o' size='7' style='font-size:12px'>x</font></p>"
@@ -4664,6 +4713,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-wbr)
   (test-address)
   (test-ruby)
+  (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
   (test-fieldset-details)

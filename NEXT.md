@@ -437,6 +437,8 @@ from the Lisp engine without calling Node or another browser engine.
   font's line gap.
 - A font element uses the size, color, and face attributes. strike is
   struck through. A marquee fills its line, and that line is 22px.
+- listing and xmp are preformatted monospace blocks. An abbr or acronym
+  with a title is underlined with dots. nobr does not wrap.
 
 ## Next
 
