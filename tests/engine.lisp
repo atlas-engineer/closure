@@ -6363,6 +6363,34 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-align-middle ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='m' align='middle' style='width:80px'>Hi</p>
+                 <p id='own' align='middle' style='text-align:left;width:80px'>Hi</p>
+                 <hr id='hm' align='middle' width='40'>
+                 <hr id='hc' align='center' width='40'>
+                 <table><thead align='middle'><tr><td id='c' width='80'>Hi</td></tr></thead></table>
+                 <table id='tb' align='middle'><tr><td>A</td></tr></table>"
+                :width 400 :height 240
+                :stylesheet "body{margin:0}"))
+         (m (closure.engine::box-style (closure.engine:find-box root "m")))
+         (own (closure.engine::box-style (closure.engine:find-box root "own")))
+         (hm (closure.engine:find-box root "hm"))
+         (hc (closure.engine:find-box root "hc"))
+         (c (closure.engine::box-style (closure.engine:find-box root "c")))
+         (tb (closure.engine:find-box root "tb")))
+    (check "align middle boxes" (and m own hm hc c tb))
+    (check "align=middle centers a paragraph"
+           (eq (closure.engine::computed-text-align m) :center))
+    (check "an author text-align wins over align=middle"
+           (eq (closure.engine::computed-text-align own) :left))
+    (check "align=middle centers a rule"
+           (and hm hc (~ (closure.engine:box-x hm) (closure.engine:box-x hc) 1d0)))
+    (check "align=middle centers a row group"
+           (eq (closure.engine::computed-text-align c) :center))
+    (check "align=middle does not center a table"
+           (< (closure.engine:box-x tb) 20d0))))
+
 (defun test-rowspan-zero ()
   (let* ((root (closure.engine:layout-html
                 "<table cellspacing='0'><tbody><tr><td id='d' rowspan='0'>Tall</td><td id='r'>R</td></tr><tr><td id='e'>E</td></tr></tbody><tfoot><tr><td id='f'>F</td><td>G</td></tr></tfoot></table>
@@ -8044,6 +8072,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-align-middle)
   (test-rowspan-zero)
   (test-marquee-spacing)
   (test-row-group-background)

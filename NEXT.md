@@ -592,6 +592,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A row group bgcolor or background paints behind its rows. A cell background still covers it.
 - hspace and vspace on a marquee set both sides. An author margin on one side still wins.
 - rowspan zero covers the rest of the row group and stops at the next group.
+- align=middle centers text and a rule the way align=center does. A table stays put.
 
 ## Next
 

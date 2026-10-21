@@ -2638,7 +2638,7 @@ The nearer attribute wins. An author vertical-align still wins."
                  ((string= value "absbottom")
                   (setf (computed-vertical-align style) :bottom))))
           ((string= tag "hr")
-           (cond ((string= value "center")
+           (cond ((or (string= value "center") (string= value "middle"))
                   (unless (gethash :margin-left specified)
                     (setf (computed-ml style) :auto))
                   (unless (gethash :margin-right specified)
@@ -2658,7 +2658,7 @@ The nearer attribute wins. An author vertical-align still wins."
                               "td" "th" "tr" "thead" "tbody" "tfoot"
                               "center" "legend")
                         :test #'string=))
-           (let ((align (cond ((string= value "center") :center)
+           (let ((align (cond ((or (string= value "center") (string= value "middle")) :center)
                               ((string= value "right") :right)
                               ((string= value "justify") :justify)
                               ((string= value "left") :left))))
