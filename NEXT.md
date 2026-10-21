@@ -544,6 +544,7 @@ from the Lisp engine without calling Node or another browser engine.
 - background on a table, row, or cell tiles that image. A div ignores it, and an author image wins.
 - leftmargin and topmargin set the body margin. marginwidth and marginheight win when both are set.
 - align on a rule moves it to the center or the right. align on a legend does the same. An author margin or text-align wins.
+- frameborder=0 removes an iframe's border. A non-zero integer keeps it, and an author border wins.
 
 ## Next
 

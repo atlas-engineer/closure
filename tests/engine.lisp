@@ -5424,6 +5424,37 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-frameborder ()
+  (let* ((root (closure.engine:layout-html
+                "<iframe id='z' frameborder='0'></iframe>
+                 <iframe id='n' frameborder='no'></iframe>
+                 <iframe id='o' frameborder='1'></iframe>
+                 <iframe id='d'></iframe>
+                 <iframe id='a' frameborder='0' style='border:3px solid red'></iframe>"
+                :width 800 :height 200
+                :stylesheet "body{margin:0}"))
+         (z (closure.engine:find-box root "z"))
+         (n (closure.engine:find-box root "n"))
+         (o (closure.engine:find-box root "o"))
+         (d (closure.engine:find-box root "d"))
+         (a (closure.engine:find-box root "a")))
+    (check "frameborder boxes" (and z n o d a))
+    (check "frameborder=0 drops the border"
+           (and z (~ (closure.engine:box-width z) 300d0)
+                (~ (closure.engine:box-height z) 150d0)))
+    (check "frameborder=no drops the border"
+           (and n (~ (closure.engine:box-width n) 300d0)
+                (~ (closure.engine:box-height n) 150d0)))
+    (check "frameborder=1 keeps the 2px border"
+           (and o (~ (closure.engine:box-width o) 304d0)
+                (~ (closure.engine:box-height o) 154d0)))
+    (check "an iframe without frameborder keeps the 2px border"
+           (and d (~ (closure.engine:box-width d) 304d0)
+                (~ (closure.engine:box-height d) 154d0)))
+    (check "an author border wins over frameborder"
+           (and a (~ (closure.engine:box-width a) 306d0)
+                (~ (closure.engine:box-height a) 156d0)))))
+
 (defun test-align-hr-legend ()
   (let* ((root (closure.engine:layout-html
                 "<hr id='r' align='right' width='80'>
@@ -6596,6 +6627,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-frameborder)
   (test-align-hr-legend)
   (test-body-margin)
   (test-table-background)

@@ -2123,6 +2123,18 @@
                                         :origin :author :order 0)))
               (dolist (pair (expand-declaration :background-image raw))
                 (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
+    ;; frameborder=0 removes the iframe border. A non-zero integer keeps it.
+    (when (and (not pseudo)
+               (string-equal (dom-element-tag element) "iframe")
+               (dom-attr element "frameborder"))
+      (let* ((raw (string-trim '(#\space #\newline #\tab #\return)
+                               (or (dom-attr element "frameborder") "")))
+             (n (ignore-errors (parse-integer raw :junk-allowed t))))
+        (unless (and (integerp n) (/= n 0))
+          (let ((decl (make-css-decl :property :border :raw "0"
+                                     :origin :author :order 0)))
+            (dolist (pair (expand-declaration :border "0"))
+              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
     found))
 
 (defun list-type-name (raw)
