@@ -2728,6 +2728,47 @@ b</div>"
                 (~ (closure.engine:box-height rb) 17d0)
                 (~ (closure.engine:box-x rb) (closure.engine:box-x ruby) 0.2d0)))))
 
+(defun test-object-fallback ()
+  (labels ((text-box (root word)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (and (eq (closure.engine::box-kind b) :text)
+                                       (string= (or (closure.engine::box-text b) "") word))
+                              (setf found b))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               found)))
+    (let* ((root (closure.engine:layout-html
+                  "<p>X<object id='f'>Z</object>Y</p>
+                   <object id='e'></object>
+                   <object id='w' width='80' height='40'></object>"
+                  :width 400 :height 220
+                  :stylesheet "body{margin:0} p{margin:0}"))
+           (fallback (closure.engine:find-box root "f"))
+           (empty (closure.engine:find-box root "e"))
+           (sized (closure.engine:find-box root "w"))
+           (y (text-box root "Y")))
+      (check "object fallback boxes" (and fallback empty sized y))
+      (check "a fallback object is the size of its text"
+             (and fallback
+                  (< (closure.engine:box-width fallback) 30d0)
+                  (< (closure.engine:box-height fallback) 24d0)))
+      (check "the following word stays next to the fallback"
+             (and fallback y
+                  (~ (closure.engine:box-x y)
+                     (+ (closure.engine:box-x fallback)
+                        (closure.engine:box-width fallback))
+                     1d0)))
+      (check "an empty object stays 300 by 150"
+             (and empty
+                  (~ (closure.engine:box-width empty) 300d0)
+                  (~ (closure.engine:box-height empty) 150d0)))
+      (check "width and height size an empty object"
+             (and sized
+                  (~ (closure.engine:box-width sized) 80d0)
+                  (~ (closure.engine:box-height sized) 40d0))))))
+
 (defun test-noembed-param ()
   (labels ((text-box (root word)
              (let ((found nil))
@@ -7099,6 +7140,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-object-fallback)
   (test-noembed-param)
   (test-bdo-rtl)
   (test-ruby-annotation-box)

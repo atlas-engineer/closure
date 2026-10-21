@@ -83,6 +83,22 @@ is 19.92, and Chromium lays that out as 19.90625."
                      (dom-element-after-style element))
       (nreverse out))))
 
+(defun object-fallback-p (el)
+  "An object with visible fallback and no data renders its contents."
+  (and (dom-element-p el)
+       (string-equal (dom-element-tag el) "object")
+       (zerop (length (string-trim '(#\space #\newline #\tab #\return)
+                                   (or (dom-attr el "data") ""))))
+       (some (lambda (c)
+               (cond
+                 ((dom-text-p c)
+                  (not (whitespace-only-p (dom-text-text c))))
+                 ((dom-element-p c)
+                  (and (dom-element-style c)
+                       (not (eq (computed-display (dom-element-style c)) :none))))
+                 (t nil)))
+             (dom-node-children el))))
+
 (defun embed-replaced-p (el)
   (and (dom-element-p el)
        (string-equal (dom-element-tag el) "embed")
@@ -352,6 +368,10 @@ Indented group options count only for a list select."
        (layout-grid el x y avail-w avail-h containing))
       ((or (eq disp :table) (eq disp :inline-table) (string= (dom-element-tag el) "table"))
        (layout-table el x y avail-w avail-h containing))
+      ((and (string-equal (dom-element-tag el) "object")
+            (not (object-fallback-p el)))
+       ;; An empty object is replaced, so its width and height apply.
+       (layout-block el x y avail-w avail-h containing :shrink t))
       ((eq disp :inline)
        ;; An embed with a resource is replaced. Without one, width does not apply.
        (if (embed-replaced-p el)
@@ -1155,6 +1175,9 @@ then adds one pixel: size/5 for sub, size/3 for super."
                       ((eq (computed-display (dom-element-style n)) :none))
                       ((embed-replaced-p n)
                        (emit-atomic n))
+                      ((and (string-equal (dom-element-tag n) "object")
+                            (not (object-fallback-p n)))
+                       (emit-atomic n))
                       ((string= (dom-element-tag n) "ruby")
                        (emit-ruby n))
                       ((string= (dom-element-tag n) "br")
@@ -1203,6 +1226,9 @@ then adds one pixel: size/5 for sub, size/3 for super."
                       (cond
                         ((eq (computed-display (dom-element-style child)) :none))
                         ((embed-replaced-p child) (emit-atomic child))
+                        ((and (string-equal (dom-element-tag child) "object")
+                              (not (object-fallback-p child)))
+                         (emit-atomic child))
                         ((string= (dom-element-tag child) "ruby") (emit-ruby child))
                         ((string= (dom-element-tag child) "br")
                          (break-line (and (dom-element-style child)
