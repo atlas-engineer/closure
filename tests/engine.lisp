@@ -3035,6 +3035,26 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                 (~ (closure.engine:box-width time) 103d0)
                 (~ (closure.engine:box-height time) 24d0)))))
 
+(defun test-control-baseline ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'><input id='f' type='file'> <input id='r' type='range'> <input id='c' type='color'> <input id='t' type='time'></p>"
+                :width 1024 :height 80
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (p (closure.engine:find-box root "p"))
+         (file (closure.engine:find-box root "f"))
+         (range (closure.engine:find-box root "r"))
+         (color (closure.engine:find-box root "c"))
+         (time (closure.engine:find-box root "t")))
+    (check "control baselines" (and p file range color time))
+    (check "the control line is 28.5 tall"
+           (~ (closure.engine:box-height p) 28.5d0 0.2d0))
+    (check "a file input sits 6px below the color input"
+           (~ (- (closure.engine:box-y file) (closure.engine:box-y color)) 6d0 0.2d0))
+    (check "a range sits 5px below the color input"
+           (~ (- (closure.engine:box-y range) (closure.engine:box-y color)) 5d0 0.2d0))
+    (check "a time input sits 4.5px below the color input"
+           (~ (- (closure.engine:box-y time) (closure.engine:box-y color)) 4.5d0 0.2d0))))
+
 (defun test-input-widgets ()
   (let* ((root (closure.engine:layout-html
                 "<input id='f' type='file'><input id='g' type='range'><input id='c' type='color'>"
@@ -5042,6 +5062,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-range-color-paint)
   (test-gauge-paint)
   (test-time-input)
+  (test-control-baseline)
   (test-input-widgets)
   (test-check-submit)
   (test-open-details)

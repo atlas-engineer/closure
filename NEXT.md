@@ -467,6 +467,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An open dialog's text moves with the centered box instead of staying at the static x.
 - A fieldset border crosses the middle of the legend and leaves a gap behind it.
 - That border is not painted again across the fieldset's text line.
+- File, range, color, and time share Chromium's baselines. The line is 28.5px.
 
 ## Next
 

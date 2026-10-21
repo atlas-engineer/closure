@@ -537,16 +537,34 @@ A replaced image does not stretch to the container the way an ordinary block doe
                           (setf (box-w box) (+ adv bl br pl pr 17.5d0)
                                 (box-h box) (+ lh 2d0 bt bb pt pb))))))
                   (when (member (dom-element-tag el) '("button" "input" "select") :test #'string=)
-                    (multiple-value-bind (bt br bb bl) (border4 style)
-                      (declare (ignore br bb bl))
-                      (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)
-                        (declare (ignore pr pb pl))
-                        (setf (box-baseline box)
-                              (+ bt pt
-                                 (font-ascent (computed-font-size style)
-                                              (computed-font-family style)
-                                              (computed-font-weight style)
-                                              (computed-font-style style)))))))
+                    (let* ((fs (computed-font-size style))
+                           (fam (computed-font-family style))
+                           (wt (computed-font-weight style))
+                           (fst (computed-font-style style))
+                           (ascent (font-ascent fs fam wt fst))
+                           (descent (font-descent fs fam wt fst))
+                           (font-h (+ ascent descent))
+                           (type (if (string= (dom-element-tag el) "input")
+                                     (string-downcase (or (dom-attr el "type") "text"))
+                                     "")))
+                      (multiple-value-bind (bt br bb bl) (border4 style)
+                        (declare (ignore br bl))
+                        (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)
+                          (declare (ignore pr pl))
+                          (setf (box-baseline box)
+                                (cond
+                                  ;; A slider, checkbox, or radio sits on the baseline.
+                                  ((member type '("range" "checkbox" "radio") :test #'string=)
+                                   (box-h box))
+                                  ;; A color input keeps the text field's 6px under the baseline.
+                                  ((string= type "color")
+                                   (- (box-h box) (+ 2d0 1d0 descent)))
+                                  ;; Other controls center the font in the content box.
+                                  (t
+                                   (let ((offset (/ (max 0d0
+                                                         (- (box-h box) bt bb pt pb font-h))
+                                                    2d0)))
+                                     (+ bt pt offset ascent)))))))))
           box)))))))))
 
 (defun pack-columns (box kids cw content-h)
