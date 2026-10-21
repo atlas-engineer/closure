@@ -578,6 +578,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An iframe srcdoc paints that document inside the frame.
 - An iframe src paints that document. srcdoc still wins when both are set.
 - An object or embed whose resource is an HTML document paints that document.
+- A sizes list picks the first source size whose media condition matches.
 
 ## Next
 

@@ -1521,6 +1521,26 @@
       (check "a 2x descriptor is skipped on this screen"
              (not (red-p two))))))
 
+(defun test-srcset-sizes ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (html (format nil "<img id='a' srcset='~A 100w, /tmp/closure-does-not-exist.png 800w' sizes='(max-width: 200px) 50px, 900px' width='40' height='20'>"
+                      png)))
+    (labels ((red-p (viewport)
+               (let* ((out "/tmp/closure-engine-srcset-sizes.png")
+                      (root (closure.engine:render-html html :width viewport :height 40
+                                                       :output out
+                                                       :stylesheet "body{margin:0}"))
+                      (box (closure.engine:find-box root "a")))
+                 (multiple-value-bind (r g b)
+                     (png-rgb out
+                              (round (+ (closure.engine:box-x box) 8))
+                              (round (+ (closure.engine:box-y box) 8)))
+                   (and (> r 180) (< g 40) (< b 40))))))
+      (check "a matching sizes condition keeps the smaller image"
+             (red-p 120))
+      (check "a later sizes length selects the wider image"
+             (not (red-p 500))))))
+
 (defun test-srcset-width ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (html (format nil "<img id='a' srcset='~A 100w, /tmp/closure-does-not-exist.png 800w' width='40' height='20'>"
@@ -7679,6 +7699,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-iframe-src)
   (test-iframe-srcdoc)
   (test-srcset-density)
+  (test-srcset-sizes)
   (test-srcset-width)
   (test-img-srcset)
   (test-picture-source)

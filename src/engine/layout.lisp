@@ -189,18 +189,48 @@ is 19.92, and Chromium lays that out as 19.90625."
           (setf start (1+ comma)))))
     (nreverse out)))
 
-(defun srcset-slot (sizes)
-  "The layout width a w descriptor is chosen against. The default is 100vw."
-  (let ((s (string-downcase (string-trim '(#\space) (or sizes "")))))
+(defun srcset-length (token)
+  "A sizes length in pixels. Npx is N. Nvw is that share of the viewport."
+  (let ((s (string-downcase (string-trim '(#\space #\tab #\newline #\return) (or token "")))))
     (cond
-      ((zerop (length s)) (float *viewport-width* 1d0))
       ((and (> (length s) 2) (string= (subseq s (- (length s) 2)) "vw"))
        (let ((n (ignore-errors (parse-integer s :junk-allowed t))))
-         (if n (* n 0.01d0 (float *viewport-width* 1d0)) (float *viewport-width* 1d0))))
+         (and n (* n 0.01d0 (float *viewport-width* 1d0)))))
       ((and (> (length s) 2) (string= (subseq s (- (length s) 2)) "px"))
        (let ((n (ignore-errors (parse-integer s :junk-allowed t))))
-         (or (and n (float n 1d0)) (float *viewport-width* 1d0))))
-      (t (float *viewport-width* 1d0)))))
+         (and n (float n 1d0))))
+      (t nil))))
+
+(defun srcset-slot (sizes)
+  "The layout width a w descriptor is chosen against. The default is 100vw.
+A sizes list uses the first source size whose media condition matches."
+  (let ((s (string-trim '(#\space #\tab #\newline #\return) (or sizes ""))))
+    (if (zerop (length s))
+        (float *viewport-width* 1d0)
+        (or (dolist (part (split-top-level s #\,))
+              (let ((piece (string-downcase
+                            (string-trim '(#\space #\tab #\newline #\return) part))))
+                (unless (zerop (length piece))
+                  (multiple-value-bind (media length)
+                      (if (char= (char piece 0) #\()
+                          (let ((end (loop with depth = 0
+                                           for i from 0 below (length piece)
+                                           for c = (char piece i)
+                                           do (cond ((char= c #\() (incf depth))
+                                                    ((char= c #\))
+                                                     (decf depth)
+                                                     (when (zerop depth) (return i)))))))
+                            (if end
+                                (values (subseq piece 0 (1+ end))
+                                        (string-trim '(#\space) (subseq piece (1+ end))))
+                                (values nil piece)))
+                          (values nil piece))
+                    (when (or (null media)
+                              (zerop (length media))
+                              (media-matches media *viewport-width* *viewport-height*))
+                      (let ((n (srcset-length length)))
+                        (when n (return n))))))))
+            (float *viewport-width* 1d0)))))
 
 (defun closer-density (a b)
   "The candidate whose x descriptor is closer to a 1x screen."
