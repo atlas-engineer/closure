@@ -602,6 +602,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An svg width or height percentage is a share of its container. An author size still wins.
 - An image button percentage is a share of its container. A text field ignores it.
 - A colspan percentage splits across its columns. A column width still wins.
+- An audio control shows the time, track, and volume beside the play mark.
 
 ## Next
 

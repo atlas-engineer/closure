@@ -1753,6 +1753,23 @@
       (check "an object paints its image data"
              (and (> r 180) (< g 40) (< b 40))))))
 
+(defun test-audio-control-parts ()
+  (let ((path "/tmp/closure-engine-audio-parts.png"))
+    (closure.engine:render-html "<audio controls></audio>"
+                                :width 320 :height 70
+                                :stylesheet "body{margin:0}"
+                                :output path)
+    (labels ((sum (x y)
+               (multiple-value-bind (r g b) (png-rgb path x y)
+                 (+ r g b))))
+      (check "the audio play mark is painted" (< (sum 26 27) 400))
+      (check "the audio play mark is a triangle" (> (sum 40 27) 680))
+      (check "the audio time is painted" (< (sum 64 26) 500))
+      (check "the audio track is painted"
+             (let ((s (sum 170 27)))
+               (and (> s 500) (< s 680))))
+      (check "the audio menu is painted" (< (sum 272 27) 400)))))
+
 (defun test-audio-controls ()
   (let* ((root (closure.engine:layout-html
                 "<audio id='n'></audio>
@@ -8305,6 +8322,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-picture-source)
   (test-video-poster)
   (test-object-image)
+  (test-audio-control-parts)
   (test-audio-controls)
   (test-table-layout-fixed)
   (test-popover)
