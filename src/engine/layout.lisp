@@ -71,6 +71,12 @@
                      (dom-element-after-style element))
       (nreverse out))))
 
+(defun embed-replaced-p (el)
+  (and (dom-element-p el)
+       (string-equal (dom-element-tag el) "embed")
+       (let ((src (dom-attr el "src")))
+         (and src (plusp (length (string-trim '(#\space #\newline #\tab) src)))))))
+
 (defun replaced-p (el)
   (and (dom-element-p el)
        (member (dom-element-tag el) '("img" "video" "canvas" "audio" "svg" "input" "iframe")
@@ -259,7 +265,10 @@ A replaced image does not stretch to the container the way an ordinary block doe
       ((or (eq disp :table) (eq disp :inline-table) (string= (dom-element-tag el) "table"))
        (layout-table el x y avail-w avail-h containing))
       ((eq disp :inline)
-       (layout-inline-element el x y avail-w))
+       ;; An embed with a resource is replaced. Without one, width does not apply.
+       (if (embed-replaced-p el)
+           (layout-block el x y avail-w avail-h containing :shrink t)
+           (layout-inline-element el x y avail-w)))
       (t
        (layout-block el x y avail-w avail-h containing :shrink (or shrink (eq disp :inline-block)))))))
 
@@ -469,7 +478,7 @@ A replaced image does not stretch to the container the way an ordinary block doe
                           (when first (translate-box first dx 0d0))))))
                   (when (string= (dom-element-tag el) "fieldset")
                     (place-fieldset-legend box))
-                  (when (string= (dom-element-tag el) "img")
+                  (when (member (dom-element-tag el) '("img" "embed") :test #'string=)
                     (apply-image-size box el avail-w avail-h))
                   (when (string= (dom-element-tag el) "svg")
                     (apply-svg-size box el avail-w avail-h))
@@ -914,6 +923,8 @@ then adds one pixel: size/5 for sub, size/3 for super."
                    ((dom-element-p n)
                     (cond
                       ((eq (computed-display (dom-element-style n)) :none))
+                      ((embed-replaced-p n)
+                       (emit-atomic n))
                       ((string= (dom-element-tag n) "ruby")
                        (emit-ruby n))
                       ((string= (dom-element-tag n) "br")

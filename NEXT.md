@@ -441,6 +441,8 @@ from the Lisp engine without calling Node or another browser engine.
   with a title is underlined with dots. nobr does not wrap.
 - tt is monospace, blink is an ordinary word, and image is an img.
   isindex adds no search form. plaintext is preformatted.
+- An embed with a resource uses its image or its width and height. Those
+  attributes also size an iframe and an object, unless author CSS sets them.
 
 ## Next
 

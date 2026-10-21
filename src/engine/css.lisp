@@ -1881,7 +1881,25 @@
       (let ((raw (substitute-vars (css-decl-raw d) (computed-custom (dom-element-style element)))))
         (dolist (pair (expand-declaration (css-decl-property d) raw))
           (push (list (car pair) (cdr pair) d '(1 0 0 0)) found))))
+    ;; width and height attributes beat the user-agent size and lose to author CSS.
+    (when (and (not pseudo)
+               (member (dom-element-tag element) '("iframe" "object" "embed") :test #'string-equal))
+      (dolist (name '("width" "height"))
+        (let ((raw (html-dimension-raw (dom-attr element name))))
+          (when raw
+            (let ((decl (make-css-decl :property (intern (string-upcase name) :keyword)
+                                       :raw raw :origin :author :order 0)))
+              (dolist (pair (expand-declaration (css-decl-property decl) raw))
+                (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
     found))
+
+(defun html-dimension-raw (raw)
+  "An HTML width or height attribute, as a CSS length."
+  (let ((s (string-trim '(#\space #\newline #\tab #\return) (or raw ""))))
+    (cond ((zerop (length s)) nil)
+          ((char= (char s (1- (length s))) #\%) s)
+          (t (let ((n (ignore-errors (parse-integer s :junk-allowed t))))
+               (when n (format nil "~Dpx" n)))))))
 
 (defun absolutize (value font-size)
   (cond

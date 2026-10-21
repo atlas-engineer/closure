@@ -2674,6 +2674,36 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-embed-size ()
+  (let* ((root (closure.engine:layout-html
+                "<embed id='e0' width='40' height='20'><embed id='e2' src='square.png'><embed id='e3' src='square.png' width='40' height='20'><iframe id='f0'></iframe><iframe id='f1' width='80' height='40'></iframe><iframe id='f2' width='80' height='40'></iframe><object id='o1' width='70' height='25'></object>"
+                :width 1024 :height 200
+                :stylesheet "body{margin:0} iframe#f2{width:50px;height:30px}"
+                :base "file:///home/jmercouris/Source/closure/screenshots/page.html"))
+         (empty (closure.engine:find-box root "e0"))
+         (intrinsic (closure.engine:find-box root "e2"))
+         (sized (closure.engine:find-box root "e3"))
+         (frame (closure.engine:find-box root "f1"))
+         (styled (closure.engine:find-box root "f2"))
+         (object (closure.engine:find-box root "o1")))
+    (check "embed and sized frames" (and intrinsic sized frame styled object))
+    (check "an embed without a resource takes no space"
+           (not empty))
+    (check "an embed uses its image, or the width and height attributes"
+           (and intrinsic sized
+                (~ (closure.engine:box-width intrinsic) 20d0)
+                (~ (closure.engine:box-height intrinsic) 20d0)
+                (~ (closure.engine:box-width sized) 40d0)
+                (~ (closure.engine:box-height sized) 20d0)))
+    (check "iframe and object attributes beat the default size, and author CSS wins"
+           (and frame styled object
+                (~ (closure.engine:box-width frame) 84d0)
+                (~ (closure.engine:box-height frame) 44d0)
+                (~ (closure.engine:box-width styled) 54d0)
+                (~ (closure.engine:box-height styled) 34d0)
+                (~ (closure.engine:box-width object) 70d0)
+                (~ (closure.engine:box-height object) 25d0)))))
+
 (defun test-obsolete-tail ()
   (let* ((root (closure.engine:layout-html
                 "<p id='t'><tt id='tt'>tt</tt> <blink id='bl'>blink</blink></p><p id='g'><image id='im' src='square.png' width='20' height='20'></image></p><isindex id='is' prompt='Find'><p id='a'>after</p><plaintext id='pl'>one
@@ -4748,6 +4778,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-wbr)
   (test-address)
   (test-ruby)
+  (test-embed-size)
   (test-obsolete-tail)
   (test-listing-abbr)
   (test-font-marquee)
