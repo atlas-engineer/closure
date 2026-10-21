@@ -2111,8 +2111,40 @@ outside the border box, so the box is content plus padding plus one border."
           (incf i span))))
     (nreconc groups (nreverse boxes))))
 
+(defun apply-table-border-attr (el)
+  "The border attribute is a 1px inset on each cell and an outset frame
+of that width, both Chromium's gray. An author border is left alone."
+  (let* ((raw (and (dom-element-p el) (dom-attr el "border")))
+         (n (and raw (plusp (length (string-trim '(#\space #\newline #\tab) raw)))
+                 (ignore-errors (parse-integer raw :junk-allowed t))))
+         (style (dom-element-style el)))
+    (when (and style n (> n 0) (eq (computed-bts style) :none))
+      (let ((px (float n 1d0))
+            (gray (color-bytes 128 128 128)))
+        (setf (computed-bt style) px (computed-br style) px
+              (computed-bb style) px (computed-bl style) px
+              (computed-bts style) :outset (computed-brs style) :outset
+              (computed-bbs style) :outset (computed-bls style) :outset
+              (computed-btc style) gray (computed-brc style) gray
+              (computed-bbc style) gray (computed-blc style) gray)
+        (labels ((walk (node)
+                   (dolist (c (dom-node-children node))
+                     (when (dom-element-p c)
+                       (if (member (dom-element-tag c) '("td" "th") :test #'string=)
+                           (let ((st (dom-element-style c)))
+                             (when (and st (eq (computed-bts st) :none))
+                               (setf (computed-bt st) 1d0 (computed-br st) 1d0
+                                     (computed-bb st) 1d0 (computed-bl st) 1d0
+                                     (computed-bts st) :inset (computed-brs st) :inset
+                                     (computed-bbs st) :inset (computed-bls st) :inset
+                                     (computed-btc st) gray (computed-brc st) gray
+                                     (computed-bbc st) gray (computed-blc st) gray)))
+                           (walk c))))))
+          (walk el))))))
+
 (defun layout-table (el x y avail-w avail-h containing)
   (declare (ignore avail-h containing))
+  (apply-table-border-attr el)
   (let* ((style (dom-element-style el))
          (box (make-element-box el :table style))
          (rows (table-rows el)))

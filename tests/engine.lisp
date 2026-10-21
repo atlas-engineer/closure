@@ -2756,6 +2756,32 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-table-border-attr ()
+  (let* ((html "<table id='t' border='1'><tr><td id='a'>One</td><td>Two</td></tr></table>")
+         (path "/tmp/closure-engine-table-border.png")
+         (root (closure.engine:render-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (table (closure.engine:find-box root "t"))
+         (cell (closure.engine:find-box root "a")))
+    (check "a border attribute sizes the table like Chromium"
+           (and table cell
+                (~ (closure.engine:box-width table) 70.875d0 0.5d0)
+                (~ (closure.engine:box-height table) 28d0)
+                (~ (closure.engine:box-x cell) 3d0)
+                (~ (closure.engine:box-y cell) 3d0)
+                (~ (closure.engine:box-width cell) 30.65625d0 0.5d0)
+                (~ (closure.engine:box-height cell) 22d0)))
+    (multiple-value-bind (r g b) (png-rgb path 0 0)
+      (check "the table frame is painted"
+             (and (< r 230) (< g 230) (< b 230))))
+    (multiple-value-bind (r g b) (png-rgb path 3 3)
+      (check "the cell border is darker than the frame"
+             (and (< r 80) (< g 80) (< b 80))))
+    (multiple-value-bind (r g b) (png-rgb path 10 10)
+      (check "the cell interior stays empty"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-frameset ()
   (let* ((root (closure.engine:layout-html
                 "<frameset id='fs' cols='100,*'><frame id='a'></frame><frame id='b'></frame><noframes id='nf'>fallback</noframes></frameset>"
@@ -5498,6 +5524,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-ruby-rtc)
   (test-ruby-rb)
   (test-ruby)
+  (test-table-border-attr)
   (test-frameset)
   (test-embed-paint)
   (test-embed-size)
