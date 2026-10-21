@@ -2897,6 +2897,77 @@ b</div>"
                 (~ (closure.engine:box-width cell) 42.65625d0 1d0)
                 (~ (closure.engine:box-height cell) 34d0 1d0)))))
 
+(defun test-table-frame ()
+  (let* ((html "<table id='above' frame='above' border='1'><tr><td id='a'>A</td></tr></table>
+                <table id='sides' frame='hsides'><tr><td id='h'>H</td></tr></table>
+                <table id='left' frame='lhs' border='1'><tr><td>L</td></tr></table>
+                <table id='empty' frame='void' border='1'><tr><td id='v'>V</td></tr></table>
+                <table id='vert' frame='vsides' border='2'><tr><td>S</td></tr></table>
+                <table id='box' frame='box'><tr><td>B</td></tr></table>
+                <table id='css' frame='above' style='border:2px solid #c00'><tr><td>C</td></tr></table>")
+         (path "/tmp/closure-engine-table-frame.png")
+         (root (closure.engine:render-html html :width 200 :height 200
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (above (closure.engine:find-box root "above"))
+         (a (closure.engine:find-box root "a"))
+         (sides (closure.engine:find-box root "sides"))
+         (h (closure.engine:find-box root "h"))
+         (left (closure.engine:find-box root "left"))
+         (empty (closure.engine:find-box root "empty"))
+         (v (closure.engine:find-box root "v"))
+         (vert (closure.engine:find-box root "vert"))
+         (box (closure.engine:find-box root "box"))
+         (css (closure.engine:find-box root "css")))
+    (check "frame tables" (and above a sides h left empty v vert box css))
+    (let ((st (closure.engine::box-style above))
+          (cell (closure.engine::box-style a)))
+      (check "frame=above draws only the top"
+             (and st (~ (closure.engine::computed-bt st) 1d0 0.01d0)
+                  (eq (closure.engine::computed-bts st) :solid)
+                  (~ (closure.engine::computed-br st) 0d0 0.01d0)
+                  (eq (closure.engine::computed-brs st) :hidden)
+                  cell (eq (closure.engine::computed-bts cell) :inset))))
+    (let ((st (closure.engine::box-style sides))
+          (cell (closure.engine::box-style h)))
+      (check "frame=hsides draws the top and bottom"
+             (and st (~ (closure.engine::computed-bt st) 1d0 0.01d0)
+                  (~ (closure.engine::computed-bb st) 1d0 0.01d0)
+                  (~ (closure.engine::computed-bl st) 0d0 0.01d0)
+                  cell (eq (closure.engine::computed-bts cell) :none))))
+    (let ((st (closure.engine::box-style left)))
+      (check "frame=lhs draws only the left"
+             (and st (~ (closure.engine::computed-bl st) 1d0 0.01d0)
+                  (eq (closure.engine::computed-bls st) :solid)
+                  (~ (closure.engine::computed-bt st) 0d0 0.01d0))))
+    (let ((st (closure.engine::box-style empty))
+          (cell (closure.engine::box-style v)))
+      (check "frame=void hides the frame and keeps the cell borders"
+             (and st (~ (closure.engine::computed-bt st) 0d0 0.01d0)
+                  (eq (closure.engine::computed-bts st) :hidden)
+                  cell (eq (closure.engine::computed-bts cell) :inset))))
+    (let ((st (closure.engine::box-style vert)))
+      (check "frame=vsides uses the border width"
+             (and st (~ (closure.engine::computed-bl st) 2d0 0.01d0)
+                  (~ (closure.engine::computed-br st) 2d0 0.01d0)
+                  (~ (closure.engine::computed-bt st) 0d0 0.01d0))))
+    (let ((st (closure.engine::box-style box)))
+      (check "frame=box draws every side"
+             (and st (~ (closure.engine::computed-bt st) 1d0 0.01d0)
+                  (~ (closure.engine::computed-bl st) 1d0 0.01d0)
+                  (eq (closure.engine::computed-bts st) :solid))))
+    (let ((st (closure.engine::box-style css)))
+      (check "an author border wins over frame"
+             (and st (~ (closure.engine::computed-bt st) 2d0 0.01d0)
+                  (~ (closure.engine::computed-br st) 2d0 0.01d0)
+                  (> (first (closure.engine::computed-btc st)) 0.7d0))))
+    (let ((x (round (+ (closure.engine:box-x above) 2d0)))
+          (y (round (closure.engine:box-y above))))
+      (multiple-value-bind (r g b) (png-rgb path x y)
+        (check "the top frame is painted" (and (< (abs (- r 128)) 40)
+                                               (< (abs (- g 128)) 40)
+                                               (< (abs (- b 128)) 40)))))))
+
 (defun test-table-rules ()
   (let* ((html "<table id='rows' rules='rows' border='1'>
                   <tr><td id='a'>A</td><td id='b'>B</td></tr>
@@ -5752,6 +5823,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-align-attr)
   (test-bgcolor)
   (test-table-cell-attrs)
+  (test-table-frame)
   (test-table-rules)
   (test-table-border-attr)
   (test-frameset)

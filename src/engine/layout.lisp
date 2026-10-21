@@ -2272,10 +2272,47 @@ An author border is left alone."
                         (computed-bbc st) gray
                         (computed-blc st) gray))))))))))
 
+(defun apply-table-frame (el)
+  "frame chooses which outer sides Chromium draws. The border attribute
+supplies the width, defaulting to 1px. An author border is left alone."
+  (let* ((raw (and (dom-element-p el) (dom-attr el "frame")))
+         (value (string-downcase (string-trim '(#\space #\newline #\tab #\return) (or raw ""))))
+         (style (dom-element-style el))
+         (known (member value '("void" "above" "below" "hsides" "lhs" "rhs" "vsides" "box" "border")
+                        :test #'string=))
+         (sides (cond ((string= value "above") '(:top))
+                      ((string= value "below") '(:bottom))
+                      ((string= value "hsides") '(:top :bottom))
+                      ((string= value "lhs") '(:left))
+                      ((string= value "rhs") '(:right))
+                      ((string= value "vsides") '(:left :right))
+                      ((or (string= value "box") (string= value "border"))
+                       '(:top :right :bottom :left))
+                      (t nil))))
+    (when (and style known (member (computed-bts style) '(:none :outset)))
+      (let* ((braw (string-trim '(#\space #\newline #\tab #\return) (or (dom-attr el "border") "")))
+             (px (if (zerop (length braw))
+                     1d0
+                     (float (or (ignore-errors (parse-integer braw :junk-allowed t)) 0) 1d0)))
+             (gray (color-bytes 128 128 128)))
+        (flet ((side (name)
+                 (if (member name sides) (values px :solid) (values 0d0 :hidden))))
+          (multiple-value-bind (tw ts) (side :top)
+            (multiple-value-bind (rw rs) (side :right)
+              (multiple-value-bind (bw bs) (side :bottom)
+                (multiple-value-bind (lw ls) (side :left)
+                  (setf (computed-bt style) tw (computed-bts style) ts
+                        (computed-br style) rw (computed-brs style) rs
+                        (computed-bb style) bw (computed-bbs style) bs
+                        (computed-bl style) lw (computed-bls style) ls
+                        (computed-btc style) gray (computed-brc style) gray
+                        (computed-bbc style) gray (computed-blc style) gray))))))))))
+
 (defun layout-table (el x y avail-w avail-h containing)
   (declare (ignore containing))
   (apply-table-border-attr el)
   (apply-table-rules el)
+  (apply-table-frame el)
   (apply-table-cell-attrs el)
   (let* ((style (dom-element-style el))
          (box (make-element-box el :table style))
