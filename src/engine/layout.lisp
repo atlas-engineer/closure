@@ -2901,6 +2901,64 @@ The remaining columns share what is left of the table."
             (setf (aref cols i) share)))))
     cols))
 
+(defun specified-column-widths (el ncols inner space-x gap)
+  "Column widths for a table with a set width. Percentage and pixel col
+widths are kept. Columns without one share what remains."
+  (let* ((cols (make-array ncols :initial-element nil))
+         (kinds (make-array ncols :initial-element nil))
+         (spacing (if (> space-x 0d0)
+                      (* space-x (1+ ncols))
+                      (* gap (max 0 (1- ncols)))))
+         (room (max 0d0 (- inner spacing)))
+         (any nil)
+         (col-i 0))
+    (dolist (spec (table-column-specs el))
+      (destructuring-bind (node span group) spec
+        (declare (ignore group))
+        (when (string-equal (dom-element-tag node) "col")
+          (let* ((st (dom-element-style node))
+                 (raw (and st (computed-width st)))
+                 (px (and st (definite-length raw room))))
+            (when (numberp px)
+              (setf any t)
+              (let ((kind (if (and (consp raw) (eq (car raw) :%)) :percent :pixel)))
+                (loop for i from 0 below span
+                      for col = (+ col-i i)
+                      when (< col ncols)
+                      do (setf (aref cols col) px
+                               (aref kinds col) kind))))))
+        (incf col-i span)))
+    (unless any
+      (return-from specified-column-widths
+        (make-array ncols :initial-element (max 1d0 (/ room (max 1 ncols))))))
+    (let ((left room))
+      (dotimes (i ncols)
+        (when (eq (aref kinds i) :percent)
+          (let ((w (min (aref cols i) left)))
+            (setf (aref cols i) w)
+            (decf left w))))
+      (let ((pix (loop for i from 0 below ncols
+                       when (eq (aref kinds i) :pixel) collect i)))
+        (when pix
+          (let ((sum (reduce #'+ pix :key (lambda (i) (aref cols i)) :initial-value 0d0)))
+            (when (and (> sum left) (> sum 0d0))
+              (let ((scale (/ left sum)))
+                (dolist (i pix)
+                  (setf (aref cols i) (* (aref cols i) scale)))))
+            (dolist (i pix)
+              (decf left (aref cols i))))))
+      (let* ((free (loop for i from 0 below ncols unless (aref kinds i) collect i))
+             (bucket (or free
+                         (loop for i from 0 below ncols
+                               when (eq (aref kinds i) :pixel) collect i)
+                         (loop for i from 0 below ncols
+                               when (eq (aref kinds i) :percent) collect i))))
+        (when (and bucket (> left 0d0))
+          (let ((extra (/ left (length bucket))))
+            (dolist (i bucket)
+              (setf (aref cols i) (+ (or (aref cols i) 0d0) extra)))))))
+    cols))
+
 (defun layout-table (el x y avail-w avail-h containing)
   (declare (ignore containing))
   (apply-table-border-attr el)
@@ -2926,12 +2984,7 @@ The remaining columns share what is left of the table."
                          (fixed-layout
                           (fixed-column-widths el rows ncols cw space-x gap avail-w))
                          (specified
-                          (let* ((around (if (> space-x 0d0)
-                                             (* space-x (1+ ncols))
-                                             (* gap (max 0 (1- ncols)))))
-                                 (share (max 1d0 (/ (max 0d0 (- cw around))
-                                                    (max 1 ncols)))))
-                            (make-array ncols :initial-element share)))
+                          (specified-column-widths el ncols cw space-x gap))
                          (t (measure-table-columns rows ncols))))
                  (cap-el (table-caption el))
                  (cap-min (if (and cap-el (not specified))

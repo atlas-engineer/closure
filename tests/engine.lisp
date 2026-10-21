@@ -6363,6 +6363,30 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-col-percent ()
+  (let* ((root (closure.engine:layout-html
+                "<table width='100' cellspacing='0'><col width='25%'><col width='75%'><tr><td id='a'>A</td><td id='b'>B</td></tr></table>
+                 <table width='100' cellspacing='0'><col width='40'><col><tr><td id='c'>A</td><td id='d'>B</td></tr></table>
+                 <table width='100' cellspacing='0'><tr><td id='e'>A</td><td id='f'>B</td></tr></table>"
+                :width 200 :height 120
+                :stylesheet "body{margin:0} td{padding:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (d (closure.engine:find-box root "d"))
+         (e (closure.engine:find-box root "e"))
+         (f (closure.engine:find-box root "f")))
+    (check "percent column boxes" (and a b c d e f))
+    (check "percentage columns follow the table width"
+           (and (~ (closure.engine:box-width a) 25d0)
+                (~ (closure.engine:box-width b) 75d0)))
+    (check "a pixel column keeps its width and the rest is shared"
+           (and (~ (closure.engine:box-width c) 40d0)
+                (~ (closure.engine:box-width d) 60d0)))
+    (check "a table without column widths still splits evenly"
+           (and (~ (closure.engine:box-width e) 50d0)
+                (~ (closure.engine:box-width f) 50d0)))))
+
 (defun test-align-middle ()
   (let* ((root (closure.engine:layout-html
                 "<p id='m' align='middle' style='width:80px'>Hi</p>
@@ -8072,6 +8096,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-col-percent)
   (test-align-middle)
   (test-rowspan-zero)
   (test-marquee-spacing)
