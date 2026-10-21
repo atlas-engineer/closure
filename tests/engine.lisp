@@ -3172,6 +3172,23 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                   (< (abs (- g 118)) 16)
                   (< (abs (- b 118)) 16))))))
 
+(defun test-disclosure-marker ()
+  (let ((path "/tmp/closure-engine-disclosure.png"))
+    (closure.engine:render-html
+     "<details><summary>Summary</summary>Hidden</details>"
+     :width 200 :height 40
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 1 8)
+      (check "a closed summary triangle starts at the left"
+             (and (< r 20) (< g 20) (< b 20))))
+    (multiple-value-bind (r g b) (png-rgb path 7 8)
+      (check "the summary triangle reaches Chromium's tip"
+             (and (< r 40) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b) (png-rgb path 12 8)
+      (check "the summary triangle stops before the label"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
     (closure.engine:render-html
@@ -5411,6 +5428,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-password-paint)
   (test-image-input)
   (test-select-list)
+  (test-disclosure-marker)
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)
