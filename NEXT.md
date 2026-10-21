@@ -581,6 +581,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A sizes list picks the first source size whose media condition matches.
 - An iframe whose src is an image paints that image at the top left.
 - A frame src paints its image or document inside the frame.
+- A frame marginwidth and marginheight replace the body margin. An author margin still wins.
 
 ## Next
 

@@ -1672,7 +1672,24 @@ srcdoc wins over src. about:blank and a missing file stay empty."
         (when (and text (plusp (length text)))
           (values text abs))))))
 
-(defun paint-clipped-document (cr box html base)
+(defun frame-margin-px (raw)
+  "A non-negative frame margin, or NIL when the attribute is absent."
+  (let* ((s (string-trim '(#\space #\newline #\tab #\return) (or raw "")))
+         (n (and (plusp (length s))
+                 (ignore-errors (parse-integer s :junk-allowed t)))))
+    (and (integerp n) (>= n 0) n)))
+
+(defun frame-margin-style (el)
+  "CSS that replaces the body margin on the axes a frame sets.
+An author margin in the framed document still wins."
+  (let ((w (frame-margin-px (dom-attr el "marginwidth")))
+        (h (frame-margin-px (dom-attr el "marginheight"))))
+    (cond
+      ((and w h) (format nil "body{margin:~Dpx ~Dpx}" h w))
+      (w (format nil "body{margin-left:~Dpx;margin-right:~Dpx}" w w))
+      (h (format nil "body{margin-top:~Dpx;margin-bottom:~Dpx}" h h)))))
+
+(defun paint-clipped-document (cr box html base &optional stylesheet)
   "Lay HTML out in BOX's content box and paint it clipped there."
   (when (and (< *iframe-depth* 2)
              html (plusp (length html))
@@ -1689,7 +1706,8 @@ srcdoc wins over src. about:blank and a missing file stay empty."
                             (declare (special *navigation-enabled*))
                             (nth-value 0
                                        (layout-html html :width cw :height ch
-                                                    :base (or base *document-base*))))))
+                                                    :base (or base *document-base*)
+                                                    :stylesheet (or stylesheet ""))))))
               (when inner
                 (translate-box inner cx cy)
                 (cairo-save cr)
@@ -1757,7 +1775,8 @@ srcdoc wins over src. about:blank and a missing file stay empty."
                                       :fit :none :position '(:left :top))))
             (let ((text (fetch-css-text abs)))
               (when (and text (plusp (length text)))
-                (paint-clipped-document cr box text abs))))))))
+                (paint-clipped-document cr box text abs
+                                        (frame-margin-style (box-element box))))))))))
 
 (defun paint-box (cr box &optional (scroll-y 0d0))
   (when (and box (or (null (box-style box))

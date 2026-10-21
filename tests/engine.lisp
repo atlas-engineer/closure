@@ -1423,6 +1423,32 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-frame-margin ()
+  (let* ((doc "file:///home/jmercouris/Source/closure/screenshots/frame.html")
+         (author "/tmp/closure-engine-frame-margin.html")
+         (out "/tmp/closure-engine-frame-margin.png"))
+    (with-open-file (s author :direction :output :if-exists :supersede :if-does-not-exist :create)
+      (write-string "<body style=\"margin:30px\"><div style=\"width:10px;height:10px;background:red\"></div>" s))
+    (let* ((html (format nil "<frameset cols='100,100,100' border='0'><frame id='z' src='~A' marginwidth='0' marginheight='0'></frame><frame id='m' src='~A' marginwidth='20' marginheight='4'></frame><frame id='a' src='file://~A' marginwidth='20' marginheight='4'></frame></frameset>"
+                        doc doc author))
+           (root (closure.engine:render-html html :width 300 :height 80 :output out))
+           (zero (closure.engine:find-box root "z"))
+           (margin (closure.engine:find-box root "m"))
+           (own (closure.engine:find-box root "a")))
+      (labels ((red-p (box dx dy)
+                 (multiple-value-bind (r g b)
+                     (png-rgb out
+                              (round (+ (closure.engine:box-x box) dx))
+                              (round (+ (closure.engine:box-y box) dy)))
+                   (and (> r 180) (< g 40) (< b 40)))))
+        (check "margin frames" (and zero margin own))
+        (check "marginwidth 0 puts the document in the corner"
+               (red-p zero 1 1))
+        (check "marginwidth and marginheight inset the document"
+               (and (red-p margin 22 6) (not (red-p margin 2 2))))
+        (check "an author body margin wins over the frame margin"
+               (and (red-p own 32 32) (not (red-p own 22 6))))))))
+
 (defun test-frame-src ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (doc "file:///home/jmercouris/Source/closure/screenshots/frame.html")
@@ -7745,6 +7771,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-frame-margin)
   (test-frame-src)
   (test-iframe-image)
   (test-object-html)
