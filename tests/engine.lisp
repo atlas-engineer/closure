@@ -1041,6 +1041,29 @@
       (walk box))
     out))
 
+(defun test-dir-optgroup ()
+  (let* ((root (closure.engine:layout-html
+                "<dir id='d'><li id='i'>Item</li></dir>
+                 <select id='s'><optgroup label='Group'><option>Blue</option></optgroup></select>
+                 <p id='p' style='width:40px'>super<wbr>cali</p>
+                 <noscript id='n'>No script</noscript>"
+                :width 400 :height 160
+                :stylesheet "body{margin:0} dir{margin:0}"))
+         (dir (closure.engine:find-box root "d"))
+         (item (closure.engine:find-box root "i"))
+         (sel (closure.engine:find-box root "s"))
+         (para (closure.engine:find-box root "p"))
+         (noscript (closure.engine:find-box root "n")))
+    (check "directory and optgroup" (and dir item sel para (not noscript)))
+    (check "a directory indents its item by 40px"
+           (and dir item (~ (- (closure.engine:box-x item) (closure.engine:box-x dir)) 40d0)))
+    (check "a select grows to its group label"
+           (and sel (~ (closure.engine:box-width sel) 60.09d0 0.5d0)
+                (~ (closure.engine:box-height sel) 19d0)
+                (> (closure.engine:box-width sel) 55d0)))
+    (check "wbr wraps a narrow line into two"
+           (and para (~ (closure.engine:box-height para) 36d0)))))
+
 (defun test-tfoot-menu ()
   (let* ((root (closure.engine:layout-html
                 "<table id='t'><tfoot><tr><td id='f'>Foot</td></tr></tfoot><tbody><tr><td id='b'>Body</td></tr></tbody></table>
@@ -4488,6 +4511,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-size-lengths)
   (test-background-size-percent)
   (test-background-position-percent)
+  (test-dir-optgroup)
   (test-tfoot-menu)
   (test-slot-columns)
   (test-picture-map)

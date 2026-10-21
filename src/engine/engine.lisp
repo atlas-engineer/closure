@@ -16,7 +16,7 @@ script element after style and layout. Left unset until that engine exists.")
 
 (defparameter *ua-css*
   "html { display: block; }
-   head, script, style, title, meta, link, template, base, source, area { display: none; }
+   head, script, style, title, meta, link, template, base, source, area, noscript { display: none; }
    body { display: block; margin: 8px; }
    div, p, h1, h2, h3, h4, h5, h6, article, section, nav, aside, header, footer, main,
    figure, figcaption, details, summary, dialog, hgroup, menu, dir, center, hr,
@@ -30,12 +30,12 @@ script element after style and layout. Left unset until that engine exists.")
    h4 { font-size: 1em; margin-top: 1.33em; margin-bottom: 1.33em; }
    h5 { font-size: 0.83em; margin-top: 1.67em; margin-bottom: 1.67em; }
    h6 { font-size: 0.67em; margin-top: 2.33em; margin-bottom: 2.33em; }
-   p, ul, ol, menu, dl, blockquote, pre { margin-top: 1em; margin-bottom: 1em; }
-   ul, ol, menu { padding-left: 40px; }
+   p, ul, ol, menu, dir, dl, blockquote, pre { margin-top: 1em; margin-bottom: 1em; }
+   ul, ol, menu, dir { padding-left: 40px; }
    dd { margin-left: 40px; }
    blockquote { margin-left: 40px; margin-right: 40px; }
    figure { margin: 1em 40px; }
-   ul, menu { list-style-type: disc; }
+   ul, menu, dir { list-style-type: disc; }
    ol { list-style-type: decimal; }
    li { display: list-item; }
    span, a, b, i, em, strong, code, small, big, tt, nobr, wbr, label, mark, time, abbr, cite, dfn,

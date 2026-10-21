@@ -427,6 +427,8 @@ from the Lisp engine without calling Node or another browser engine.
 - A footer row is painted after the body even when it comes first in the
   source. A menu indents its item by 40px. A heading group holds its
   heading.
+- A directory list indents like a menu. A select grows to its longest
+  option or group label. wbr wraps a narrow line, and noscript is not shown.
 
 ## Next
 
