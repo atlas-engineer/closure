@@ -1041,6 +1041,29 @@
       (walk box))
     out))
 
+(defun test-form-metrics ()
+  (let* ((root (closure.engine:layout-html
+                "<button id='b'>OK</button><input id='n' value='Hi'><select id='s'><option selected>Blue</option></select><textarea id='t'>note</textarea>"
+                :width 800 :height 80
+                :stylesheet "body{margin:0}"))
+         (b (closure.engine:find-box root "b"))
+         (n (closure.engine:find-box root "n"))
+         (s (closure.engine:find-box root "s"))
+         (tt (closure.engine:find-box root "t")))
+    (check "form metric boxes" (and b n s tt))
+    (check "a button is about 35 by 21"
+           (and b (~ (closure.engine:box-width b) 35.27d0 0.15d0)
+                (~ (closure.engine:box-height b) 21d0)))
+    (check "a text input is 177 by 21"
+           (and n (~ (closure.engine:box-width n) 177d0)
+                (~ (closure.engine:box-height n) 21d0)))
+    (check "a select fits its label"
+           (and s (~ (closure.engine:box-width s) 49d0 0.6d0)
+                (~ (closure.engine:box-height s) 19d0)))
+    (check "a textarea is 181 by 40"
+           (and tt (~ (closure.engine:box-width tt) 181d0)
+                (~ (closure.engine:box-height tt) 40d0)))))
+
 (defun test-form-controls ()
   (let* ((html "<input id='n' value='old'>
                 <button id='b'>OK</button>
@@ -4334,6 +4357,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-size-lengths)
   (test-background-size-percent)
   (test-background-position-percent)
+  (test-form-metrics)
   (test-form-controls)
   (test-external-css)
   (test-lisp-script)

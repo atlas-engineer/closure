@@ -76,10 +76,11 @@ script element after style and layout. Left unset until that engine exists.")
    meter { display: inline-block; width: 80px; height: 16px; vertical-align: -0.2em; }
    hr { display: block; margin-top: 0.5em; margin-bottom: 0.5em; border: 1px inset #808080; }
    center { text-align: center; }
-   button, input, select, textarea { font-family: sans-serif; }
-   button { display: inline-block; background: #eee; border: 1px solid #888; padding: 2px 8px; }
-   input, select { background: #fff; border: 1px solid #888; padding: 1px 4px; width: 140px; height: 22px; }
-   textarea { background: #fff; border: 1px solid #888; padding: 2px 4px; width: 160px; height: 48px; }")
+   button, input, select, textarea { font-family: sans-serif; font-size: smaller; }
+   button { display: inline-block; background: #efefef; border: 2px outset #efefef; padding: 1px 6px; }
+   input { background: #fff; border: 2px inset #ccc; padding: 1px 2px; width: 169px; height: 15px; }
+   select { background: #efefef; border: 1px solid #767676; padding: 0; }
+   textarea { font-family: monospace; background: #fff; border: 1px solid #767676; padding: 2px; width: 175px; height: 34px; }")
 
 (defun collect-rules (sheets)
   (let ((rules nil)

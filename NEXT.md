@@ -413,8 +413,11 @@ from the Lisp engine without calling Node or another browser engine.
 - A ruby annotation is half size and sits above its base. A longer
   annotation overhangs by half its font size on each side, and the line
   grows to 26px.
+- A button is 35 by 21, a text field is 177 by 21, a select fits its
+  label at 49 by 19, and a textarea is 181 by 40.
 
 ## Next
 
-1. Form controls such as the button still use a different size from the
-   browser. The done condition is not met.
+1. The done condition is not met. Embedded elements such as iframe and
+   object, and the remaining text-level tags, are still missing from the
+   sample page.
