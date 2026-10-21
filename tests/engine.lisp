@@ -1198,7 +1198,12 @@
       (check "an iframe border is gray"
              (and (< (abs (- r 154)) 40)
                   (< (abs (- g 154)) 40)
-                  (< (abs (- b 154)) 40))))))
+                  (< (abs (- b 154)) 40))))
+    (multiple-value-bind (r g b) (png-rgb path 20 152)
+      (check "the iframe bottom edge is the light inset gray"
+             (and (< (abs (- r 238)) 20)
+                  (< (abs (- g 238)) 20)
+                  (< (abs (- b 238)) 20))))))
 
 (defun test-iframe-object ()
   (let* ((root (closure.engine:layout-html
