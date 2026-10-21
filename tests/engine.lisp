@@ -5424,6 +5424,31 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-br-clear ()
+  (labels ((at (html id)
+             (closure.engine:find-box
+              (closure.engine:layout-html html :width 200 :stylesheet "body{margin:0}")
+              id)))
+    (let ((cleared (at "<div style='float:left;width:40px;height:40px'></div>before<br clear='left'><span id='a'>after</span>" "a"))
+          (beside (at "<div style='float:left;width:40px;height:40px'></div>before<br><span id='b'>beside</span>" "b"))
+          (right (at "<div style='float:right;width:40px;height:40px'></div>side<br clear='right'><span id='c'>below</span>" "c"))
+          (authored (at "<div style='float:left;width:40px;height:40px'></div>z<br clear='left' style='clear:none'><span id='d'>stay</span>" "d")))
+      (check "cleared lines" (and cleared beside right authored))
+      (check "br clear=left starts the next line below the float"
+             (and cleared
+                  (>= (closure.engine:box-y cleared) 38d0)
+                  (< (closure.engine:box-x cleared) 8d0)))
+      (check "a plain br stays beside the float"
+             (and beside
+                  (< (closure.engine:box-y beside) 20d0)
+                  (> (closure.engine:box-x beside) 30d0)))
+      (check "br clear=right starts below a right float"
+             (and right (>= (closure.engine:box-y right) 38d0)))
+      (check "an author clear wins over the br attribute"
+             (and authored
+                  (< (closure.engine:box-y authored) 20d0)
+                  (> (closure.engine:box-x authored) 30d0))))))
+
 (defun test-list-type-attr ()
   (let* ((html "<ol type='a' start='3'><li id='a'>One</li><li id='b'>Two</li></ol>
                 <ol type='I'><li id='r' value='4'>Four</li><li id='s'>Five</li></ol>
@@ -5883,6 +5908,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-br-clear)
   (test-list-type-attr)
   (test-nowrap-attr)
   (test-hr-size)

@@ -1928,6 +1928,19 @@
                                  :origin :author :order 0)))
         (dolist (pair (expand-declaration :white-space "nowrap"))
           (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))
+    ;; br clear loses to an author clear. HTML all is CSS both.
+    (when (and (not pseudo) (string-equal (dom-element-tag element) "br"))
+      (let* ((raw (string-downcase (string-trim '(#\space #\newline #\tab #\return)
+                                                (or (dom-attr element "clear") ""))))
+             (mapped (cond ((string= raw "left") "left")
+                           ((string= raw "right") "right")
+                           ((or (string= raw "all") (string= raw "both")) "both")
+                           ((string= raw "none") "none"))))
+        (when mapped
+          (let ((decl (make-css-decl :property :clear :raw mapped
+                                     :origin :author :order 0)))
+            (dolist (pair (expand-declaration :clear mapped))
+              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
     ;; ol/ul/li type loses to an author list-style-type.
     (when (and (not pseudo)
                (member (dom-element-tag element) '("ol" "ul" "li") :test #'string-equal))

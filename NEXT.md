@@ -521,6 +521,7 @@ from the Lisp engine without calling Node or another browser engine.
 - hr size sets the rule's height, and noshade paints it as a solid gray bar.
 - nowrap keeps a cell on one line and widens the table. An author white-space wins.
 - type on a list or item sets the marker: letters, roman numerals, or a square. An author list style wins.
+- br clear drops the next line below the float. An author clear wins.
 
 ## Next
 
