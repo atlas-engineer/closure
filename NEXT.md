@@ -591,6 +591,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A column background image paints behind its cells. A cell background still covers it.
 - A row group bgcolor or background paints behind its rows. A cell background still covers it.
 - hspace and vspace on a marquee set both sides. An author margin on one side still wins.
+- rowspan zero covers the rest of the row group and stops at the next group.
 
 ## Next
 

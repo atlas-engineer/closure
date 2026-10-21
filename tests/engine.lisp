@@ -6363,6 +6363,28 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-rowspan-zero ()
+  (let* ((root (closure.engine:layout-html
+                "<table cellspacing='0'><tbody><tr><td id='d' rowspan='0'>Tall</td><td id='r'>R</td></tr><tr><td id='e'>E</td></tr></tbody><tfoot><tr><td id='f'>F</td><td>G</td></tr></tfoot></table>
+                 <table cellspacing='0'><tr><td id='z' rowspan='2'>Two</td><td>R</td></tr><tr><td id='n'>N</td></tr></table>"
+                :width 300 :height 160
+                :stylesheet "body{margin:0} td{padding:0}"))
+         (d (closure.engine:find-box root "d"))
+         (e (closure.engine:find-box root "e"))
+         (f (closure.engine:find-box root "f"))
+         (z (closure.engine:find-box root "z"))
+         (n (closure.engine:find-box root "n")))
+    (check "rowspan boxes" (and d e f z n))
+    (check "rowspan zero covers the rest of the group"
+           (and d e (> (closure.engine:box-height d) (+ (closure.engine:box-height e) 4))
+                (> (closure.engine:box-x e) (+ (closure.engine:box-x d) 4))))
+    (check "rowspan zero stops at the next group"
+           (and d f (~ (closure.engine:box-x f) (closure.engine:box-x d) 1d0)
+                (>= (closure.engine:box-y f)
+                    (+ (closure.engine:box-y d) (closure.engine:box-height d) -1))))
+    (check "an explicit rowspan of two still covers two rows"
+           (and z n (> (closure.engine:box-height z) (+ (closure.engine:box-height n) 4))))))
+
 (defun test-marquee-spacing ()
   (let* ((root (closure.engine:layout-html
                 "<marquee id='h' hspace='12' width='80'>Hi</marquee>
@@ -8022,6 +8044,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-rowspan-zero)
   (test-marquee-spacing)
   (test-row-group-background)
   (test-col-background)

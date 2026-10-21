@@ -2304,10 +2304,28 @@ counts down from the length or from start, and li value resets the sequence."
          (n (and raw (ignore-errors (parse-integer raw :junk-allowed t)))))
     (max 1 (or n 1))))
 
-(defun cell-rowspan (cell)
+(defun group-rows (row)
+  "The tr elements in ROW's row group, in source order."
+  (let ((parent (and (dom-element-p row) (dom-node-parent row))))
+    (if (not (dom-element-p parent))
+        (list row)
+        (or (remove-if-not (lambda (c)
+                             (and (dom-element-p c)
+                                  (string-equal (dom-element-tag c) "tr")))
+                           (dom-node-children parent))
+            (list row)))))
+
+(defun cell-rowspan (cell &optional row)
+  "ROWSPAN. Zero means the rest of the row group, including this row."
   (let* ((raw (and (dom-element-p cell) (dom-attr cell "rowspan")))
          (n (and raw (ignore-errors (parse-integer raw :junk-allowed t)))))
-    (max 1 (or n 1))))
+    (cond
+      ((and n (zerop n))
+       (max 1 (or (loop for tail on (and row (group-rows row))
+                        when (eq (car tail) row)
+                          return (length tail))
+                  1)))
+      (t (max 1 (or n 1))))))
 
 (defun cell-at-column (row index)
   "The cell in ROW that covers column INDEX."
@@ -2421,7 +2439,7 @@ than the columns it covers shares the extra across those columns."
                 do (incf col))
           (when (< col ncols)
             (let* ((span (min (cell-colspan cell) (max 1 (- ncols col))))
-                   (rspan (cell-rowspan cell))
+                   (rspan (cell-rowspan cell row))
                    (w (cell-max-content-width cell)))
               (if (= span 1)
                   (setf (aref cols col) (max (aref cols col) w))
@@ -3023,7 +3041,7 @@ The remaining columns share what is left of the table."
                                                              (if (> space-x 0d0) space-x gap)))))
                            (incf col))
                   (let* ((span (min (cell-colspan cell) (max 1 (- ncols col))))
-                         (rspan (cell-rowspan cell))
+                         (rspan (cell-rowspan cell row))
                          (slot (column-span-width cols col span gap))
                          (cb (layout-element cell xx yy
                                              (max (if (and (< col ncols) (aref col-collapsed col))
