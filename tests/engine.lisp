@@ -1168,6 +1168,19 @@
                 (~ (closure.engine:box-x open)
                    (/ (- 400d0 (closure.engine:box-width open)) 2d0)
                    0.5d0)))
+    (let ((word nil))
+      (labels ((walk (b)
+                 (when b
+                   (when (and (eq (closure.engine::box-kind b) :text)
+                              (string= (closure.engine::box-text b) "Dialog"))
+                     (setf word b))
+                   (dolist (c (closure.engine::box-children b)) (walk c)))))
+        (walk root))
+      (check "the dialog text moves into the centered box"
+             (and open word
+                  (>= (closure.engine:box-x word) (closure.engine:box-x open))
+                  (<= (+ (closure.engine:box-x word) (closure.engine:box-width word))
+                      (+ (closure.engine:box-x open) (closure.engine:box-width open))))))
     (check "search is a full-width block"
            (and search (~ (closure.engine:box-width search) 400d0)
                 (~ (closure.engine:box-height search) 18d0)))
