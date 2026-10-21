@@ -96,6 +96,7 @@ script element after style and layout. Left unset until that engine exists.")
    input[type=submit], input[type=reset], input[type=button] {
      background: #efefef; border: 2px outset #efefef; padding: 1px 6px; width: auto; height: auto; }
    input[type=file] { width: 253px; height: 21px; padding: 0; border: none; }
+   input[type=image] { border: none; padding: 0; width: auto; height: auto; background: transparent; }
    input[type=range] { width: 129px; height: 16px; padding: 0; border: none; margin-left: 2px; margin-right: 2px; }
    input[type=checkbox] { margin: 3px 3px 3px 4px; }
    input[type=radio] { margin: 3px 3px 0px 5px; }

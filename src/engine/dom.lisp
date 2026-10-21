@@ -228,7 +228,7 @@
       ((string= tag "input")
        (let ((type (string-downcase (or (dom-attr el "type") "text"))))
          (cond
-           ((member type '("color" "range" "file") :test #'string=) "")
+           ((member type '("color" "range" "file" "image") :test #'string=) "")
            ;; A password's discs are painted separately. A placeholder stays text.
            ((string= type "password")
             (let ((value (dom-attr el "value")))

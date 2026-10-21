@@ -3128,6 +3128,25 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
       (check "an empty password stays blank"
              (and (> r 240) (> g 240) (> b 240))))))
 
+(defun test-image-input ()
+  (let* ((path "/tmp/closure-engine-image-input.png")
+         (root (closure.engine:render-html
+                "<input id='i' type='image' src='file:///home/jmercouris/Source/closure/screenshots/square.png' alt='go'>"
+                :width 80 :height 40
+                :stylesheet "body{margin:0}"
+                :output path))
+         (box (closure.engine:find-box root "i")))
+    (check "an image input is the image size"
+           (and box
+                (~ (closure.engine:box-width box) 20d0 1d0)
+                (~ (closure.engine:box-height box) 20d0 1d0)))
+    (multiple-value-bind (r g b) (png-rgb path 4 4)
+      (check "an image input paints its image"
+             (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b) (png-rgb path 30 4)
+      (check "an image input does not draw a text field"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
     (closure.engine:render-html
@@ -5365,6 +5384,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-button-border)
   (test-textarea-grip)
   (test-password-paint)
+  (test-image-input)
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)

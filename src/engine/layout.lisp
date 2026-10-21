@@ -492,7 +492,9 @@ A replaced image does not stretch to the container the way an ordinary block doe
                           (when first (translate-box first dx 0d0))))))
                   (when (string= (dom-element-tag el) "fieldset")
                     (place-fieldset-legend box))
-                  (when (member (dom-element-tag el) '("img" "embed") :test #'string=)
+                  (when (or (member (dom-element-tag el) '("img" "embed") :test #'string=)
+                            (and (string= (dom-element-tag el) "input")
+                                 (string-equal (or (dom-attr el "type") "") "image")))
                     (apply-image-size box el avail-w avail-h))
                   (when (string= (dom-element-tag el) "svg")
                     (apply-svg-size box el avail-w avail-h))
@@ -586,7 +588,7 @@ A replaced image does not stretch to the container the way an ordinary block doe
                           (setf (box-baseline box)
                                 (cond
                                   ;; A slider, checkbox, or radio sits on the baseline.
-                                  ((member type '("range" "checkbox" "radio") :test #'string=)
+                                  ((member type '("range" "checkbox" "radio" "image") :test #'string=)
                                    (box-h box))
                                   ;; A color input keeps the text field's 6px under the baseline.
                                   ((string= type "color")
