@@ -1620,15 +1620,29 @@ but paint a 1px gray rounded edge around the background."
 
 (defvar *iframe-depth* 0)
 
+(defun iframe-source (el)
+  "HTML for an iframe, and the base URL it resolves against.
+srcdoc wins over src. about:blank and a missing file stay empty."
+  (let ((srcdoc (string-trim '(#\space #\newline #\tab #\return)
+                             (or (dom-attr el "srcdoc") ""))))
+    (if (plusp (length srcdoc))
+        (values srcdoc *document-base*)
+        (let* ((src (string-trim '(#\space #\newline #\tab #\return)
+                                 (or (dom-attr el "src") "")))
+               (abs (and (plusp (length src)) (resolve-url src *document-base*))))
+          (when (and abs (member (url-scheme abs) '("http" "https" "file") :test #'string=))
+            (let ((text (fetch-css-text abs)))
+              (when (and text (plusp (length text)))
+                (values text abs))))))))
+
 (defun paint-iframe-srcdoc (cr box)
-  "Paint an iframe srcdoc document inside the content box, clipped there."
+  "Paint an iframe srcdoc or src document inside the content box, clipped there."
   (when (and (< *iframe-depth* 2)
              (box-element box)
              (string= (or (box-tag box) "") "iframe")
              (box-style box))
-    (let ((srcdoc (string-trim '(#\space #\newline #\tab #\return)
-                               (or (dom-attr (box-element box) "srcdoc") ""))))
-      (when (plusp (length srcdoc))
+    (multiple-value-bind (html base) (iframe-source (box-element box))
+      (when (and html (plusp (length html)))
         (multiple-value-bind (bt br bb bl) (border4 (box-style box))
           (multiple-value-bind (pt pr pb pl) (pad4 (box-style box) (box-w box))
             (let ((cw (max 0d0 (- (box-w box) bl br pl pr)))
@@ -1640,8 +1654,8 @@ but paint a 1px gray rounded edge around the background."
                                     (*navigation-enabled* nil))
                                 (declare (special *navigation-enabled*))
                                 (nth-value 0
-                                           (layout-html srcdoc :width cw :height ch
-                                                        :base *document-base*)))))
+                                           (layout-html html :width cw :height ch
+                                                        :base (or base *document-base*))))))
                   (when inner
                     (translate-box inner cx cy)
                     (cairo-save cr)

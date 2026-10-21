@@ -1423,6 +1423,38 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-iframe-src ()
+  (let* ((dir (uiop:ensure-directory-pathname #P"/tmp/closure-cmp/"))
+         (frame (merge-pathnames "frame-src.html" dir))
+         (blue (merge-pathnames "frame-blue.html" dir))
+         (out "/tmp/closure-engine-iframe-src.png"))
+    (ensure-directories-exist dir)
+    (with-open-file (s frame :direction :output :if-exists :supersede :if-does-not-exist :create)
+      (write-string "<div style=\"width:40px;height:20px;background:red\"></div>" s))
+    (with-open-file (s blue :direction :output :if-exists :supersede :if-does-not-exist :create)
+      (write-string "<div style=\"width:40px;height:20px;background:blue\"></div>" s))
+    (let* ((html (format nil "<iframe id='f' src='frame-src.html'></iframe>
+                            <iframe id='d' src='frame-blue.html' srcdoc='<div style=&quot;width:40px;height:20px;background:red&quot;></div>'></iframe>"
+                         ))
+           (root (closure.engine:render-html html :width 700 :height 200 :output out
+                                            :stylesheet "body{margin:0}"
+                                            :base "file:///tmp/closure-cmp/page.html"))
+           (box (closure.engine:find-box root "f"))
+           (doc (closure.engine:find-box root "d")))
+      (check "src iframe" (and box doc))
+      (multiple-value-bind (r g b)
+          (png-rgb out
+                   (round (+ (closure.engine:box-x box) 20))
+                   (round (+ (closure.engine:box-y box) 20)))
+        (check "iframe src paints the document"
+               (and (> r 180) (< g 40) (< b 40))))
+      (multiple-value-bind (r g b)
+          (png-rgb out
+                   (round (+ (closure.engine:box-x doc) 20))
+                   (round (+ (closure.engine:box-y doc) 20)))
+        (check "srcdoc wins over src"
+               (and (> r 180) (< g 40) (< b 40)))))))
+
 (defun test-iframe-srcdoc ()
   (let* ((out "/tmp/closure-engine-srcdoc.png")
          (html "<iframe id='f' srcdoc='<div style=&quot;width:40px;height:20px;background:red&quot;></div>'></iframe>")
@@ -7623,6 +7655,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-iframe-src)
   (test-iframe-srcdoc)
   (test-srcset-density)
   (test-srcset-width)
