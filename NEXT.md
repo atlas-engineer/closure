@@ -498,6 +498,7 @@ from the Lisp engine without calling Node or another browser engine.
 - Placeholder hyphens are solid dark bars, the dash Chromium paints.
 - Those dashes sit on Chromium's row for both the time field and the date line.
 - Each placeholder dash is five pixels wide, the bar Chromium paints.
+- A button's background stays on the button. The anonymous line behind the label no longer paints that gray across the rest of the line.
 
 ## Next
 

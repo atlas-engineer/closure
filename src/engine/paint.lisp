@@ -1341,7 +1341,14 @@ but paint a 1px gray rounded edge around the background."
           (unless skip-chrome
             (paint-box-shadow cr box)
             (let ((bg (background-style box)))
-              (when (and bg (> (box-w box) 0d0) (> (box-h box) 0d0))
+              ;; An anonymous line stretches to the available width and
+              ;; shares its parent's style. The parent already paints that
+              ;; background on its own box, so filling the line again would
+              ;; smear a shrink-wrapped button across the rest of the line.
+              ;; Text boxes still fill, which is how a mark colors its glyphs.
+              (when (and bg
+                         (or (box-element box) (eq (box-kind box) :text))
+                         (> (box-w box) 0d0) (> (box-h box) 0d0))
                 (multiple-value-bind (x y w h) (background-clip-rect box)
                   (when (and (> w 0d0) (> h 0d0))
                     (set-color cr (color-or (computed-background bg) bg))

@@ -3067,7 +3067,15 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                   (< (abs (- b 118)) 16))))
     (multiple-value-bind (r g b) (png-rgb path 0 0)
       (check "the button corner is rounded"
-             (and (> r 200) (> g 200) (> b 200))))))
+             (and (> r 200) (> g 200) (> b 200))))
+    (closure.engine:render-html
+     "<button>OK</button>"
+     :width 200 :height 30
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 120 8)
+      (check "the button background stops at the button"
+             (and (> r 250) (> g 250) (> b 250))))))
 
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
