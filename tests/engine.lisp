@@ -5424,6 +5424,56 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-hr-size ()
+  (let* ((html "<hr id='s' size='8'>
+                <hr id='n' noshade size='6' width='80'>
+                <hr id='one' size='1'>
+                <hr id='css' size='10' style='height:4px'>")
+         (path "/tmp/closure-engine-hr-size.png")
+         (root (closure.engine:render-html html :width 200 :height 120
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (sized (closure.engine:find-box root "s"))
+         (flat (closure.engine:find-box root "n"))
+         (one (closure.engine:find-box root "one"))
+         (css (closure.engine:find-box root "css")))
+    (check "sized rules" (and sized flat one css))
+    (check "hr size is the border box"
+           (and sized (~ (closure.engine:box-height sized) 8d0)))
+    (let ((st (closure.engine::box-style flat)))
+      (check "noshade is a solid gray bar of the given size"
+             (and flat st
+                  (~ (closure.engine:box-height flat) 6d0)
+                  (~ (closure.engine:box-width flat) 82d0)
+                  (eq (closure.engine::computed-bts st) :solid)
+                  st (consp (closure.engine::computed-background st))
+                  (> (first (closure.engine::computed-background st)) 0.4d0))))
+    (let ((st (closure.engine::box-style one)))
+      (check "hr size=1 keeps a single edge"
+             (and one st
+                  (~ (closure.engine:box-height one) 1d0)
+                  (~ (closure.engine::computed-bb st) 0d0 0.01d0))))
+    (check "an author height wins over hr size"
+           (and css (~ (closure.engine:box-height css) 6d0)))
+    (let ((x (round (+ (closure.engine:box-x sized) 8d0)))
+          (top (round (closure.engine:box-y sized)))
+          (mid (round (+ (closure.engine:box-y sized) 4d0)))
+          (bot (round (+ (closure.engine:box-y sized) (closure.engine:box-height sized) -1d0))))
+      (multiple-value-bind (r g b) (png-rgb path x top)
+        (check "a sized rule's top edge is the dark gray"
+               (and (< (abs (- r 154)) 20) (< (abs (- g 154)) 20) (< (abs (- b 154)) 20))))
+      (multiple-value-bind (r g b) (png-rgb path x mid)
+        (check "a sized rule leaves the middle empty"
+               (and (> r 240) (> g 240) (> b 240))))
+      (multiple-value-bind (r g b) (png-rgb path x bot)
+        (check "a sized rule's bottom edge is the light gray"
+               (and (< (abs (- r 238)) 20) (< (abs (- g 238)) 20) (< (abs (- b 238)) 20)))))
+    (let ((x (round (+ (closure.engine:box-x flat) 8d0)))
+          (y (round (+ (closure.engine:box-y flat) 3d0))))
+      (multiple-value-bind (r g b) (png-rgb path x y)
+        (check "noshade fills the bar gray"
+               (and (< (abs (- r 128)) 30) (< (abs (- g 128)) 30) (< (abs (- b 128)) 30)))))))
+
 (defun test-svg-text ()
   (let ((path "/tmp/closure-engine-svg-text.png"))
     (closure.engine:render-html
@@ -5780,6 +5830,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-hr-size)
   (test-q)
   (test-blockquote)
   (test-nested-q)

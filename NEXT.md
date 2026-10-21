@@ -518,6 +518,7 @@ from the Lisp engine without calling Node or another browser engine.
 - rules collapses a table and draws only the row, column, or group lines Chromium draws.
 - frame draws only the outer sides Chromium draws, at the border attribute's width.
 - bordercolor paints the table and its cells in that color. An author border color wins.
+- hr size sets the rule's height, and noshade paints it as a solid gray bar.
 
 ## Next
 

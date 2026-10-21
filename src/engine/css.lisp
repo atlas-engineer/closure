@@ -1905,6 +1905,19 @@
                             :border-bottom-color :border-left-color))
               (dolist (pair (expand-declaration prop raw))
                 (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
+    ;; hr size is the border-box height. The two 1px borders come out of it.
+    (when (and (not pseudo) (string-equal (dom-element-tag element) "hr"))
+      (let* ((raw (string-trim '(#\space #\newline #\tab #\return)
+                               (or (dom-attr element "size") "")))
+             (n (and (plusp (length raw))
+                     (ignore-errors (parse-integer raw :junk-allowed t)))))
+        (when (and n (>= n 0))
+          (let* ((px (max 0 (- n 2)))
+                 (decl (make-css-decl :property :height
+                                      :raw (format nil "~Dpx" px)
+                                      :origin :author :order 0)))
+            (dolist (pair (expand-declaration :height (css-decl-raw decl)))
+              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
     found))
 
 (defun html-dimension-raw (raw)
@@ -2226,6 +2239,26 @@ the smaller fixed table."
                  '(10d0 12d0 13d0 16d0 20d0 26d0 39d0)
                  '(10d0 13d0 16d0 18d0 24d0 32d0 48d0)))))))
 
+(defun apply-hr-presentational (element style)
+  "noshade flattens the rule to a solid gray bar. size=1 keeps only the top edge."
+  (when (and style (string-equal (dom-element-tag element) "hr"))
+    (let ((noshade (dom-attr element "noshade"))
+          (raw (string-trim '(#\space #\newline #\tab #\return)
+                            (or (dom-attr element "size") ""))))
+      (when noshade
+        (when (eq (computed-bts style) :inset)
+          (setf (computed-bts style) :solid (computed-brs style) :solid
+                (computed-bbs style) :solid (computed-bls style) :solid))
+        (unless (computed-background style)
+          (setf (computed-background style) (color-bytes 128 128 128))))
+      (let ((n (and (plusp (length raw))
+                    (ignore-errors (parse-integer raw :junk-allowed t)))))
+        (when (and n (> n 0) (< n 2)
+                   (= (computed-bb style) 1d0)
+                   (or (eq (computed-bbs style) :inset)
+                       (and noshade (eq (computed-bbs style) :solid))))
+          (setf (computed-bb style) 0d0))))))
+
 (defun apply-valign-presentational (element style specified)
   "valign on a cell, or on its row, sets vertical-align. An author value wins."
   (when (and (not (gethash :vertical-align specified))
@@ -2326,7 +2359,8 @@ the smaller fixed table."
           (apply-font-presentational element style best)
           (apply-bgcolor-presentational element style best)
           (apply-align-presentational element style best)
-          (apply-valign-presentational element style best))))
+          (apply-valign-presentational element style best)
+          (apply-hr-presentational element style))))
     (if pseudo
         (setf (dom-element-style element) previous)
         (setf (dom-element-style element) style))
