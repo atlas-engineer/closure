@@ -225,12 +225,12 @@ A replaced image does not stretch to the container the way an ordinary block doe
 (defun select-choice-width (el style)
   "Widest option or optgroup label, which is what sets a select's width."
   (let ((best 0d0))
-    (labels ((consider (text)
+    (labels ((consider (text &optional (weight (computed-font-weight style)))
                (when (and text (plusp (length text)))
                  (setf best (max best (text-advance text
                                                     (computed-font-size style)
                                                     (computed-font-family style)
-                                                    (computed-font-weight style)
+                                                    weight
                                                     (computed-font-style style))))))
              (walk (node)
                (dolist (c (dom-node-children node))
@@ -239,7 +239,8 @@ A replaced image does not stretch to the container the way an ordinary block doe
                      ((string= (dom-element-tag c) "option")
                       (consider (dom-text-content c)))
                      ((string= (dom-element-tag c) "optgroup")
-                      (consider (dom-attr c "label"))
+                      ;; Group labels are bold, which is what widens the control.
+                      (consider (dom-attr c "label") :bold)
                       (walk c))
                      (t (walk c)))))))
       (consider (control-label el))

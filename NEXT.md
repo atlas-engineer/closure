@@ -429,6 +429,8 @@ from the Lisp engine without calling Node or another browser engine.
   heading.
 - A directory list indents like a menu. A select grows to its longest
   option or group label. wbr wraps a narrow line, and noscript is not shown.
+- An optgroup label is bold, so a select is as wide as that label. The
+  sample control is 65px wide and 19px tall.
 
 ## Next
 

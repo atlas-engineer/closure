@@ -1057,8 +1057,8 @@
     (check "directory and optgroup" (and dir item sel para (not noscript)))
     (check "a directory indents its item by 40px"
            (and dir item (~ (- (closure.engine:box-x item) (closure.engine:box-x dir)) 40d0)))
-    (check "a select grows to its group label"
-           (and sel (~ (closure.engine:box-width sel) 60.09d0 0.5d0)
+    (check "a select grows to its bold group label"
+           (and sel (~ (closure.engine:box-width sel) 65.22d0 0.5d0)
                 (~ (closure.engine:box-height sel) 19d0)
                 (> (closure.engine:box-width sel) 55d0)))
     (check "wbr wraps a narrow line into two"
