@@ -4547,6 +4547,36 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                        (/ (* 3d0 16d0) 18d0)
                        0.2d0)))))))
 
+(defun test-math-script ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><math><msup><mi id='x'>x</mi><mn id='e'>2</mn></msup></math>
+                 <math><msub><mi id='h'>H</mi><mn id='n'>2</mn></msub></math></p>"
+                :width 300 :height 80
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (base (closure.engine:find-box root "x"))
+         (exp (closure.engine:find-box root "e"))
+         (h (closure.engine:find-box root "h"))
+         (sub (closure.engine:find-box root "n")))
+    (check "script boxes" (and base exp h sub))
+    (check "the superscript is the smaller script size"
+           (and exp (~ (closure.engine::computed-font-size
+                        (closure.engine::box-style exp))
+                       (* 16d0 0.71d0) 0.2d0)))
+    (check "the superscript sits above the base"
+           (and base exp
+                (~ (- (closure.engine:box-y base) (closure.engine:box-y exp))
+                   (* 16d0 0.4d0) 0.3d0)
+                (~ (closure.engine:box-x exp)
+                   (+ (closure.engine:box-x base) (closure.engine:box-width base))
+                   0.3d0)))
+    (check "the subscript sits below the base"
+           (and h sub
+                (~ (- (closure.engine:box-y sub) (closure.engine:box-y h))
+                   (* 16d0 0.48d0) 0.3d0)
+                (~ (closure.engine:box-x sub)
+                   (+ (closure.engine:box-x h) (closure.engine:box-width h))
+                   0.3d0)))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8531,6 +8561,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-select-list)
   (test-button-label)
   (test-math-operator)
+  (test-math-script)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)

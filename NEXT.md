@@ -613,6 +613,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An hr with a width is centered. align=left keeps it at the start, and an author margin still wins.
 - A reset button paints Reset and a submit button paints Submit when they have no value. An author value still wins.
 - A math identifier is italic, and an infix operator keeps space on each side. A fence and a prefix operator stay tight.
+- A math superscript sits above the base and a subscript sits below it. The script is about 71% of the base.
 
 ## Next
 

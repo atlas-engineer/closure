@@ -1213,6 +1213,48 @@ postfix operator stay tight."
        (values 0d0 0d0))
       (t (values (/ 5d0 18d0) (/ 5d0 18d0))))))
 
+(defun math-token-box (el)
+  "One math token, measured in its own font."
+  (let* ((st (dom-element-style el))
+         (text (string-trim '(#\space #\newline #\tab #\return) (inline-text el)))
+         (fs (if st (computed-font-size st) 16d0))
+         (fam (if st (computed-font-family st) "serif"))
+         (wt (if st (computed-font-weight st) :normal))
+         (fst (if st (computed-font-style st) :normal))
+         (adv (if (plusp (length text)) (text-advance text fs fam wt fst) 0d0))
+         (asc (font-ascent fs fam wt fst))
+         (desc (font-descent fs fam wt fst)))
+    (make-box :kind :text :style st :element el :text text
+              :tag (dom-element-tag el) :id (dom-element-id el)
+              :w adv :h (+ asc desc) :baseline asc)))
+
+(defun layout-math-script (el)
+  "A superscript sits above the base and a subscript sits below it.
+The script is the smaller second child."
+  (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
+         (base-el (first kids))
+         (script-el (second kids))
+         (st (dom-element-style el))
+         (em (if st (computed-font-size st) 16d0))
+         (sup (string-equal (dom-element-tag el) "msup")))
+    (when (and base-el script-el)
+      (let* ((base (math-token-box base-el))
+             (script (math-token-box script-el))
+             (shift (* em (if sup 0.4d0 0.48d0)))
+             (base-y (if sup shift 0d0))
+             (script-y (if sup 0d0 shift)))
+        (setf (box-x base) 0d0
+              (box-y base) base-y
+              (box-x script) (box-w base)
+              (box-y script) script-y)
+        (make-box :kind :inline :style st :element el
+                  :tag (dom-element-tag el) :id (dom-element-id el)
+                  :w (+ (box-w base) (box-w script))
+                  :h (max (+ base-y (box-h base))
+                          (+ script-y (box-h script)))
+                  :baseline (+ base-y (or (box-baseline base) 0d0))
+                  :children (list base script))))))
+
 (defun layout-inline-run (nodes x y width style &key (float-inset 0d0) (float-avoid 0d0) (float-span 0d0) avail-h)
   (let ((font (computed-font-size style))
         (family (computed-font-family style))
@@ -1368,6 +1410,15 @@ postfix operator stay tight."
                                  :w px :advance px :h 0d0 :baseline 0d0)
                        current)
                  (incf current-w px)))
+             (emit-math-script (el)
+               (let ((b (layout-math-script el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-ruby (el)
                (let ((b (layout-ruby-box el)))
                  (when b
@@ -1435,6 +1486,8 @@ postfix operator stay tight."
                        (emit-atomic n))
                       ((string= (dom-element-tag n) "ruby")
                        (emit-ruby n))
+                      ((member (dom-element-tag n) '("msup" "msub") :test #'string=)
+                       (emit-math-script n))
                       ((string= (dom-element-tag n) "br")
                        (break-line (and (dom-element-style n)
                                         (computed-clear (dom-element-style n)))))
