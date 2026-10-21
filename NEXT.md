@@ -455,6 +455,8 @@ from the Lisp engine without calling Node or another browser engine.
   and shrink to the label instead of the text-field width.
 - A file input is 253 by 21, a range is 129 by 16, and a color input is
   50 by 27.
+- A time input is 103 by 24: 98px of content, 1px of left padding, and a
+  2px inset border.
 
 ## Next
 

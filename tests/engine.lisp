@@ -2942,6 +2942,17 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-time-input ()
+  (let* ((root (closure.engine:layout-html
+                "<input id='t' type='time'>"
+                :width 400 :height 40
+                :stylesheet "body{margin:0}"))
+         (time (closure.engine:find-box root "t")))
+    (check "a time input is 103 by 24"
+           (and time
+                (~ (closure.engine:box-width time) 103d0)
+                (~ (closure.engine:box-height time) 24d0)))))
+
 (defun test-input-widgets ()
   (let* ((root (closure.engine:layout-html
                 "<input id='f' type='file'><input id='g' type='range'><input id='c' type='color'>"
@@ -4923,6 +4934,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-time-input)
   (test-input-widgets)
   (test-check-submit)
   (test-open-details)
