@@ -626,6 +626,7 @@ from the Lisp engine without calling Node or another browser engine.
 - mathsize sets the font size from a length or a percentage. small, normal, and big stay at the inherited size, and an author font-size still wins.
 - mspace width is a gap. height sits above the baseline and depth sits below it.
 - A math table sizes each column to its widest cell and centers the cell contents. A row is at least the math strut.
+- Postscripts sit to the right of a multiscript base and prescripts sit to the left. Each pair shares a column.
 
 ## Next
 

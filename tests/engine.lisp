@@ -5002,6 +5002,36 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                      (+ (closure.engine:box-y a) (closure.engine:box-height a))
                      0.2d0))))))
 
+(defun test-math-multiscripts ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><math><mmultiscripts id='m'><mi id='b'>x</mi><mn id='s'>1</mn><mn id='u'>2</mn><mprescripts/><mn id='ps'>3</mn><mn id='pu'>4</mn></mmultiscripts></math></p>"
+                :width 240 :height 50
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (base (closure.engine:find-box root "b"))
+         (sub (closure.engine:find-box root "s"))
+         (sup (closure.engine:find-box root "u"))
+         (psub (closure.engine:find-box root "ps"))
+         (psup (closure.engine:find-box root "pu")))
+    (check "multiscript boxes" (and base sub sup psub psup))
+    (check "scripts are the smaller size"
+           (and sub (~ (closure.engine::computed-font-size
+                        (closure.engine::box-style sub))
+                       (* 16d0 0.71d0) 0.2d0)))
+    (check "postscripts share a column to the right"
+           (and base sub sup
+                (~ (closure.engine:box-x sub) (closure.engine:box-x sup) 0.3d0)
+                (~ (closure.engine:box-x sub)
+                   (+ (closure.engine:box-x base) (closure.engine:box-width base))
+                   0.3d0)
+                (< (closure.engine:box-y sup) (closure.engine:box-y sub))))
+    (check "prescripts share a column to the left"
+           (and base psub psup
+                (~ (closure.engine:box-x psub) (closure.engine:box-x psup) 0.3d0)
+                (~ (+ (closure.engine:box-x psub) (closure.engine:box-width psub))
+                   (closure.engine:box-x base)
+                   0.3d0)
+                (< (closure.engine:box-y psup) (closure.engine:box-y psub))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8999,6 +9029,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-size)
   (test-math-space)
   (test-math-table)
+  (test-math-multiscripts)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)

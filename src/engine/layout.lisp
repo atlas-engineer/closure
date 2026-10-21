@@ -1524,6 +1524,70 @@ contents are centered. A row is at least the math strut."
       (layout-math-underover-limits el)
       (layout-math-subsup el)))
 
+(defun layout-script-column (sub-el sup-el em x base-y)
+  "One subscript and superscript sharing a column at X. Returns the width and the boxes."
+  (let ((sub (and sub-el
+                  (not (string-equal (dom-element-tag sub-el) "none"))
+                  (math-piece sub-el)))
+        (sup (and sup-el
+                  (not (string-equal (dom-element-tag sup-el) "none"))
+                  (math-piece sup-el))))
+    (let ((w (max (if sub (box-w sub) 0d0)
+                  (if sup (box-w sup) 0d0))))
+      (when sub
+        (setf (box-x sub) x
+              (box-y sub) (+ base-y (* em 0.29d0))))
+      (when sup
+        (setf (box-x sup) x
+              (box-y sup) 0d0))
+      (values w (remove nil (list sub sup))))))
+
+(defun layout-math-multiscripts (el)
+  "Postscripts sit to the right of the base and prescripts sit to the left.
+Each pair shares a column, with the superscript above the subscript."
+  (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
+         (base-el (first kids))
+         (st (dom-element-style el))
+         (em (if st (computed-font-size st) 16d0))
+         (pre nil)
+         (post nil)
+         (after nil))
+    (dolist (kid (rest kids))
+      (cond
+        ((string-equal (dom-element-tag kid) "mprescripts")
+         (setf after t))
+        (after (push kid pre))
+        (t (push kid post))))
+    (setf pre (nreverse pre)
+          post (nreverse post))
+    (when base-el
+      (let* ((base (math-piece base-el))
+             (base-y (* em 0.4d0))
+             (pre-w 0d0)
+             (pieces nil))
+        (loop for tail on pre by #'cddr
+              do (multiple-value-bind (w boxes)
+                     (layout-script-column (first tail) (second tail) em pre-w base-y)
+                   (incf pre-w w)
+                   (setf pieces (append pieces boxes))))
+        (setf (box-x base) pre-w
+              (box-y base) base-y)
+        (push base pieces)
+        (let ((x (+ pre-w (box-w base))))
+          (loop for tail on post by #'cddr
+                do (multiple-value-bind (w boxes)
+                       (layout-script-column (first tail) (second tail) em x base-y)
+                     (incf x w)
+                     (setf pieces (append pieces boxes))))
+          (make-box :kind :inline :style st :element el
+                    :tag (dom-element-tag el) :id (dom-element-id el)
+                    :w x
+                    :h (reduce #'max pieces
+                               :key (lambda (p) (+ (box-y p) (box-h p)))
+                               :initial-value 0d0)
+                    :baseline (+ base-y (or (box-baseline base) 0d0))
+                    :children pieces))))))
+
 (defun math-piece (el)
   "One child of a square root: a script, a fraction, or a token."
   (cond
@@ -1539,6 +1603,8 @@ contents are centered. A row is at least the math strut."
      (layout-math-underover el))
     ((string-equal (dom-element-tag el) "menclose")
      (layout-math-enclose el))
+    ((string-equal (dom-element-tag el) "mmultiscripts")
+     (layout-math-multiscripts el))
     (t (math-token-box el))))
 
 (defun layout-math-sqrt (el)
@@ -1799,6 +1865,15 @@ contents are centered. A row is at least the math strut."
                    (push b current)
                    (incf current-w (box-w b))
                    (setf previous (dom-element-style el)))))
+             (emit-math-multiscripts (el)
+               (let ((b (layout-math-multiscripts el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-math-table (el)
                (let ((b (layout-math-table el)))
                  (when b
@@ -1934,6 +2009,8 @@ contents are centered. A row is at least the math strut."
                        (emit-math-space n))
                       ((string= (dom-element-tag n) "mtable")
                        (emit-math-table n))
+                      ((string= (dom-element-tag n) "mmultiscripts")
+                       (emit-math-multiscripts n))
                       ((string= (dom-element-tag n) "mfrac")
                        (emit-math-fraction n))
                       ((string= (dom-element-tag n) "msqrt")

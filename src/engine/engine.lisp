@@ -57,6 +57,7 @@ script element after style and layout. Left unset until that engine exists.")
    mover > :nth-child(2), munder > :nth-child(2),
    munderover > :nth-child(2), munderover > :nth-child(3) { font-size: 71%; }
    mroot > :nth-child(2) { font-size: 50.41%; }
+   mmultiscripts > :nth-child(n+2) { font-size: 71%; }
    ruby > rt { font-size: 50%; }
    rp { display: none; }
    sub { vertical-align: sub; font-size: smaller; }
