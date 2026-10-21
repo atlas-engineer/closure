@@ -5424,6 +5424,32 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-col-collapse ()
+  (let* ((root (closure.engine:layout-html
+                "<table id='t'><col style='visibility:collapse'><col><tr><td id='a'>A</td><td id='b'>B</td><td id='c'>C</td></tr></table>
+                 <table><col><col style='visibility:collapse'><col><tr><td id='d'>AA</td><td id='e'>BB</td><td id='f'>CC</td></tr></table>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0} table{border-spacing:2px} td{padding:0;border:1px solid #000}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (d (closure.engine:find-box root "d"))
+         (e (closure.engine:find-box root "e"))
+         (f (closure.engine:find-box root "f"))
+         (table (closure.engine:find-box root "t")))
+    (check "collapsed column boxes" (and a b c d e f table))
+    (check "a collapsed first column takes no width"
+           (and a (< (closure.engine:box-width a) 0.5d0)
+                (~ (closure.engine:box-x b) (closure.engine:box-x a) 0.5d0)
+                (~ (closure.engine:box-width table) 31.3d0 0.6d0)))
+    (check "a collapsed middle column keeps the following gap"
+           (and e d f
+                (< (closure.engine:box-width e) 0.5d0)
+                (~ (closure.engine:box-x e)
+                   (+ (closure.engine:box-x d) (closure.engine:box-width d))
+                   0.6d0)
+                (~ (- (closure.engine:box-x f) (closure.engine:box-x e)) 2d0 0.6d0)))))
+
 (defun test-row-collapse ()
   (let* ((root (closure.engine:layout-html
                 "<table id='v'><tr style='visibility:collapse'><td id='e'>E</td></tr><tr><td id='f'>F</td></tr></table>"
@@ -6795,6 +6821,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-col-collapse)
   (test-row-collapse)
   (test-rowspan-height)
   (test-col-span-width)

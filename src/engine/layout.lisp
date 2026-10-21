@@ -2190,6 +2190,34 @@ outside the border box, so the box is content plus padding plus one border."
           (setf prev cell))))
     share))
 
+(defun collapsed-column-flags (el ncols)
+  "True for each column whose col element is visibility:collapse."
+  (let ((flags (make-array ncols :initial-element nil))
+        (index 0))
+    (dolist (spec (table-column-specs el))
+      (destructuring-bind (node span group) spec
+        (declare (ignore group))
+        (when (and (string-equal (dom-element-tag node) "col")
+                   (dom-element-style node)
+                   (eq (computed-visibility (dom-element-style node)) :collapse))
+          (loop for k from 0 below span
+                for col = (+ index k)
+                when (< col ncols)
+                do (setf (aref flags col) t)))
+        (incf index span)))
+    flags))
+
+(defun column-gap-after (index collapsed space)
+  "Border-spacing after column INDEX. A collapsed column removes one gap:
+the gap after it when it is first, otherwise the gap before it."
+  (cond
+    ((or (null collapsed) (<= space 0d0) (>= index (length collapsed))) 0d0)
+    ((and (aref collapsed index) (zerop index)) 0d0)
+    ((and (< (1+ index) (length collapsed))
+          (aref collapsed (1+ index)))
+     0d0)
+    (t space)))
+
 (defun column-outer-width (cols gap space-x)
   "Content width of the columns plus the gaps or border-spacing around them."
   (let ((n (length cols)))
@@ -2552,7 +2580,21 @@ supplies the width, defaulting to 1px. An author border is left alone."
               (when (> grow 0d0)
                 (incf cw grow)
                 (incf bw grow)))
-            (let* ((cap-bottom (and cap-el
+            (let ((col-collapsed (collapsed-column-flags el ncols))
+                  (removed 0d0)
+                  (nvis 0))
+              (dotimes (i ncols)
+                (when (aref col-collapsed i)
+                  (incf removed (aref cols i))
+                  (setf (aref cols i) 0d0)
+                  (incf nvis)))
+              (when (> nvis 0)
+                (let ((shrink (+ removed
+                                 (if (> space-x 0d0) (* space-x nvis) 0d0))))
+                  (decf cw shrink)
+                  (decf bw shrink))))
+            (let* ((col-collapsed (collapsed-column-flags el ncols))
+                   (cap-bottom (and cap-el
                                   (dom-element-style cap-el)
                                   (eq (computed-caption-side (dom-element-style cap-el)) :bottom)))
                  (cap (when (and cap-el
@@ -2575,16 +2617,22 @@ supplies the width, defaulting to 1px. An author border is left alone."
                     (prev nil))
                 (dolist (cell (row-cells row))
                   (loop while (and (< col ncols) (> (aref covered col) 0))
-                        do (incf xx (cond
-                                      (collapse (aref cols col))
-                                      ((> space-x 0d0) (+ (aref cols col) space-x))
-                                      (t (+ (aref cols col) gap))))
+                        do (incf xx (+ (aref cols col)
+                                       (column-gap-after col col-collapsed
+                                                         (if collapse 0d0
+                                                             (if (> space-x 0d0) space-x gap)))))
                            (incf col))
                   (let* ((span (min (cell-colspan cell) (max 1 (- ncols col))))
                          (rspan (cell-rowspan cell))
                          (slot (column-span-width cols col span gap))
-                         (cb (layout-element cell xx yy (max 1d0 slot) nil nil)))
+                         (cb (layout-element cell xx yy
+                                             (max (if (and (< col ncols) (aref col-collapsed col))
+                                                      0d0 1d0)
+                                                  slot)
+                                             nil nil)))
                     (when cb
+                      (when (and (= span 1) (< col ncols) (aref col-collapsed col))
+                        (setf (box-w cb) 0d0))
                       (when (and collapse prev)
                         (decf xx (max (border-edge (box-style prev) :right)
                                       (border-edge (box-style cb) :left))))
@@ -2600,10 +2648,10 @@ supplies the width, defaulting to 1px. An author border is left alone."
                         (when (< (+ col i) ncols)
                           (setf (aref covered (+ col i)) rspan)))
                       (incf col span)
-                      (incf xx (cond
-                                 (collapse (box-w cb))
-                                 ((> space-x 0d0) (+ (box-w cb) space-x))
-                                 (t (+ slot gap))))
+                      (incf xx (+ (box-w cb)
+                                  (column-gap-after (1- col) col-collapsed
+                                                    (if collapse 0d0
+                                                        (if (> space-x 0d0) space-x gap)))))
                       (setf prev cb))))
                 (dotimes (i ncols)
                   (when (> (aref covered i) 0)
