@@ -768,6 +768,17 @@ on spaces so a line fits MAX-W."
                           (float (+ (- bottom 4) i) 1d0)
                           1d0 1d0 gray)))))
 
+(defun paint-math-fraction (cr box)
+  "The bar between a numerator and a denominator."
+  (when (and (string= (or (box-tag box) "") "mfrac")
+             (> (box-w box) 0d0)
+             (box-baseline box))
+    ;; Snap to a whole pixel so the bar is one black row, not a gray fringe.
+    (fill-rect cr (box-x box)
+               (float (floor (+ (box-y box) (box-baseline box))) 1d0)
+               (box-w box) 1d0
+               (color-bytes 0 0 0))))
+
 (defun paint-text-box (cr box)
   (let ((st (box-style box))
         (text (box-text box)))
@@ -1913,6 +1924,7 @@ An author margin in the framed document still wins."
                          (member (computed-overflow (box-style box)) '(:hidden :clip :scroll :auto)))
                 (cairo-rectangle cr (box-x box) (box-y box) (box-w box) (box-h box))
                 (cairo-clip cr))
+              (paint-math-fraction cr box)
               (dolist (c (box-children box))
                 (paint-box cr c scroll-y))))
         (when (< opacity 1d0)

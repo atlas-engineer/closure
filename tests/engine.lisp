@@ -4577,6 +4577,46 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                    (+ (closure.engine:box-x h) (closure.engine:box-width h))
                    0.3d0)))))
 
+(defun test-math-fraction ()
+  (let* ((path "/tmp/closure-engine-frac.png")
+         (root (closure.engine:render-html
+                "<p style='margin:0'><math><mfrac id='f'><mi id='n'>a</mi><mi id='d'>bb</mi></mfrac></math></p>"
+                :width 120 :height 60
+                :stylesheet "body{margin:0;font-size:16px}"
+                :output path))
+         (frac (closure.engine:find-box root "f"))
+         (num (closure.engine:find-box root "n"))
+         (den (closure.engine:find-box root "d")))
+    (check "fraction boxes" (and frac num den))
+    (check "the numerator is the smaller script size"
+           (and num (~ (closure.engine::computed-font-size
+                        (closure.engine::box-style num))
+                       (* 16d0 0.71d0) 0.2d0)))
+    (check "the numerator sits above the denominator"
+           (and num den (< (closure.engine:box-y num) (closure.engine:box-y den))))
+    (check "both parts are centered on the bar"
+           (and frac num den
+                (~ (+ (closure.engine:box-x num)
+                      (/ (closure.engine:box-width num) 2d0))
+                   (+ (closure.engine:box-x den)
+                      (/ (closure.engine:box-width den) 2d0))
+                   0.4d0)
+                (~ (closure.engine:box-width frac)
+                   (+ (max (closure.engine:box-width num)
+                           (closure.engine:box-width den))
+                      2d0)
+                   0.4d0)))
+    (let ((x (round (+ (closure.engine:box-x frac)
+                       (/ (closure.engine:box-width frac) 2d0))))
+          (y (floor (+ (closure.engine:box-y frac)
+                       (closure.engine::box-baseline frac)))))
+      (multiple-value-bind (r g b) (png-rgb path x y)
+        (check "the fraction bar is black"
+               (and (< r 40) (< g 40) (< b 40))))
+      (multiple-value-bind (r g b) (png-rgb path x (1- y))
+        (check "the row above the bar stays empty"
+               (and (> r 240) (> g 240) (> b 240)))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8562,6 +8602,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-button-label)
   (test-math-operator)
   (test-math-script)
+  (test-math-fraction)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)
