@@ -6363,6 +6363,35 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-col-background ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (out "/tmp/closure-engine-col-bgimg.png")
+         (html (format nil "<table cellspacing='0'><col background='~A' width='40'><tr><td id='a'>Hi</td><td id='b'>No</td></tr></table>
+                         <table cellspacing='0'><col background='~A' width='40'><tr><td id='own' style='background:#0a0'>Hi</td></tr></table>"
+                      png png))
+         (root (closure.engine:render-html html :width 200 :height 80 :output out
+                                          :stylesheet "body{margin:0} td{padding:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (own (closure.engine:find-box root "own")))
+    (labels ((red-p (box)
+               (multiple-value-bind (r g bcol)
+                   (png-rgb out
+                            (round (+ (closure.engine:box-x box) 28))
+                            (round (+ (closure.engine:box-y box) 4)))
+                 (and (> r 150) (< g 80) (< bcol 80))))
+             (green-p (box)
+               (multiple-value-bind (r g bcol)
+                   (png-rgb out
+                            (round (+ (closure.engine:box-x box) 28))
+                            (round (+ (closure.engine:box-y box) 4)))
+                 (and (< r 80) (> g 120) (< bcol 80)))))
+      (check "column image boxes" (and a b own))
+      (check "a column background image paints in its cells"
+             (and (red-p a) (not (red-p b))))
+      (check "a cell background covers the column image"
+             (green-p own)))))
+
 (defun test-col-bgcolor ()
   (let* ((out "/tmp/closure-engine-col-bg.png")
          (html "<table cellspacing='0'><col id='c' bgcolor='#c00' width='40'><tr><td id='a'>Hi</td><td id='b'>No</td></tr><tr><td id='d'>Yo</td></tr></table>
@@ -7939,6 +7968,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-col-background)
   (test-col-bgcolor)
   (test-row-group-valign)
   (test-row-group-align)
