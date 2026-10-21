@@ -5042,6 +5042,20 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-svg-text ()
+  (let ((path "/tmp/closure-engine-svg-text.png"))
+    (closure.engine:render-html
+     "<svg width='200' height='40'><text x='8' y='28' fill='red' font-size='20'>Hi</text></svg>"
+     :width 200 :height 60
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 10 15)
+      (check "svg text is painted in its fill"
+             (and (> r 200) (< g 50) (< b 50))))
+    (multiple-value-bind (r g b) (png-rgb path 4 4)
+      (check "svg text does not fill the viewport"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-svg-default ()
   (let* ((html "<svg id='plain'><rect width='100' height='50' fill='red'/></svg>
                 <svg id='box' viewBox='0 0 100 50'><rect width='100' height='50' fill='green'/></svg>")
@@ -5537,6 +5551,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-inline-image-middle)
   (test-image-alt)
   (test-image-alt-clip)
+  (test-svg-text)
   (test-svg-default)
   (test-svg)
   (test-selectors-and-cascade)

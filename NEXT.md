@@ -507,6 +507,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A list bullet is the small disc Chromium paints, 14px left of the item.
 - An ordered-list number sits on Chromium's column, four pixels before the item.
 - An svg with no size is 300 by 150. A viewBox stretches it to the line and keeps the ratio.
+- SVG text is drawn at its x and y in the fill color.
 
 ## Next
 
