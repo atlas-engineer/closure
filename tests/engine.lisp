@@ -5424,6 +5424,37 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-progress-indeterminate ()
+  (let* ((html "<progress id='i'></progress>
+                <progress id='z' value='0'></progress>
+                <progress id='h' value='0.5'></progress>")
+         (path "/tmp/closure-engine-indet.png")
+         (root (closure.engine:render-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0} progress{display:block}"
+                                          :output path)))
+    (labels ((at (id dx)
+               (let ((box (closure.engine:find-box root id)))
+                 (and box
+                      (multiple-value-list
+                       (png-rgb path
+                                (round (+ (closure.engine:box-x box) dx))
+                                (round (+ (closure.engine:box-y box) 8d0))))))))
+      (destructuring-bind (ir ig ib) (at "i" 16d0)
+        (declare (ignore ig))
+        (destructuring-bind (er eg eb) (at "i" 80d0)
+          (destructuring-bind (zr zg zb) (at "z" 16d0)
+            (destructuring-bind (hr hg hb) (at "h" 16d0)
+              (declare (ignore hg))
+              (check "progress states" (and ir er zr hr))
+              (check "an indeterminate progress paints a short blue bar"
+                     (and (< ir 40) (> ib 200)))
+              (check "the rest of an indeterminate progress stays gray"
+                     (and (> er 200) (> eg 200) (> eb 200) (< er 250)))
+              (check "a progress at zero stays empty"
+                     (and (> zr 200) (> zg 200) (> zb 200)))
+              (check "a progress with a value still fills from the left"
+                     (and (< hr 40) (> hb 200))))))))))
+
 (defun test-canvas-size ()
   (let* ((root (closure.engine:layout-html
                 "<canvas id='c' width='40' height='20'></canvas>
@@ -6290,6 +6321,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-progress-indeterminate)
   (test-canvas-size)
   (test-meter-color)
   (test-textarea-wrap)

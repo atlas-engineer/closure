@@ -1275,7 +1275,12 @@ red on the far side of the optimum."
              (member (box-tag box) '("progress" "meter") :test #'string=)
              (> (box-w box) 0d0)
              (> (box-h box) 4d0))
-    (let* ((ratio (gauge-ratio (box-element box)))
+    (let* ((ratio (if (and (string= (box-tag box) "progress")
+                          (not (dom-attr (box-element box) "value")))
+                     ;; Chromium's indeterminate bar starts at the left and
+                     ;; covers a fifth of the track in a static shot.
+                     0.2d0
+                     (gauge-ratio (box-element box))))
            (x (box-x box))
            (h 6d0)
            (y (float (round (+ (box-y box) (/ (- (box-h box) h) 2d0))) 1d0))
