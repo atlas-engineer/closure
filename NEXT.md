@@ -505,6 +505,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A select with a size shows each option on a 17px row, and the selected row is gray.
 - A summary's disclosure triangle sits on the left and is about 8px across, the mark Chromium paints.
 - A list bullet is the small disc Chromium paints, 14px left of the item.
+- An ordered-list number sits on Chromium's column, four pixels before the item.
 
 ## Next
 

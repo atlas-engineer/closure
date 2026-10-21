@@ -859,10 +859,13 @@ and gaps between known stops are split evenly."
             (let ((tx (if (box-marker-inside box)
                           (+ (box-x box) (px (computed-pl st) (box-w box))
                              (used-border-width (computed-bl st) (computed-bls st)))
-                          (- (box-x box) adv 6d0))))
+                          ;; Four pixels between the marker and the item
+                          ;; puts the digit on Chromium's column.
+                          (- (box-x box) adv 4d0))))
               (cairo-move-to cr tx
                              (+ (box-y box)
-                                (font-ascent size family weight fstyle)))
+                                (font-ascent size family weight fstyle)
+                                (if (box-marker-inside box) 0d0 -1d0)))
               (cairo-show-text cr marker)))
           (let* ((cy (+ (box-y box) 8d0))
                  ;; A disc sits 14px left of the item and one pixel below

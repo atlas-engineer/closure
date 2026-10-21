@@ -3189,6 +3189,28 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
       (check "the summary triangle stops before the label"
              (and (> r 240) (> g 240) (> b 240))))))
 
+(defun test-ordered-marker ()
+  (let* ((path "/tmp/closure-engine-ol.png")
+         (root (closure.engine:render-html
+                "<ol><li id='a'>Alpha</li><li>Beta</li></ol>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0;font-size:16px}"
+                :output path))
+         (item (closure.engine:find-box root "a")))
+    (check "ordered item" item)
+    (multiple-value-bind (r g b)
+        (png-rgb path
+                 (round (- (closure.engine:box-x item) 12))
+                 (round (+ (closure.engine:box-y item) 6)))
+      (check "the item number sits on Chromium's column"
+             (< (+ r g b) 180)))
+    (multiple-value-bind (r g b)
+        (png-rgb path
+                 (round (- (closure.engine:box-x item) 20))
+                 (round (+ (closure.engine:box-y item) 6)))
+      (check "the item number does not start early"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
     (closure.engine:render-html
@@ -5429,6 +5451,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-image-input)
   (test-select-list)
   (test-disclosure-marker)
+  (test-ordered-marker)
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)
