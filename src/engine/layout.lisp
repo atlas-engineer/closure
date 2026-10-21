@@ -154,14 +154,56 @@ is 19.92, and Chromium lays that out as 19.90625."
           (setf (box-w box) (+ (or cw 0d0) extra-w)
                 (box-h box) (+ (or ch 0d0) extra-h)))))))
 
-(defun source-candidate (srcset)
-  "The first URL in a srcset, without its width or density descriptor."
-  (let ((s (string-trim '(#\space #\newline #\tab #\return) (or srcset ""))))
+(defun srcset-candidates (srcset)
+  "Parse SRCSET into (url . width). Width is the w descriptor, or NIL."
+  (let ((s (string-trim '(#\space #\newline #\tab #\return) (or srcset "")))
+        (out nil)
+        (start 0))
     (when (plusp (length s))
-      (let* ((cand (string-trim '(#\space)
-                                (subseq s 0 (or (position #\, s) (length s)))))
-             (sp (position #\space cand)))
-        (if sp (subseq cand 0 sp) cand)))))
+      (loop
+        (let* ((comma (position #\, s :start start))
+               (end (or comma (length s)))
+               (part (string-trim '(#\space) (subseq s start end))))
+          (unless (zerop (length part))
+            (let ((sp (position #\space part)))
+              (if (null sp)
+                  (push (cons part nil) out)
+                  (let ((desc (string-trim '(#\space) (subseq part (1+ sp)))))
+                    (push (cons (subseq part 0 sp)
+                                (and (plusp (length desc))
+                                     (char-equal (char desc (1- (length desc))) #\w)
+                                     (ignore-errors
+                                      (parse-integer desc :junk-allowed t))))
+                          out)))))
+          (unless comma (return))
+          (setf start (1+ comma)))))
+    (nreverse out)))
+
+(defun srcset-slot (sizes)
+  "The layout width a w descriptor is chosen against. The default is 100vw."
+  (let ((s (string-downcase (string-trim '(#\space) (or sizes "")))))
+    (cond
+      ((zerop (length s)) (float *viewport-width* 1d0))
+      ((and (> (length s) 2) (string= (subseq s (- (length s) 2)) "vw"))
+       (let ((n (ignore-errors (parse-integer s :junk-allowed t))))
+         (if n (* n 0.01d0 (float *viewport-width* 1d0)) (float *viewport-width* 1d0))))
+      ((and (> (length s) 2) (string= (subseq s (- (length s) 2)) "px"))
+       (let ((n (ignore-errors (parse-integer s :junk-allowed t))))
+         (or (and n (float n 1d0)) (float *viewport-width* 1d0))))
+      (t (float *viewport-width* 1d0)))))
+
+(defun select-srcset (srcset &optional sizes)
+  "The srcset URL Chromium would pick for the current viewport."
+  (let ((cands (srcset-candidates srcset)))
+    (when cands
+      (if (notany #'cdr cands)
+          (car (first cands))
+          (let* ((slot (srcset-slot sizes))
+                 (fits (remove-if (lambda (c) (or (null (cdr c)) (< (cdr c) slot))) cands)))
+            (car (if fits
+                     (reduce (lambda (a b) (if (<= (cdr a) (cdr b)) a b)) fits)
+                     (reduce (lambda (a b) (if (>= (or (cdr a) 0) (or (cdr b) 0)) a b))
+                             cands))))))))
 
 (defun source-type-ok (type)
   "True when TYPE is empty or an image kind this engine can decode."
@@ -183,7 +225,7 @@ is 19.92, and Chromium lays that out as 19.90625."
                    (string-equal (dom-element-tag c) "source"))
           (let ((media (string-trim '(#\space #\newline #\tab #\return)
                                     (or (dom-attr c "media") "")))
-                (url (source-candidate (dom-attr c "srcset"))))
+                (url (select-srcset (dom-attr c "srcset") (dom-attr c "sizes"))))
             (when (and url
                        (source-type-ok (dom-attr c "type"))
                        (or (zerop (length media))
@@ -198,7 +240,7 @@ is 19.92, and Chromium lays that out as 19.90625."
        (dom-attr el "data"))
       ((member (dom-element-tag el) '("img" "image") :test #'string-equal)
        (or (picture-source-url el)
-           (source-candidate (dom-attr el "srcset"))
+           (select-srcset (dom-attr el "srcset") (dom-attr el "sizes"))
            (dom-attr el "src")))
       (t (dom-attr el "src")))))
 

@@ -275,7 +275,9 @@ BASE is the document URL. A <base href> in the document overrides it."
   (multiple-value-bind (root doc-base)
       (layout-html html :width width :height height
                    :stylesheet stylesheet :time time :base base)
-    (let ((*document-base* doc-base))
+    (let ((*document-base* doc-base)
+          (*viewport-width* (float width 1d0))
+          (*viewport-height* (float height 1d0)))
       (when (and root output)
         (let* ((doc-h (max height
                            (ceiling (+ (box-y root) (box-h root) 8))))
