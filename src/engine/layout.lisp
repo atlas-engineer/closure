@@ -1281,6 +1281,53 @@ The script is the smaller second child."
                   :baseline (+ bar-y (* bar 0.5d0))
                   :children (list num den))))))
 
+(defun math-piece (el)
+  "One child of a square root: a script, a fraction, or a token."
+  (cond
+    ((member (dom-element-tag el) '("msup" "msub") :test #'string=)
+     (layout-math-script el))
+    ((string-equal (dom-element-tag el) "mfrac")
+     (layout-math-fraction el))
+    (t (math-token-box el))))
+
+(defun layout-math-sqrt (el)
+  "A radical. The sign takes about 0.55em, and a bar sits just above the radicand."
+  (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
+         (st (dom-element-style el))
+         (em (if st (computed-font-size st) 16d0))
+         (gutter (* em 0.55d0))
+         (top (* em 0.16d0))
+         (tail (* em 0.2d0))
+         (pieces nil)
+         (x 0d0)
+         (asc 0d0))
+    (dolist (kid kids)
+      (let ((piece (math-piece kid)))
+        (when piece
+          (when (string-equal (dom-element-tag kid) "mo")
+            (multiple-value-bind (ls rs) (math-operator-gaps kid)
+              (incf x (* ls em))
+              (setf (box-x piece) x)
+              (incf x (+ (box-w piece) (* rs em)))))
+          (unless (string-equal (dom-element-tag kid) "mo")
+            (setf (box-x piece) x)
+            (incf x (box-w piece)))
+          (setf asc (max asc (or (box-baseline piece) 0d0)))
+          (push piece pieces))))
+    (when pieces
+      (dolist (piece pieces)
+        (incf (box-x piece) gutter)
+        (setf (box-y piece) (+ top (- asc (or (box-baseline piece) 0d0)))))
+      (make-box :kind :inline :style st :element el
+                :tag (dom-element-tag el) :id (dom-element-id el)
+                :w (+ gutter x)
+                :h (+ tail
+                      (reduce #'max pieces
+                              :key (lambda (p) (+ (box-y p) (box-h p)))
+                              :initial-value 0d0))
+                :baseline (+ top asc)
+                :children (nreverse pieces)))))
+
 (defun layout-inline-run (nodes x y width style &key (float-inset 0d0) (float-avoid 0d0) (float-span 0d0) avail-h)
   (let ((font (computed-font-size style))
         (family (computed-font-family style))
@@ -1436,6 +1483,15 @@ The script is the smaller second child."
                                  :w px :advance px :h 0d0 :baseline 0d0)
                        current)
                  (incf current-w px)))
+             (emit-math-sqrt (el)
+               (let ((b (layout-math-sqrt el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-math-fraction (el)
                (let ((b (layout-math-fraction el)))
                  (when b
@@ -1525,6 +1581,8 @@ The script is the smaller second child."
                        (emit-math-script n))
                       ((string= (dom-element-tag n) "mfrac")
                        (emit-math-fraction n))
+                      ((string= (dom-element-tag n) "msqrt")
+                       (emit-math-sqrt n))
                       ((string= (dom-element-tag n) "br")
                        (break-line (and (dom-element-style n)
                                         (computed-clear (dom-element-style n)))))

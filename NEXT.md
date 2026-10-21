@@ -615,6 +615,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A math identifier is italic, and an infix operator keeps space on each side. A fence and a prefix operator stay tight.
 - A math superscript sits above the base and a subscript sits below it. The script is about 71% of the base.
 - A math fraction stacks a smaller numerator over a bar and a denominator. Both are centered.
+- A square root draws a radical beside the expression and a bar over it.
 
 ## Next
 

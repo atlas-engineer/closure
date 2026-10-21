@@ -4617,6 +4617,33 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
         (check "the row above the bar stays empty"
                (and (> r 240) (> g 240) (> b 240)))))))
 
+(defun test-math-sqrt ()
+  (let* ((path "/tmp/closure-engine-sqrt.png")
+         (root (closure.engine:render-html
+                "<p style='margin:0'><math><msqrt id='r'><mi id='sx'>x</mi></msqrt></math></p>"
+                :width 160 :height 50
+                :stylesheet "body{margin:0;font-size:16px}"
+                :output path))
+         (radical (closure.engine:find-box root "r"))
+         (x (closure.engine:find-box root "sx")))
+    (check "square root boxes" (and radical x))
+    (check "the radicand starts after the radical sign"
+           (and radical x
+                (~ (- (closure.engine:box-x x) (closure.engine:box-x radical))
+                   (* 16d0 0.55d0) 0.3d0)
+                (~ (- (closure.engine:box-width radical) (closure.engine:box-width x))
+                   (* 16d0 0.55d0) 0.3d0)))
+    (check "the radicand sits just under the bar"
+           (and radical x
+                (~ (- (closure.engine:box-y x) (closure.engine:box-y radical))
+                   (* 16d0 0.16d0) 0.3d0)))
+    (let ((px (round (+ (closure.engine:box-x radical) (* 16d0 0.55d0) 2d0)))
+          (py (floor (+ (closure.engine:box-y radical)
+                        (max 0d0 (- (* 16d0 0.16d0) 1d0))))))
+      (multiple-value-bind (r g b) (png-rgb path px py)
+        (check "the radical bar is black"
+               (and (< r 40) (< g 40) (< b 40)))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8603,6 +8630,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-operator)
   (test-math-script)
   (test-math-fraction)
+  (test-math-sqrt)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)
