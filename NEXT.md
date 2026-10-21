@@ -499,6 +499,7 @@ from the Lisp engine without calling Node or another browser engine.
 - Those dashes sit on Chromium's row for both the time field and the date line.
 - Each placeholder dash is five pixels wide, the bar Chromium paints.
 - A button's background stays on the button. The anonymous line behind the label no longer paints that gray across the rest of the line.
+- A textarea paints Chromium's resize grip, two gray diagonal marks in the bottom-right corner.
 
 ## Next
 

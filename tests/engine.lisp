@@ -3077,6 +3077,32 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
       (check "the button background stops at the button"
              (and (> r 250) (> g 250) (> b 250))))))
 
+(defun test-textarea-grip ()
+  (let ((path "/tmp/closure-engine-textarea-grip.png"))
+    (closure.engine:render-html
+     "<textarea>note</textarea>"
+     :width 200 :height 80
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 178 31)
+      (check "a textarea paints the upper grip mark"
+             (and (< (abs (- r 102)) 12)
+                  (< (abs (- g 102)) 12)
+                  (< (abs (- b 102)) 12))))
+    (multiple-value-bind (r g b) (png-rgb path 172 37)
+      (check "a textarea paints the lower grip mark"
+             (and (< (abs (- r 102)) 12)
+                  (< (abs (- g 102)) 12)
+                  (< (abs (- b 102)) 12))))
+    (multiple-value-bind (r g b) (png-rgb path 176 37)
+      (check "a textarea paints the second grip mark"
+             (and (< (abs (- r 102)) 12)
+                  (< (abs (- g 102)) 12)
+                  (< (abs (- b 102)) 12))))
+    (multiple-value-bind (r g b) (png-rgb path 170 30)
+      (check "the grip leaves the field white beside it"
+             (and (> r 250) (> g 250) (> b 250))))))
+
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
     (closure.engine:render-html
@@ -5312,6 +5338,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-check-paint)
   (test-select-arrow)
   (test-button-border)
+  (test-textarea-grip)
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)

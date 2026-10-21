@@ -622,6 +622,28 @@ and gaps between known stops are split evenly."
                                          (computed-font-style st))))
           (cairo-show-text cr label))))))
 
+(defun paint-textarea-grip (cr box)
+  "Two diagonal marks in the bottom-right corner, the grip Chromium paints."
+  (when (and (string= (or (box-tag box) "") "textarea")
+             (> (box-w box) 16d0)
+             (> (box-h box) 16d0))
+    (let ((right (round (- (+ (box-x box) (box-w box)) 1d0)))
+          (bottom (round (- (+ (box-y box) (box-h box)) 1d0)))
+          (gray (color-bytes 102 102 102)))
+      ;; The longer mark runs from two pixels inside the right border,
+      ;; eight above the bottom, down and to the left. The shorter mark
+      ;; starts four rows lower.
+      (loop for i from 0 to 6
+            do (fill-rect cr
+                          (float (- right 2 i) 1d0)
+                          (float (+ (- bottom 8) i) 1d0)
+                          1d0 1d0 gray))
+      (loop for i from 0 to 2
+            do (fill-rect cr
+                          (float (- right 2 i) 1d0)
+                          (float (+ (- bottom 4) i) 1d0)
+                          1d0 1d0 gray)))))
+
 (defun paint-text-box (cr box)
   (let ((st (box-style box))
         (text (box-text box)))
@@ -1383,6 +1405,7 @@ but paint a 1px gray rounded edge around the background."
               (when (and (box-tag box)
                          (member (box-tag box) '("input" "select" "textarea") :test #'string=))
                 (paint-control cr box))
+              (paint-textarea-grip cr box)
               (when (and (box-style box)
                          (member (computed-overflow (box-style box)) '(:hidden :clip :scroll :auto)))
                 (cairo-rectangle cr (box-x box) (box-y box) (box-w box) (box-h box))
