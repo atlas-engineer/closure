@@ -493,6 +493,7 @@ from the Lisp engine without calling Node or another browser engine.
 - Progress and meter bars use that same fringe, and a meter's fringe stays gray.
 - An empty date field is sized from mm/dd/yyyy and paints that placeholder with a calendar.
 - The date field leaves room for Chromium's calendar, a gray frame with a black header.
+- Month and week fields use the same calendar and their own placeholders.
 
 ## Next
 

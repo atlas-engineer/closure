@@ -34,6 +34,12 @@
 (defun px (value container)
   (or (resolve-px value container) 0d0))
 
+(defun calendar-placeholder (type)
+  "The empty text Chromium shows for a date, month, or week field."
+  (cond ((string-equal type "month") "--------- ----")
+        ((string-equal type "week") "Week --, ----")
+        (t "mm/dd/yyyy")))
+
 (defun snap-used-margin (px)
   "A used margin is a whole 1/64px, truncated toward zero. 0.83em of 24px
 is 19.92, and Chromium lays that out as 19.90625."
@@ -495,9 +501,11 @@ A replaced image does not stretch to the container the way an ordinary block doe
                     (setf (box-w box) 13d0
                           (box-h box) 13d0))
                   (when (and (string= (dom-element-tag el) "input")
-                             (string= (string-downcase (or (dom-attr el "type") "")) "date")
+                             (member (string-downcase (or (dom-attr el "type") ""))
+                                     '("date" "month" "week") :test #'string=)
                              (eq (computed-width style) :auto))
-                    (let ((adv (text-advance "mm/dd/yyyy"
+                    (let ((adv (text-advance (calendar-placeholder
+                                              (string-downcase (dom-attr el "type")))
                                              (computed-font-size style)
                                              (computed-font-family style)
                                              (computed-font-weight style)

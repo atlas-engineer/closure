@@ -1136,7 +1136,8 @@ It does not apply when borders are collapsed."
   "An empty date field shows Chromium's mm/dd/yyyy placeholder and a calendar."
   (let ((el (box-element box)))
     (when (and el (string= (box-tag box) "input")
-               (string-equal (or (dom-attr el "type") "") "date")
+               (member (string-downcase (or (dom-attr el "type") ""))
+                       '("date" "month" "week") :test #'string=)
                (> (box-w box) 20d0) (> (box-h box) 8d0))
       (let* ((st (box-style box))
              (x (box-x box))
@@ -1161,7 +1162,8 @@ It does not apply when borders are collapsed."
                                                       (computed-font-family st)
                                                       (computed-font-weight st)
                                                       (computed-font-style st))))))
-              (cairo-show-text cr "mm/dd/yyyy"))))
+              (cairo-show-text cr (calendar-placeholder
+                                    (string-downcase (dom-attr el "type")))))))
         (let* ((iw 11d0)
                (ih 11d0)
                (ix (+ x w -16d0))

@@ -3211,6 +3211,22 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
         (check "the calendar page is white"
                (and (> r 240) (> g 240) (> b 240)))))))
 
+(defun test-month-week ()
+  (let* ((root (closure.engine:layout-html
+                "<input id='d' type='date'><input id='m' type='month'><input id='w' type='week'>"
+                :width 500 :height 40
+                :stylesheet "body{margin:0}"))
+         (date (closure.engine:find-box root "d"))
+         (month (closure.engine:find-box root "m"))
+         (week (closure.engine:find-box root "w")))
+    (check "month and week fields" (and date month week))
+    (check "a month field is wider than a date field"
+           (and month date
+                (~ (closure.engine:box-height month) 23d0)
+                (> (closure.engine:box-width month) (closure.engine:box-width date))))
+    (check "a week field is taller than a text line"
+           (and week (~ (closure.engine:box-height week) 23d0)))))
+
 (defun test-time-input ()
   (let* ((root (closure.engine:layout-html
                 "<input id='t' type='time'>"
@@ -5282,6 +5298,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-text-input-border)
   (test-time-paint)
   (test-date-input)
+  (test-month-week)
   (test-time-input)
   (test-control-baseline)
   (test-input-widgets)

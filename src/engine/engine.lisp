@@ -103,7 +103,8 @@ script element after style and layout. Left unset until that engine exists.")
      border: 1px solid #767676; background: #efefef; }
    input[type=time] { box-sizing: border-box; width: 103px; height: 24px; padding: 0 0 0 4px;
      border: 1px solid #767676; font-family: monospace; }
-   input[type=date] { box-sizing: border-box; width: auto; height: 23px; padding: 0 0 0 4px;
+   input[type=date], input[type=month], input[type=week] {
+     box-sizing: border-box; width: auto; height: 23px; padding: 0 0 0 4px;
      border: 1px solid #767676; font-family: monospace; }
    select { background: #efefef; border: 1px solid #767676; padding: 0; }
    textarea { font-family: monospace; background: #fff; border: 1px solid #767676; padding: 2px; width: 175px; height: 34px; }")
