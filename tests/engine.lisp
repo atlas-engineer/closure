@@ -3001,6 +3001,24 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-check-line ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p' style='margin:0'><input id='c' type='checkbox'><input id='s' type='submit' value='Go'></p>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0}"))
+         (para (closure.engine:find-box root "p"))
+         (check (closure.engine:find-box root "c"))
+         (submit (closure.engine:find-box root "s")))
+    (check "checkbox line and controls" (and para check submit))
+    (check "a checkbox margin stretches the line to 22px"
+           (and para (~ (closure.engine:box-height para) 22d0)))
+    (check "the checkbox sits 3px below the line"
+           (and para check
+                (~ (- (closure.engine:box-y check) (closure.engine:box-y para)) 3d0)))
+    (check "the submit sits 1px below that line"
+           (and para submit
+                (~ (- (closure.engine:box-y submit) (closure.engine:box-y para)) 1d0 0.2d0)))))
+
 (defun test-check-paint ()
   (let ((path "/tmp/closure-engine-checks.png"))
     (closure.engine:render-html
@@ -3008,12 +3026,12 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
      :width 40 :height 50
      :stylesheet "body{margin:0} input{display:block}"
      :output path)
-    (multiple-value-bind (r g b) (png-rgb path 1 1)
+    (multiple-value-bind (r g b) (png-rgb path 6 6)
       (declare (ignore g))
       (check "a checked checkbox is blue" (and (< r 40) (> b 200))))
-    (multiple-value-bind (r g b) (png-rgb path 6 19)
+    (multiple-value-bind (r g b) (png-rgb path 10 22)
       (check "an unchecked checkbox is white inside" (and (> r 250) (> g 250) (> b 250))))
-    (multiple-value-bind (r g b) (png-rgb path 6 32)
+    (multiple-value-bind (r g b) (png-rgb path 11 38)
       (declare (ignore g))
       (check "a checked radio is blue" (and (< r 40) (> b 200))))))
 
@@ -5165,6 +5183,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-check-line)
   (test-check-paint)
   (test-select-arrow)
   (test-file-input-paint)

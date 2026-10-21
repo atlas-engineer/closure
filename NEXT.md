@@ -483,6 +483,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A progress or meter track is a 6px rounded bar centered in the control.
 - An iframe border is Chromium's inset gray, 154 on the top and left and 238 on the bottom and right.
 - A solid border fills its own pixels, so a 3px dialog edge does not fringe into the next row.
+- A checkbox margin is 3px and a radio margin matches Chromium, so the line is 22px tall.
 
 ## Next
 

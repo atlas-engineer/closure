@@ -620,6 +620,22 @@ A replaced image does not stretch to the container the way an ordinary block doe
   (let ((a (box-advance box)))
     (if (numberp a) a (box-w box))))
 
+(defun inline-control-margin (item width)
+  "Margins that join an inline line: checkbox, radio, and range.
+Other inline boxes stay at zero so a paragraph margin is not applied again.
+Returns top, right, bottom, left."
+  (let ((st (box-style item))
+        (el (box-element item)))
+    (if (and st el (string= (or (box-tag item) "") "input"))
+        (let ((type (string-downcase (or (dom-attr el "type") ""))))
+          (if (member type '("checkbox" "radio" "range") :test #'string=)
+              (values (px (computed-mt st) width)
+                      (px (computed-mr st) width)
+                      (px (computed-mb st) width)
+                      (px (computed-ml st) width))
+              (values 0d0 0d0 0d0 0d0)))
+        (values 0d0 0d0 0d0 0d0))))
+
 (defun used-text-indent (style width)
   "Pixels to shift the first line. A percentage is of WIDTH."
   (let ((v (and style (computed-text-indent style))))
@@ -1098,8 +1114,10 @@ then adds one pixel: size/5 for sub, size/3 for super."
                          (above (if (eq (box-kind item) :text)
                                     (float (floor (/ (max 0d0 (- extent (box-h item))) 2d0)))
                                     0d0)))
-                    (setf top (min top (- ry above))
-                          bottom (max bottom (+ ry (- extent above)))))))
+                    (multiple-value-bind (mt mr mb ml) (inline-control-margin item width)
+                      (declare (ignore mr ml))
+                      (setf top (min top (- ry mt above))
+                            bottom (max bottom (+ ry mb (- extent above))))))))
               (dolist (item line)
                 (case (align-kind item)
                   ((:top :text-top)
@@ -1119,17 +1137,11 @@ then adds one pixel: size/5 for sub, size/3 for super."
                     (let* ((ox (box-x item))
                            (oy (box-y item))
                            (ny (+ yy (- ry top)))
-                           (st (box-style item))
                            (ml 0d0)
                            (mr 0d0))
-                      ;; A range has a 2px side margin. Other inline boxes
-                      ;; do not carry their style's margin into the line.
-                      (when (and st (box-element item)
-                                 (string= (or (box-tag item) "") "input")
-                                 (string-equal (or (dom-attr (box-element item) "type") "")
-                                               "range"))
-                        (setf ml (px (computed-ml st) width)
-                              mr (px (computed-mr st) width)))
+                      (multiple-value-bind (mt mr2 mb ml2) (inline-control-margin item width)
+                        (declare (ignore mt mb))
+                        (setf ml ml2 mr mr2))
                       (setf (box-x item) (+ xx ml)
                             (box-y item) ny)
                       (dolist (child (box-children item))
