@@ -1512,14 +1512,23 @@ but paint a 1px gray rounded edge around the background."
                  (w (float (round (box-w box)) 1d0))
                  (h (float (round (box-h box)) 1d0))
                  (bg (background-style box)))
-            (set-color cr (color-bytes 118 118 118))
-            (rounded-rect cr x y w h 2d0)
-            (cairo-fill cr)
-            (set-color cr (if bg
-                              (color-or (computed-background bg) bg)
-                              (color-bytes 239 239 239)))
-            (rounded-rect cr (+ x 1d0) (+ y 1d0) (- w 2d0) (- h 2d0) 1d0)
-            (cairo-fill cr))
+            (if (control-disabled-p el)
+                (progn
+                  (set-color cr (color-bytes 208 208 208))
+                  (rounded-rect cr x y w h 2d0)
+                  (cairo-fill cr)
+                  (set-color cr (color-bytes 238 238 238))
+                  (rounded-rect cr (+ x 1d0) (+ y 1d0) (- w 2d0) (- h 2d0) 1d0)
+                  (cairo-fill cr))
+                (progn
+                  (set-color cr (color-bytes 118 118 118))
+                  (rounded-rect cr x y w h 2d0)
+                  (cairo-fill cr)
+                  (set-color cr (if bg
+                                    (color-or (computed-background bg) bg)
+                                    (color-bytes 239 239 239)))
+                  (rounded-rect cr (+ x 1d0) (+ y 1d0) (- w 2d0) (- h 2d0) 1d0)
+                  (cairo-fill cr))))
           t)))))
 
 (defun paint-frameset-bar (cr x y w h vertical)

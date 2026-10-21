@@ -4212,6 +4212,24 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 39 10)
       (check "the select paints a dark arrow" (and (< r 40) (< g 40) (< b 40))))))
 
+(defun test-disabled-button ()
+  (let ((path "/tmp/closure-engine-disabled-button.png"))
+    (closure.engine:render-html
+     "<button disabled>OK</button>"
+     :width 80 :height 30
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 8 1)
+      (check "a disabled button face is light"
+             (and (< (abs (- r 238)) 12)
+                  (< (abs (- g 238)) 12)
+                  (< (abs (- b 238)) 12))))
+    (multiple-value-bind (r g b) (png-rgb path 8 0)
+      (check "a disabled button edge is a light gray"
+             (and (> r 180) (< r 230)
+                  (< (abs (- r g)) 8)
+                  (< (abs (- r b)) 8))))))
+
 (defun test-button-border ()
   (let ((path "/tmp/closure-engine-button-border.png"))
     (closure.engine:render-html
@@ -8290,6 +8308,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-radio-shape)
   (test-check-paint)
   (test-select-arrow)
+  (test-disabled-button)
   (test-button-border)
   (test-textarea-grip)
   (test-password-paint)
