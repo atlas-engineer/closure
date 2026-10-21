@@ -34,6 +34,11 @@
 (defun px (value container)
   (or (resolve-px value container) 0d0))
 
+(defun snap-used-margin (px)
+  "A used margin is a whole 1/64px, truncated toward zero. 0.83em of 24px
+is 19.92, and Chromium lays that out as 19.90625."
+  (/ (float (truncate (* (float px 1d0) 64d0)) 1d0) 64d0))
+
 (defun definite-length (value container)
   (resolve-px value container))
 
@@ -383,8 +388,10 @@ A replaced image does not stretch to the container the way an ordinary block doe
                                                            cw child-h cont
                                                            :shrink (string= (dom-element-tag node) "legend"))))
                                    (when cb
-                                     (let* ((mt (px (computed-mt (dom-element-style node)) cw))
-                                            (mb (max (px (computed-mb (dom-element-style node)) cw)
+                                     (let* ((mt (snap-used-margin
+                                                 (px (computed-mt (dom-element-style node)) cw)))
+                                            (mb (max (snap-used-margin
+                                                      (px (computed-mb (dom-element-style node)) cw))
                                                      (box-collapsed-bottom cb)))
                                             (through (box-collapsed-top cb))
                                             (collapse (and (not flow-started)

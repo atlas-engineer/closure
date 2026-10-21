@@ -488,6 +488,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A file button border uses the nearer pixel, so a box at 2922.09 does not paint one row low.
 - A button paints Chromium's 1px gray rounded edge instead of a 2px outset bevel.
 - An empty time field's placeholder is Chromium's dark gray, not the border gray.
+- A used margin truncates to 1/64px, so 0.83em of 24px is 19.90625 and the time field shares Chromium's pixel.
 
 ## Next
 

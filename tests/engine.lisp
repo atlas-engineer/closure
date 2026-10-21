@@ -3336,6 +3336,15 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
       (check "the legend shrinks to its text"
              (and legend (< (closure.engine:box-width legend) 80d0))))))
 
+(defun test-margin-unit ()
+  (let* ((root (closure.engine:layout-html
+                "<h2 id='h'>Heading</h2>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0}"))
+         (h2 (closure.engine:find-box root "h")))
+    (check "a used margin truncates to 1/64px"
+           (and h2 (~ (closure.engine:box-y h2) 19.90625d0 0.001d0)))))
+
 (defun test-smaller-headings ()
   (let* ((root (closure.engine:layout-html
                 "<h4 id='h4'>Hi</h4><h5 id='h5'>Hi</h5><h6 id='h6'>Hi</h6>"
@@ -5231,6 +5240,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-open-details)
   (test-fieldset-border)
   (test-fieldset-details)
+  (test-margin-unit)
   (test-smaller-headings)
   (test-br-and-center)
   (test-text-indent)
