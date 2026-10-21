@@ -4127,6 +4127,27 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
            (and para submit
                 (~ (- (closure.engine:box-y submit) (closure.engine:box-y para)) 1d0 0.2d0)))))
 
+(defun test-radio-shape ()
+  (let ((path "/tmp/closure-engine-radio.png"))
+    (closure.engine:render-html
+     "<p style='margin:0'><input type='radio' checked><input type='radio'></p>"
+     :width 80 :height 40
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 5 3)
+      (check "a radio has no square border"
+             (and (> r 240) (> g 240) (> b 240))))
+    (multiple-value-bind (r g b) (png-rgb path 11 9)
+      (declare (ignore g))
+      (check "a checked radio is a blue disc"
+             (and (< r 40) (> b 200))))
+    (multiple-value-bind (r g b) (png-rgb path 32 9)
+      (check "an unchecked radio is white inside"
+             (and (> r 240) (> g 240) (> b 240))))
+    (multiple-value-bind (r g b) (png-rgb path 26 9)
+      (check "an unchecked radio has a round edge"
+             (and (< r 210) (< g 210) (< b 210))))))
+
 (defun test-check-paint ()
   (let ((path "/tmp/closure-engine-checks.png"))
     (closure.engine:render-html
@@ -8226,6 +8247,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-font-marquee)
   (test-replaced-widgets)
   (test-check-line)
+  (test-radio-shape)
   (test-check-paint)
   (test-select-arrow)
   (test-button-border)

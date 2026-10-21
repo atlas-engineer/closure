@@ -102,7 +102,7 @@ script element after style and layout. Left unset until that engine exists.")
    input[type=image] { border: none; padding: 0; width: auto; height: auto; background: transparent; }
    input[type=range] { width: 129px; height: 16px; padding: 0; border: none; margin-left: 2px; margin-right: 2px; }
    input[type=checkbox] { margin: 3px 3px 3px 4px; }
-   input[type=radio] { margin: 3px 3px 0px 5px; }
+   input[type=radio] { margin: 3px 3px 0px 5px; border: none; padding: 0; background: transparent; }
    input[type=color] { box-sizing: border-box; width: 50px; height: 27px; padding: 1px 2px;
      border: 1px solid #767676; background: #efefef; }
    input[type=time] { box-sizing: border-box; width: 103px; height: 24px; padding: 0 0 0 4px;
