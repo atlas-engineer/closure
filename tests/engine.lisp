@@ -4738,6 +4738,44 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                    (* 16d0 0.29d0) 0.3d0)
                 (< (closure.engine:box-y sup) (closure.engine:box-y sub))))))
 
+(defun test-math-limit ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><math><mover id='o'><mi id='b'>x</mi><mo id='a'>^</mo></mover></math>
+                 <math><munder id='u'><mi id='ub'>x</mi><mo id='ua'>~</mo></munder></math></p>"
+                :width 220 :height 80
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (base (closure.engine:find-box root "b"))
+         (accent (closure.engine:find-box root "a"))
+         (under-base (closure.engine:find-box root "ub"))
+         (under (closure.engine:find-box root "ua")))
+    (check "limit boxes" (and base accent under-base under))
+    (check "the accent is the smaller script size"
+           (and accent (~ (closure.engine::computed-font-size
+                           (closure.engine::box-style accent))
+                          (* 16d0 0.71d0) 0.2d0)))
+    (check "the accent is centered above the base"
+           (and base accent
+                (~ (+ (closure.engine:box-x accent)
+                      (/ (closure.engine:box-width accent) 2d0))
+                   (+ (closure.engine:box-x base)
+                      (/ (closure.engine:box-width base) 2d0))
+                   0.4d0)
+                (~ (- (closure.engine:box-y base)
+                      (+ (closure.engine:box-y accent)
+                         (closure.engine:box-height accent)))
+                   (* 16d0 0.15d0) 0.3d0)))
+    (check "the underscript is centered below the base"
+           (and under-base under
+                (~ (+ (closure.engine:box-x under)
+                      (/ (closure.engine:box-width under) 2d0))
+                   (+ (closure.engine:box-x under-base)
+                      (/ (closure.engine:box-width under-base) 2d0))
+                   0.4d0)
+                (~ (- (closure.engine:box-y under)
+                      (+ (closure.engine:box-y under-base)
+                         (closure.engine:box-height under-base)))
+                   (* 16d0 0.15d0) 0.3d0)))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8728,6 +8766,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-root)
   (test-math-display)
   (test-math-subsup)
+  (test-math-limit)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)

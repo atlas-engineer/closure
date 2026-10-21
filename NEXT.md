@@ -619,6 +619,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An nth root puts a half-size index in the radical's upper corner. The radicand still starts after the sign.
 - display=block makes math a block and centers it. An author alignment still wins.
 - A combined subscript and superscript stack in one column beside the base. The subscript sits higher than it would alone.
+- An accent sits above its base, and an underscript sits below it. The narrower one is centered.
 
 ## Next
 
