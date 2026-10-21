@@ -420,8 +420,10 @@ from the Lisp engine without calling Node or another browser engine.
 - A closed dialog is hidden. An open dialog is a centered white box with
   a 3px border and 1em of padding, 13px from the top. search is a block
   and output is an inline word.
+- A picture shows its image at the given size, and the line grows to fit
+  it. A map and its areas take no space between the words around them.
 
 ## Next
 
-1. The done condition is not met. A handful of tags, including picture
-   and map, still need a sample and a comparison.
+1. The done condition is not met. Rare tags such as slot, colgroup, and
+   datalist are still missing from the sample page.

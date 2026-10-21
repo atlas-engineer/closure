@@ -1041,6 +1041,37 @@
       (walk box))
     out))
 
+(defun test-picture-map ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'><picture><img id='im' src='missing.png' alt='s' width='20' height='20'></picture> tail</p>
+                 <p id='q'>go <map id='m'><area shape='rect' coords='0,0,10,10'></map>on</p>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (p (closure.engine:find-box root "p"))
+         (im (closure.engine:find-box root "im"))
+         (go nil)
+         (on nil))
+    (labels ((walk (b)
+               (when b
+                 (when (eq (closure.engine::box-kind b) :text)
+                   (cond ((string= (or (closure.engine::box-text b) "") "go")
+                          (setf go b))
+                         ((string= (or (closure.engine::box-text b) "") "on")
+                          (setf on b))))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "picture and map" (and p im go on))
+    (check "the picture's image is 20 by 20 and the line is 24 tall"
+           (and im p
+                (~ (closure.engine:box-width im) 20d0)
+                (~ (closure.engine:box-height im) 20d0)
+                (~ (closure.engine:box-height p) 24d0)))
+    (check "a map does not separate the words around it"
+           (and go on
+                (~ (closure.engine:box-x on)
+                   (+ (closure.engine:box-x go) (closure.engine:box-width go) 4d0)
+                   0.2d0)))))
+
 (defun test-dialog-search ()
   (let* ((root (closure.engine:layout-html
                 "<dialog id='c'>Dialog</dialog><dialog id='d' open>Dialog</dialog><search id='s'>Search</search><p><output id='o'>42</output></p>"
@@ -4405,6 +4436,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-size-lengths)
   (test-background-size-percent)
   (test-background-position-percent)
+  (test-picture-map)
   (test-dialog-search)
   (test-iframe-object)
   (test-form-metrics)

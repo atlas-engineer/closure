@@ -16,7 +16,7 @@ script element after style and layout. Left unset until that engine exists.")
 
 (defparameter *ua-css*
   "html { display: block; }
-   head, script, style, title, meta, link, template, base { display: none; }
+   head, script, style, title, meta, link, template, base, source, area { display: none; }
    body { display: block; margin: 8px; }
    div, p, h1, h2, h3, h4, h5, h6, article, section, nav, aside, header, footer, main,
    figure, figcaption, details, summary, dialog, hgroup, menu, dir, center, hr,
@@ -39,7 +39,7 @@ script element after style and layout. Left unset until that engine exists.")
    ol { list-style-type: decimal; }
    li { display: list-item; }
    span, a, b, i, em, strong, code, small, big, tt, nobr, wbr, label, mark, time, abbr, cite, dfn,
-   bdi, bdo, data,
+   bdi, bdo, data, picture, map, output,
    kbd, samp, var, sub, sup, u, ins, s, del, q, button { display: inline; }
    s, del { text-decoration: line-through; }
    u, ins { text-decoration: underline; }
