@@ -2897,6 +2897,88 @@ b</div>"
                 (~ (closure.engine:box-width cell) 42.65625d0 1d0)
                 (~ (closure.engine:box-height cell) 34d0 1d0)))))
 
+(defun test-table-rules ()
+  (let* ((html "<table id='rows' rules='rows' border='1'>
+                  <tr><td id='a'>A</td><td id='b'>B</td></tr>
+                  <tr><td id='c'>C</td></tr>
+                </table>
+                <table id='cols' rules='cols'><tr><td id='d'>D</td><td>E</td></tr></table>
+                <table id='all' rules='all'><tr><td id='e'>F</td></tr></table>
+                <table id='none' rules='none' border='1'><tr><td id='n'>N</td></tr></table>
+                <table id='grp' rules='groups' border='1'>
+                  <colgroup><col><col></colgroup>
+                  <thead><tr><td id='h'>H</td><td id='i'>I</td></tr></thead>
+                  <tbody><tr><td id='body'>B</td><td>C</td></tr></tbody>
+                </table>
+                <table id='css' rules='rows'><tr><td id='red' style='border:1px solid #c00'>R</td></tr></table>")
+         (path "/tmp/closure-engine-table-rules.png")
+         (root (closure.engine:render-html html :width 200 :height 160
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (rows (closure.engine:find-box root "rows"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (d (closure.engine:find-box root "d"))
+         (e (closure.engine:find-box root "e"))
+         (n (closure.engine:find-box root "n"))
+         (none (closure.engine:find-box root "none"))
+         (h (closure.engine:find-box root "h"))
+         (i (closure.engine:find-box root "i"))
+         (red (closure.engine:find-box root "red")))
+    (check "rules tables" (and rows a b d e n none h i red))
+    (check "rules collapses the table"
+           (and rows (eq (closure.engine::computed-border-collapse (closure.engine::box-style rows))
+                         :collapse)))
+    (let ((st (closure.engine::box-style a)))
+      (check "rules=rows draws the horizontal borders"
+             (and st (~ (closure.engine::computed-bt st) 1d0 0.01d0)
+                  (~ (closure.engine::computed-bb st) 1d0 0.01d0)
+                  (eq (closure.engine::computed-bts st) :solid)))
+      (check "rules=rows leaves the vertical borders off"
+             (and st (~ (closure.engine::computed-bl st) 0d0 0.01d0)
+                  (~ (closure.engine::computed-br st) 0d0 0.01d0)
+                  (eq (closure.engine::computed-bls st) :none))))
+    (let ((st (closure.engine::box-style d)))
+      (check "rules=cols draws the vertical borders"
+             (and st (~ (closure.engine::computed-bl st) 1d0 0.01d0)
+                  (~ (closure.engine::computed-br st) 1d0 0.01d0)
+                  (~ (closure.engine::computed-bt st) 0d0 0.01d0))))
+    (let ((st (closure.engine::box-style e)))
+      (check "rules=all draws every side"
+             (and st (~ (closure.engine::computed-bt st) 1d0 0.01d0)
+                  (~ (closure.engine::computed-bl st) 1d0 0.01d0))))
+    (let ((st (closure.engine::box-style n))
+          (frame (closure.engine::box-style none)))
+      (check "rules=none clears the cell borders and keeps the frame"
+             (and st frame
+                  (~ (closure.engine::computed-bt st) 0d0 0.01d0)
+                  (eq (closure.engine::computed-bts frame) :outset))))
+    (let ((hs (closure.engine::box-style h))
+          (is (closure.engine::box-style i)))
+      (check "rules=groups lines the header and the column group"
+             (and hs is
+                  (~ (closure.engine::computed-bb hs) 1d0 0.01d0)
+                  (~ (closure.engine::computed-br hs) 0d0 0.01d0)
+                  (~ (closure.engine::computed-br is) 1d0 0.01d0))))
+    (let ((st (closure.engine::box-style red)))
+      (check "an author border wins over rules"
+             (and st (eq (closure.engine::computed-bts st) :solid)
+                  (> (first (closure.engine::computed-btc st)) 0.7d0)
+                  (< (second (closure.engine::computed-btc st)) 0.2d0))))
+    (let ((x (round (+ (closure.engine:box-x a) 4d0)))
+          (y (round (+ (closure.engine:box-y a) (closure.engine:box-height a) -1d0)))
+          (gap-x (round (+ (closure.engine:box-x a) (closure.engine:box-width a))))
+          (gap-y (round (+ (closure.engine:box-y a) 4d0))))
+      (multiple-value-bind (r g b) (png-rgb path x y)
+        (format t "~&  row rule pixel ~A,~A ~A ~A ~A~%" x y r g b)
+        (check "the row rule is painted" (and (< r 180) (< g 180) (< b 180))))
+      (multiple-value-bind (r g b) (png-rgb path gap-x gap-y)
+        (format t "~&  column gap pixel ~A,~A ~A ~A ~A~%" gap-x gap-y r g b)
+        (check "rules=rows does not paint a column rule"
+               (not (and (< (abs (- r 128)) 24)
+                         (< (abs (- g 128)) 24)
+                         (< (abs (- b 128)) 24))))))))
+
 (defun test-table-border-attr ()
   (let* ((html "<table id='t' border='1'><tr><td id='a'>One</td><td>Two</td></tr></table>")
          (path "/tmp/closure-engine-table-border.png")
@@ -5670,6 +5752,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-align-attr)
   (test-bgcolor)
   (test-table-cell-attrs)
+  (test-table-rules)
   (test-table-border-attr)
   (test-frameset)
   (test-embed-paint)
