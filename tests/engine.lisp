@@ -3156,9 +3156,9 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 4 0)
       (check "a time input has a gray border"
              (and (< (abs (- r 118)) 8) (< (abs (- g 118)) 8) (< (abs (- b 118)) 8))))
-    (multiple-value-bind (r g b) (png-rgb path 8 11)
-      (check "an empty time input shows its placeholder"
-             (not (and (> r 250) (> g 250) (> b 250)))))
+    (multiple-value-bind (r g b) (png-rgb path 8 12)
+      (check "an empty time input shows a dark placeholder"
+             (and (< r 160) (< g 160) (< b 160))))
     (multiple-value-bind (r g b) (png-rgb path 90 6)
       (declare (ignore g b))
       (check "a time input paints a clock" (< r 80)))))

@@ -487,6 +487,7 @@ from the Lisp engine without calling Node or another browser engine.
 - The range thumb is a blue disc, painted after the track clip is restored.
 - A file button border uses the nearer pixel, so a box at 2922.09 does not paint one row low.
 - A button paints Chromium's 1px gray rounded edge instead of a 2px outset bevel.
+- An empty time field's placeholder is Chromium's dark gray, not the border gray.
 
 ## Next
 

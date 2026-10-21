@@ -1111,7 +1111,7 @@ It does not apply when borders are collapsed."
              (y (box-y box))
              (w (box-w box))
              (h (box-h box))
-             (gray (color-bytes 118 118 118)))
+             (gray (color-bytes 39 39 39)))
         (multiple-value-bind (bt br bb bl) (border4 st)
           (declare (ignore br bb))
           (multiple-value-bind (pt pr pb pl) (pad4 st w)
