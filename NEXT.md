@@ -532,6 +532,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A placeholder is gray, and a typed value stays the field's own color.
 - cols and rows size a textarea from the character cell. An author size wins.
 - size on a text field sets its width in characters. An author width wins.
+- textarea wrap=off stays on one line, and soft wraps. An author white-space wins.
 
 ## Next
 

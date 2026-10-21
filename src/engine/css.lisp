@@ -1938,6 +1938,17 @@
                             :border-bottom-style :border-left-style))
               (dolist (pair (expand-declaration prop "solid"))
                 (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
+    ;; textarea wrap=off is pre. soft and hard wrap. An author white-space wins.
+    (when (and (not pseudo) (string-equal (dom-element-tag element) "textarea"))
+      (let* ((wrap (string-downcase (string-trim '(#\space #\newline #\tab #\return)
+                                                 (or (dom-attr element "wrap") ""))))
+             (white (cond ((string= wrap "off") "pre")
+                          ((or (string= wrap "soft") (string= wrap "hard")) "pre-wrap"))))
+        (when white
+          (let ((decl (make-css-decl :property :white-space :raw white
+                                     :origin :author :order 0)))
+            (dolist (pair (expand-declaration :white-space white))
+              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
     ;; nowrap on a cell loses to an author white-space.
     (when (and (not pseudo)
                (member (dom-element-tag element) '("td" "th") :test #'string-equal)

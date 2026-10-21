@@ -108,7 +108,7 @@ script element after style and layout. Left unset until that engine exists.")
      box-sizing: border-box; width: auto; height: 23px; padding: 0 0 0 4px;
      border: 1px solid #767676; font-family: monospace; }
    select { background: #efefef; border: 1px solid #767676; padding: 0; }
-   textarea { font-family: monospace; background: #fff; border: 1px solid #767676; padding: 2px; width: 175px; height: 34px; }
+   textarea { font-family: monospace; background: #fff; border: 1px solid #767676; padding: 2px; width: 175px; height: 34px; white-space: pre-wrap; overflow: auto; }
    button:disabled {
      color: rgba(16, 16, 16, 0.3);
      background-color: rgba(239, 239, 239, 0.3);

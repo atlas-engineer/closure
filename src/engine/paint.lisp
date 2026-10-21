@@ -598,6 +598,35 @@ and gaps between known stops are split evenly."
                  (cairo-show-text cr alt)
                  (cairo-restore cr)))))))))))
 
+(defun wrap-field-lines (text st max-w)
+  "Lines of a textarea. pre keeps each newline intact. pre-wrap also breaks
+on spaces so a line fits MAX-W."
+  (let* ((size (computed-font-size st))
+         (family (computed-font-family st))
+         (weight (computed-font-weight st))
+         (fstyle (computed-font-style st))
+         (hard (member (computed-white-space st) '(:pre :nowrap)))
+         (paras (split-lines text)))
+    (if hard
+        paras
+        (loop for para in paras
+              append (let ((words (uiop:split-string para :separator '(#\space)))
+                           (lines nil)
+                           (cur nil))
+                       (flet ((commit ()
+                                (push (format nil "~{~A~^ ~}" (nreverse cur)) lines)
+                                (setf cur nil)))
+                         (dolist (word words)
+                           (let* ((trial (if cur
+                                             (format nil "~{~A~^ ~} ~A" (reverse cur) word)
+                                             word))
+                                  (adv (text-advance trial size family weight fstyle)))
+                             (if (or (null cur) (<= adv (max 1d0 max-w)))
+                                 (push word cur)
+                                 (progn (commit) (push word cur)))))
+                         (when cur (commit)))
+                       (or (nreverse lines) '("")))))))
+
 (defun paint-control (cr box)
   "Draw the value of an input, select, or textarea. Buttons paint their own text."
   (let* ((el (box-element box))
@@ -605,9 +634,7 @@ and gaps between known stops are split evenly."
          (label (and el (control-label el))))
     (when (and st label (plusp (length label)))
       (multiple-value-bind (bt br bb bl) (border4 st)
-        (declare (ignore br bb))
         (multiple-value-bind (pt pr pb pl) (pad4 st (box-w box))
-          (declare (ignore pr pb))
           (set-color cr (if (placeholder-shown-p el)
                             (color-bytes 117 117 117)
                             (computed-color st)))
@@ -616,13 +643,33 @@ and gaps between known stops are split evenly."
                             (cairo-slant (computed-font-style st))
                             (cairo-weight (computed-font-weight st))
                             (computed-font-size st))
-          (cairo-move-to cr (+ (box-x box) bl pl)
-                         (+ (box-y box) bt pt
-                            (font-ascent (computed-font-size st)
-                                         (computed-font-family st)
-                                         (computed-font-weight st)
-                                         (computed-font-style st))))
-          (cairo-show-text cr label))))))
+          (if (string= (dom-element-tag el) "textarea")
+              (let* ((x0 (+ (box-x box) bl pl))
+                     (y0 (+ (box-y box) bt pt))
+                     (cw (max 1d0 (- (box-w box) bl br pl pr)))
+                     (ch (max 1d0 (- (box-h box) bt bb pt pb)))
+                     (lh (used-line-height st))
+                     (ascent (font-ascent (computed-font-size st)
+                                          (computed-font-family st)
+                                          (computed-font-weight st)
+                                          (computed-font-style st)))
+                     (lines (wrap-field-lines label st cw)))
+                (cairo-save cr)
+                (cairo-rectangle cr x0 y0 cw ch)
+                (cairo-clip cr)
+                (loop for line in lines
+                      for i from 0
+                      do (cairo-move-to cr x0 (+ y0 ascent (* (float i 1d0) lh)))
+                         (cairo-show-text cr line))
+                (cairo-restore cr))
+              (progn
+                (cairo-move-to cr (+ (box-x box) bl pl)
+                               (+ (box-y box) bt pt
+                                  (font-ascent (computed-font-size st)
+                                               (computed-font-family st)
+                                               (computed-font-weight st)
+                                               (computed-font-style st))))
+                (cairo-show-text cr label))))))))
 
 (defun paint-password (cr box)
   "One disc per character. Chromium's mask is 0.35em apart and sits above the baseline."

@@ -5424,6 +5424,42 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-textarea-wrap ()
+  (let* ((html "<textarea id='off' wrap='off' cols='8'>one two three</textarea>
+                <textarea id='soft' wrap='soft' cols='8'>one two three</textarea>
+                <textarea id='css' wrap='off' style='white-space:pre-wrap' cols='8'>one two three</textarea>")
+         (path "/tmp/closure-engine-textarea-wrap.png")
+         (root (closure.engine:render-html html :width 400 :height 80
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (off (closure.engine:find-box root "off"))
+         (soft (closure.engine:find-box root "soft"))
+         (css (closure.engine:find-box root "css")))
+    (labels ((ink-low (box)
+               (when box
+                 (let ((x0 (round (+ (closure.engine:box-x box) 6d0)))
+                       (y0 (round (+ (closure.engine:box-y box)
+                                     (* (closure.engine:box-height box) 0.55d0))))
+                       (y1 (round (+ (closure.engine:box-y box)
+                                     (closure.engine:box-height box) -8d0))))
+                   (loop for y from y0 to y1
+                         thereis (loop for x from x0 to (+ x0 30)
+                                       thereis (multiple-value-bind (r g b)
+                                                   (png-rgb path x y)
+                                                 (< (+ r g b) 200))))))))
+      (check "wrap boxes" (and off soft css))
+      (check "wrap=off keeps the text on one line"
+             (and off
+                  (eq (closure.engine::computed-white-space (closure.engine::box-style off)) :pre)
+                  (not (ink-low off))))
+      (check "wrap=soft breaks onto the next line"
+             (and soft
+                  (eq (closure.engine::computed-white-space (closure.engine::box-style soft)) :pre-wrap)
+                  (ink-low soft)))
+      (check "an author white-space wins over wrap"
+             (and css
+                  (eq (closure.engine::computed-white-space (closure.engine::box-style css)) :pre-wrap))))))
+
 (defun test-input-size ()
   (let* ((html "<input id='d' value='Hi'>
                 <input id='a' size='10' value='Hi'>
@@ -6197,6 +6233,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-textarea-wrap)
   (test-input-size)
   (test-textarea-size)
   (test-placeholder)
