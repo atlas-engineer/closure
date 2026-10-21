@@ -3096,6 +3096,23 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                 (~ (closure.engine:box-height hidden) 18d0)
                 (eq (closure.engine::box-marker summary) :disclosure-open)))))
 
+(defun test-fieldset-border ()
+  (let ((path "/tmp/closure-engine-fieldset.png"))
+    (closure.engine:render-html
+     "<fieldset><legend>Legend</legend>Field</fieldset>"
+     :width 400 :height 80
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 4 1)
+      (check "the fieldset border is not at the top of the box"
+             (and (> r 250) (> g 250) (> b 250))))
+    (multiple-value-bind (r g b) (png-rgb path 4 8)
+      (check "the fieldset border crosses the legend"
+             (and (< r 180) (< g 180) (< b 180))))
+    (multiple-value-bind (r g b) (png-rgb path 17 8)
+      (check "the legend leaves a gap in the top border"
+             (and (> r 250) (> g 250) (> b 250))))))
+
 (defun test-fieldset-details ()
   (let* ((root (closure.engine:layout-html
                 "<fieldset id='f'><legend id='l'>Legend</legend>Field</fieldset>
@@ -5025,6 +5042,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-input-widgets)
   (test-check-submit)
   (test-open-details)
+  (test-fieldset-border)
   (test-fieldset-details)
   (test-smaller-headings)
   (test-br-and-center)

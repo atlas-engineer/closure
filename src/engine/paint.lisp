@@ -28,6 +28,19 @@
           (cairo-arc cr (+ x r) (+ y r) r pi (* 1.5d0 pi))
           (cairo-close-path cr)))))
 
+(defun fieldset-border-top (box bt)
+  "A fieldset's top border crosses the middle of its legend, not the box top.
+Returns the border y, the legend x, and the legend width. The legend width is
+the gap in that border."
+  (when (and (string= (or (box-tag box) "") "fieldset") (> bt 0d0))
+    (let ((legend (find-if (lambda (k)
+                             (and (box-tag k) (string= (box-tag k) "legend")))
+                           (box-children box))))
+      (when legend
+        (values (+ (box-y legend) (/ (max 0d0 (- (box-h legend) bt)) 2d0))
+                (box-x legend)
+                (box-w legend))))))
+
 (defun paint-border (cr box)
   (let* ((st (box-style box))
          (x (box-x box)) (y (box-y box)) (w (box-w box)) (h (box-h box)))
@@ -105,14 +118,23 @@
                        ((or (eq style :ridge) (eq style :outset))
                         (values (shade color (not light)) :solid))
                        (t (values color style)))))
-            (multiple-value-bind (c s) (tone (computed-btc st) (computed-bts st) nil)
-              (side bt c s x y w bt))
-            (multiple-value-bind (c s) (tone (computed-bbc st) (computed-bbs st) t)
-              (side bb c s x (+ y h (- bb)) w bb))
-            (multiple-value-bind (c s) (tone (computed-blc st) (computed-bls st) nil)
-              (side bl c s x y bl h))
-            (multiple-value-bind (c s) (tone (computed-brc st) (computed-brs st) t)
-              (side br c s (+ x w (- br)) y br h))))))))
+            (multiple-value-bind (legend-y legend-x legend-w)
+                (fieldset-border-top box bt)
+              (let ((top-y (or legend-y y))
+                    (side-h (if legend-y (- (+ y h) legend-y) h)))
+                (multiple-value-bind (c s) (tone (computed-btc st) (computed-bts st) nil)
+                  (if legend-y
+                      (let ((gap-l (max x (min (+ x w) legend-x)))
+                            (gap-r (max x (min (+ x w) (+ legend-x legend-w)))))
+                        (side bt c s x top-y (max 0d0 (- gap-l x)) bt)
+                        (side bt c s gap-r top-y (max 0d0 (- (+ x w) gap-r)) bt))
+                      (side bt c s x y w bt)))
+                (multiple-value-bind (c s) (tone (computed-bbc st) (computed-bbs st) t)
+                  (side bb c s x (+ y h (- bb)) w bb))
+                (multiple-value-bind (c s) (tone (computed-blc st) (computed-bls st) nil)
+                  (side bl c s x top-y bl side-h))
+                (multiple-value-bind (c s) (tone (computed-brc st) (computed-brs st) t)
+                  (side br c s (+ x w (- br)) top-y br side-h))))))))))
 
 (defun paint-outline (cr box)
   "Draw an outline outside the border box. It does not change layout."

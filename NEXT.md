@@ -465,6 +465,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A select paints a downward triangle in the gutter at its right edge.
 - A checked checkbox and radio are blue. An empty checkbox is a gray box.
 - An open dialog's text moves with the centered box instead of staying at the static x.
+- A fieldset border crosses the middle of the legend and leaves a gap behind it.
 
 ## Next
 
