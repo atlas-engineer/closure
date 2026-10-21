@@ -5424,6 +5424,37 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-table-background ()
+  (let* ((html "<table id='t' background='square.png'>
+                  <tr id='r' background='square.png'>
+                    <td id='c' background='square.png'>A</td>
+                    <th id='h' background='square.png'>H</th>
+                    <td id='a' background='square.png' style='background-image:none'>x</td>
+                  </tr>
+                </table>
+                <div id='d' background='square.png'>no</div>")
+         (root (closure.engine:layout-html html :width 300 :height 80
+                                          :stylesheet "body{margin:0}"))
+         (names '("t" "r" "c" "h")))
+    (labels ((image (id)
+               (let ((box (closure.engine:find-box root id)))
+                 (and box (closure.engine::computed-background-image
+                           (closure.engine::box-style box))))))
+      (check "table background boxes"
+             (every (lambda (id) (closure.engine:find-box root id))
+                    (append names '("a" "d"))))
+      (check "background tiles a table, row, cell, and header"
+             (every (lambda (id)
+                      (let ((img (image id)))
+                        (and (stringp img)
+                             (search "square.png" img :test #'char-equal))))
+                    names))
+      (check "a div ignores background"
+             (let ((img (image "d")))
+               (or (null img) (eq img :none))))
+      (check "an author image wins over the background attribute"
+             (eq (image "a") :none)))))
+
 (defun test-body-presentational ()
   (let* ((html "<body id='bd' text='red' link='#0a0' background='square.png' bgcolor='#eee'>
                   <p id='p'>Hello <a id='a' href='#'>link</a><a id='n'>x</a></p>
@@ -6495,6 +6526,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-table-background)
   (test-body-presentational)
   (test-disclosure-open)
   (test-dotted-underline)

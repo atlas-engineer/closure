@@ -2073,14 +2073,6 @@
                 (let ((decl (make-css-decl :property :color :raw text
                                            :origin :author :order 0)))
                   (dolist (pair (expand-declaration :color text))
-                    (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))
-            (let ((bg (string-trim '(#\space #\newline #\tab #\return)
-                                   (or (dom-attr body "background") ""))))
-              (when (plusp (length bg))
-                (let* ((raw (format nil "url(\"~A\")" bg))
-                       (decl (make-css-decl :property :background-image :raw raw
-                                            :origin :author :order 0)))
-                  (dolist (pair (expand-declaration :background-image raw))
                     (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
           (when (and (string-equal (dom-element-tag element) "a")
                      (dom-attr element "href"))
@@ -2099,7 +2091,17 @@
                 (let ((decl (make-css-decl :property :color :raw raw
                                            :origin :author :order 0)))
                   (dolist (pair (expand-declaration :color raw))
-                    (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))))
+                    (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))))
+      (when (member (dom-element-tag element)
+                    '("body" "table" "tr" "td" "th") :test #'string-equal)
+        (let ((bg (string-trim '(#\space #\newline #\tab #\return)
+                               (or (dom-attr element "background") ""))))
+          (when (plusp (length bg))
+            (let* ((raw (format nil "url(\"~A\")" bg))
+                   (decl (make-css-decl :property :background-image :raw raw
+                                        :origin :author :order 0)))
+              (dolist (pair (expand-declaration :background-image raw))
+                (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
     found))
 
 (defun list-type-name (raw)

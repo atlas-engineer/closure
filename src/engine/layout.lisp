@@ -2613,6 +2613,32 @@ supplies the width, defaulting to 1px. An author border is left alone."
                 (setf (box-h cb)
                       (loop for i from index below (min (+ index rspan) (length row-heights))
                             sum (or (nth i row-heights) 0d0)))))
+            ;; A row background sits behind its cells. Appended here so the
+            ;; later nreverse paints it first.
+            (loop for row in rows
+                  for cells in row-boxes
+                  when cells
+                  do (let* ((rst (and (dom-element-p row) (dom-element-style row)))
+                            (img (and rst (computed-background-image rst)))
+                            (bg (and rst (computed-background rst))))
+                       (when (or (stringp img)
+                                 (and (consp bg) (not (eq (car bg) :px))))
+                         (let* ((x0 (reduce #'min cells :key #'box-x))
+                                (y0 (reduce #'min cells :key #'box-y))
+                                (x1 (reduce #'max cells
+                                            :key (lambda (k) (+ (box-x k) (box-w k)))))
+                                (y1 (reduce #'max cells
+                                            :key (lambda (k) (+ (box-y k) (box-h k))))))
+                           (setf kids
+                                 (append kids
+                                         (list (make-box :kind :block
+                                                         :element row
+                                                         :tag "tr"
+                                                         :style rst
+                                                         :id (dom-element-id row)
+                                                         :x x0 :y y0
+                                                         :w (- x1 x0)
+                                                         :h (- y1 y0)))))))))
             (when (and cap-el cap-bottom
                        (dom-element-style cap-el)
                        (not (eq (computed-display (dom-element-style cap-el)) :none)))
