@@ -5424,6 +5424,23 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-row-collapse ()
+  (let* ((root (closure.engine:layout-html
+                "<table id='v'><tr style='visibility:collapse'><td id='e'>E</td></tr><tr><td id='f'>F</td></tr></table>"
+                :width 200 :height 80
+                :stylesheet "body{margin:0} td{border:1px solid #000;padding:0;width:30px;height:18px}"))
+         (e (closure.engine:find-box root "e"))
+         (f (closure.engine:find-box root "f"))
+         (table (closure.engine:find-box root "v")))
+    (check "collapsed row boxes" (and e f table))
+    (check "a collapsed row takes no height"
+           (and e (< (closure.engine:box-height e) 1d0)))
+    (check "the next row starts where the collapsed row was"
+           (and e f (~ (closure.engine:box-y f) (closure.engine:box-y e) 1d0)
+                (~ (closure.engine:box-height f) 20d0 1d0)))
+    (check "the table is only as tall as the visible row"
+           (and table (~ (closure.engine:box-height table) 24d0 1d0)))))
+
 (defun test-rowspan-height ()
   (let* ((root (closure.engine:layout-html
                 "<table><tr><td id='r' rowspan='2' height='50'>R</td><td id='t'>T</td></tr><tr><td id='u'>U</td></tr></table>"
@@ -6778,6 +6795,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-row-collapse)
   (test-rowspan-height)
   (test-col-span-width)
   (test-table-align-float)

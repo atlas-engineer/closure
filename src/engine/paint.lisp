@@ -1564,7 +1564,8 @@ but paint a 1px gray rounded edge around the background."
 
 (defun paint-box (cr box &optional (scroll-y 0d0))
   (when (and box (or (null (box-style box))
-                     (not (eq (computed-visibility (box-style box)) :hidden))))
+                     (not (member (computed-visibility (box-style box))
+                                  '(:hidden :collapse)))))
     (let ((sticky (or (box-sticky-top box) 0d0))
           (dy 0d0))
       (when (and (box-sticky-top box) (box-style box)

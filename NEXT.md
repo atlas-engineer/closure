@@ -551,6 +551,7 @@ from the Lisp engine without calling Node or another browser engine.
 - table align=left or right floats the table. align=center still centers it. An author float wins.
 - A col with a span gives each of those columns its width. An author width wins.
 - A rowspan height covers every spanned row and the gap between them. The extra is shared.
+- visibility:collapse removes a table row and its gap. The next row moves up.
 
 ## Next
 

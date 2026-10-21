@@ -2612,6 +2612,12 @@ supplies the width, defaulting to 1px. An author border is left alone."
                                  (definite-length (computed-height (dom-element-style row)) nil))))
                   (when (and (numberp want) (> want rh))
                     (setf rh want)))
+                ;; visibility:collapse removes the row, including its gap.
+                (let ((collapsed (and (dom-element-style row)
+                                      (eq (computed-visibility (dom-element-style row))
+                                          :collapse))))
+                  (when collapsed
+                    (setf rh 0d0))
                 (push rh row-heights)
                 (push cells row-boxes)
                 (dolist (cb cells)
@@ -2641,10 +2647,12 @@ supplies the width, defaulting to 1px. An author border is left alone."
                   (dolist (cb cells) (inset-collapsed-cell cb)))
                 (setf kids (append (nreverse cells) kids))
                 (setf prev-row cells)
-                (incf yy (+ rh (cond
-                                 (collapse 0d0)
-                                 ((> space-y 0d0) space-y)
-                                 (t (computed-row-gap style)))))))
+                (incf yy (+ rh (if collapsed
+                                   0d0
+                                   (cond
+                                     (collapse 0d0)
+                                     ((> space-y 0d0) space-y)
+                                     (t (computed-row-gap style)))))))))
             (setf row-heights (nreverse row-heights))
             (setf row-boxes (nreverse row-boxes))
             ;; A table height taller than the rows shares the extra equally.
