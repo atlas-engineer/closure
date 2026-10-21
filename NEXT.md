@@ -447,6 +447,8 @@ from the Lisp engine without calling Node or another browser engine.
   or stars, and the default border leaves a 6px gap. noframes is hidden.
 - An rb element is the ruby base. For WWW with the annotation note, that
   box is 45.31 by 17 at the same x as the ruby.
+- An rt inside rtc stays full size and follows the base on the line. The
+  ruby is 72.86 by 17, and the container starts where the base ends.
 
 ## Next
 

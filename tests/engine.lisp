@@ -2646,6 +2646,25 @@ b</div>"
         (check "address has no extra indent"
                (and block (~ (closure.engine:box-x block) 0d0)))))))
 
+(defun test-ruby-rtc ()
+  (let* ((root (closure.engine:layout-html
+                "<p>X<ruby id='r'>WWW<rtc id='c'><rt>note</rt></rtc></ruby>Y</p>"
+                :width 800 :height 80
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (ruby (closure.engine:find-box root "r"))
+         (rtc (closure.engine:find-box root "c")))
+    (check "an rtc follows the base at full size"
+           (and ruby rtc
+                (~ (closure.engine:box-x ruby) 11.56d0 0.2d0)
+                (~ (closure.engine:box-y ruby) 0d0)
+                (~ (closure.engine:box-width ruby) 72.86d0 0.4d0)
+                (~ (closure.engine:box-height ruby) 17d0)
+                (~ (closure.engine:box-x rtc) 56.88d0 0.3d0)
+                (~ (closure.engine:box-y rtc) 0d0)
+                (~ (closure.engine:box-width rtc) 27.55d0 0.3d0)
+                (~ (closure.engine:box-height rtc) 17d0)
+                (~ (closure.engine::computed-font-size (closure.engine::box-style rtc)) 16d0)))))
+
 (defun test-ruby-rb ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'>X<ruby id='r'><rb id='b'>WWW</rb><rt id='t'>note</rt></ruby>Y</p>"
@@ -4834,6 +4853,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-ruby-rtc)
   (test-ruby-rb)
   (test-ruby)
   (test-frameset)

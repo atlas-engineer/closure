@@ -697,12 +697,20 @@ then adds one pixel: size/5 for sub, size/3 for super."
          (rt (find-if (lambda (c)
                         (and (dom-element-p c) (string= (dom-element-tag c) "rt")))
                       (dom-node-children el)))
+         (rtc (find-if (lambda (c)
+                         (and (dom-element-p c) (string-equal (dom-element-tag c) "rtc")))
+                       (dom-node-children el)))
          (rt-style (or (and rt (dom-element-style rt)) style))
          (base-text (string-trim '(#\space #\newline #\tab)
                                  (ruby-plain-text (dom-node-children el) :skip-annot t)))
          (ann-text (if rt
                        (string-trim '(#\space #\newline #\tab)
                                     (ruby-plain-text (dom-node-children rt)))
+                       ""))
+         ;; An rt inside rtc stays full size and follows the base on the line.
+         (rtc-text (if (and rtc (not rt))
+                       (string-trim '(#\space #\newline #\tab)
+                                    (ruby-plain-text (dom-node-children rtc)))
                        ""))
          (fs (computed-font-size style))
          (fam (computed-font-family style))
@@ -713,9 +721,12 @@ then adds one pixel: size/5 for sub, size/3 for super."
          (awt (computed-font-weight rt-style))
          (afst (computed-font-style rt-style))
          (base-w (if (plusp (length base-text)) (text-advance base-text fs fam wt fst) 0d0))
+         (rtc-w (if (plusp (length rtc-text)) (text-advance rtc-text fs fam wt fst) 0d0))
          (ann-w (if (plusp (length ann-text)) (text-advance ann-text afs afam awt afst) 0d0))
          (ann-extra (if (plusp (length ann-text)) afs 0d0))
-         (ruby-w (max base-w (max 0d0 (- ann-w ann-extra))))
+         (ruby-w (if (plusp rtc-w)
+                     (+ base-w rtc-w)
+                     (max base-w (max 0d0 (- ann-w ann-extra)))))
          (base-asc (font-ascent fs fam wt fst))
          (base-h (+ base-asc (font-descent fs fam wt fst)))
          (ann-asc (font-ascent afs afam awt afst))
@@ -737,8 +748,15 @@ then adds one pixel: size/5 for sub, size/3 for super."
       (push (make-box :kind :text :style style :element base-el :text base-text
                       :tag (unless (eq base-el el) (dom-element-tag base-el))
                       :id (unless (eq base-el el) (dom-element-id base-el))
-                      :x (/ (- ruby-w base-w) 2d0) :y ann-extra
+                      :x (if (plusp rtc-w) 0d0 (/ (- ruby-w base-w) 2d0))
+                      :y ann-extra
                       :w base-w :h base-h :baseline base-asc)
+            kids))
+    (when (plusp (length rtc-text))
+      (push (make-box :kind :text :style style :element rtc :text rtc-text
+                      :tag (dom-element-tag rtc) :id (dom-element-id rtc)
+                      :x base-w :y 0d0
+                      :w rtc-w :h base-h :baseline base-asc)
             kids))
     (setf (box-children box) (nreverse kids))
     box))
