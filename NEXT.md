@@ -435,6 +435,8 @@ from the Lisp engine without calling Node or another browser engine.
   that line. The block after it starts in the same place.
 - A video line is 154px. Progress and meter sit on it without adding their
   font's line gap.
+- A font element uses the size, color, and face attributes. strike is
+  struck through. A marquee fills its line, and that line is 22px.
 
 ## Next
 

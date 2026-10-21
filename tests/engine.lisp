@@ -2674,6 +2674,50 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-font-marquee ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'><strike id='s'>strike</strike></p><p id='g'><font id='f' size='7' color='red'>font</font> <font id='r' size='+2'>plus</font> <font id='m' size='3' face='monospace'>mono</font></p><p id='q'><marquee id='mq'>scroll</marquee></p><p><font id='o' size='7' style='font-size:12px'>x</font></p>"
+                :width 1024 :height 300
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (strike (closure.engine:find-box root "s"))
+         (para (closure.engine:find-box root "g"))
+         (font (closure.engine:find-box root "f"))
+         (plus (closure.engine:find-box root "r"))
+         (mono (closure.engine:find-box root "m"))
+         (line (closure.engine:find-box root "q"))
+         (marquee (closure.engine:find-box root "mq"))
+         (over (closure.engine:find-box root "o"))
+         (color (and font (closure.engine::computed-color (closure.engine::box-style font)))))
+    (check "font, strike, and marquee" (and strike para font plus mono line marquee over))
+    (check "strike is struck through at the same width as a browser"
+           (and strike
+                (eq (closure.engine::computed-text-decoration (closure.engine::box-style strike))
+                    :line-through)
+                (~ (closure.engine:box-width strike) 35.55d0 0.1d0)
+                (~ (closure.engine:box-height strike) 17d0)))
+    (check "font size 7 is 48px red and the line is 55 tall"
+           (and font para color
+                (~ (closure.engine::computed-font-size (closure.engine::box-style font)) 48d0)
+                (~ (first color) 1d0 0.01d0)
+                (~ (second color) 0d0 0.01d0)
+                (~ (closure.engine:box-width font) 77.33d0 0.1d0)
+                (~ (closure.engine:box-height font) 53d0)
+                (~ (closure.engine:box-y font) 19d0)
+                (~ (closure.engine:box-height para) 55d0)))
+    (check "a relative font size and a monospace face use the browser tables"
+           (and plus mono
+                (~ (closure.engine::computed-font-size (closure.engine::box-style plus)) 24d0)
+                (~ (closure.engine:box-y plus) 41d0)
+                (~ (closure.engine::computed-font-size (closure.engine::box-style mono)) 13d0)
+                (~ (closure.engine:box-width mono) 31.2d0 0.1d0)))
+    (check "an author font-size beats the size attribute"
+           (and over (~ (closure.engine::computed-font-size (closure.engine::box-style over)) 12d0)))
+    (check "a marquee fills the line and the line is 22 tall"
+           (and marquee line
+                (~ (closure.engine:box-width marquee) 1024d0)
+                (~ (closure.engine:box-height marquee) 18d0)
+                (~ (closure.engine:box-height line) 22d0)))))
+
 (defun test-replaced-widgets ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'><video id='v'></video> <canvas id='c'></canvas> <progress id='g'></progress> <meter id='m'></meter></p><audio id='a'></audio>"
@@ -4620,6 +4664,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-wbr)
   (test-address)
   (test-ruby)
+  (test-font-marquee)
   (test-replaced-widgets)
   (test-fieldset-details)
   (test-smaller-headings)

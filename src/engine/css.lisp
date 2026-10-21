@@ -2153,6 +2153,47 @@
       (setf (computed-custom s) (copy-custom (computed-custom parent))))
     s))
 
+(defun monospace-family-p (family)
+  "True when FAMILY is a generic or named monospace face."
+  (let ((name (string-downcase
+               (cond ((stringp family) family)
+                     ((and (consp family) (stringp (car family))) (car family))
+                     (t "")))))
+    (member name '("monospace" "courier" "courier new" "ui-monospace") :test #'string=)))
+
+(defun html-font-size (size-attr family)
+  "Map an HTML font size attribute onto the browser's 1..7 pixel table.
+A leading + or - is relative to 3, the default base. A monospace face uses
+the smaller fixed table."
+  (let* ((s (string-trim '(#\space #\newline #\tab #\return) (or size-attr "")))
+         (n (and (plusp (length s)) (ignore-errors (parse-integer s :junk-allowed t)))))
+    (when n
+      (let ((index (max 1 (min 7
+                               (if (find (char s 0) "+-")
+                                   (+ 3 n)
+                                   n)))))
+        (nth (1- index)
+             (if (monospace-family-p family)
+                 '(10d0 12d0 13d0 16d0 20d0 26d0 39d0)
+                 '(10d0 13d0 16d0 18d0 24d0 32d0 48d0)))))))
+
+(defun apply-font-presentational (element style specified)
+  "The font element's size, color, and face attributes. An author rule wins."
+  (when (string-equal (dom-element-tag element) "font")
+    (let ((face (dom-attr element "face")))
+      (when (and face (not (gethash :font-family specified)) (plusp (length (string-trim '(#\space) face))))
+        (let ((families (parse-font-family (css-tokenize face))))
+          (when families (setf (computed-font-family style) families)))))
+    (let ((size (dom-attr element "size")))
+      (when (and size (not (gethash :font-size specified)))
+        (let ((px (html-font-size size (computed-font-family style))))
+          (when px (setf (computed-font-size style) px)))))
+    (let ((color (dom-attr element "color")))
+      (when (and color (not (gethash :color specified)) (plusp (length (string-trim '(#\space) color))))
+        (let ((c (parse-color-tokens (css-tokenize color))))
+          (when (and c (listp c))
+            (setf (computed-color style) c)))))))
+
 (defun cascade-element (element rules &optional inline-decls pseudo parent-style)
   (let* ((*cascade-element* element)
          (style (inherit-computed parent-style))
@@ -2176,7 +2217,9 @@
         (maphash (lambda (prop item)
                    (unless (eq prop :font-size)
                      (apply-longhand style prop (second item) parent-size)))
-                 best)))
+                 best)
+        (unless pseudo
+          (apply-font-presentational element style best))))
     (if pseudo
         (setf (dom-element-style element) previous)
         (setf (dom-element-style element) style))

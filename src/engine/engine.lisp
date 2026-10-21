@@ -39,9 +39,9 @@ script element after style and layout. Left unset until that engine exists.")
    ol { list-style-type: decimal; }
    li { display: list-item; }
    span, a, b, i, em, strong, code, small, big, tt, nobr, wbr, label, mark, time, abbr, cite, dfn,
-   bdi, bdo, data, picture, map, output,
-   kbd, samp, var, sub, sup, u, ins, s, del, q, button { display: inline; }
-   s, del { text-decoration: line-through; }
+   bdi, bdo, data, picture, map, output, font,
+   kbd, samp, var, sub, sup, u, ins, s, del, strike, q, button { display: inline; }
+   s, del, strike { text-decoration: line-through; }
    u, ins { text-decoration: underline; }
    small { font-size: smaller; }
    big { font-size: larger; }
@@ -58,6 +58,7 @@ script element after style and layout. Left unset until that engine exists.")
    code, kbd, samp, tt, pre { font-family: monospace; font-size: 13px; }
    pre { white-space: pre; }
    nobr { white-space: nowrap; }
+   marquee { display: inline-block; width: 100%; white-space: nowrap; overflow: hidden; }
    table { display: table; border-spacing: 2px; }
    caption { display: table-caption; text-align: center; }
    thead { display: table-header-group; }

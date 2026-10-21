@@ -1001,12 +1001,17 @@ then adds one pixel: size/5 for sub, size/3 for super."
                   (let* ((ry (raw-y item))
                          (st (or (box-style item) style))
                          ;; Text keeps its line gap. A replaced or atomic box
-                         ;; contributes only its own height.
+                         ;; contributes only its own height. An even gap is
+                         ;; split above and below the glyphs; a single pixel
+                         ;; of gap stays below, which is where a 16px line puts it.
                          (extent (if (eq (box-kind item) :text)
                                      (max (box-h item) (used-line-height st))
-                                     (box-h item))))
-                    (setf top (min top ry)
-                          bottom (max bottom (+ ry extent))))))
+                                     (box-h item)))
+                         (above (if (eq (box-kind item) :text)
+                                    (float (floor (/ (max 0d0 (- extent (box-h item))) 2d0)))
+                                    0d0)))
+                    (setf top (min top (- ry above))
+                          bottom (max bottom (+ ry (- extent above)))))))
               (dolist (item line)
                 (case (align-kind item)
                   ((:top :text-top)
