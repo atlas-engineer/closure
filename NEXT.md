@@ -570,6 +570,7 @@ from the Lisp engine without calling Node or another browser engine.
 - table-layout:fixed keeps the table width. Automatic layout still grows for nowrap.
 - Audio with controls is Chromium's 300 by 54 bar. Without controls it stays hidden.
 - An object with image data paints that image.
+- A video poster is drawn with object-fit contain.
 
 ## Next
 

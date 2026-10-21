@@ -1423,6 +1423,31 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-video-poster ()
+  (let* ((out "/tmp/closure-engine-video-poster.png")
+         (root (closure.engine:render-html
+                "<video id='v' poster='file:///home/jmercouris/Source/closure/screenshots/square.png' width='40' height='20'></video>"
+                :width 80 :height 40 :output out
+                :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "v")))
+    (check "video poster box" box)
+    (check "a poster keeps the video size"
+           (and box
+                (~ (closure.engine:box-width box) 40d0)
+                (~ (closure.engine:box-height box) 20d0)))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x box) 20))
+                 (round (+ (closure.engine:box-y box) 8)))
+      (check "the poster is centered in the video"
+             (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x box) 2))
+                 (round (+ (closure.engine:box-y box) 8)))
+      (check "object-fit contain leaves the sides empty"
+             (and (> r 250) (> g 250) (> b 250))))))
+
 (defun test-object-image ()
   (let* ((out "/tmp/closure-engine-object-image.png")
          (root (closure.engine:render-html
@@ -7484,6 +7509,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-video-poster)
   (test-object-image)
   (test-audio-controls)
   (test-table-layout-fixed)

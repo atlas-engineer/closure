@@ -84,6 +84,7 @@ script element after style and layout. Left unset until that engine exists.")
    iframe { width: 300px; height: 150px; border: 2px solid #9a9a9a; }
    object { display: inline; width: 300px; height: 150px; }
    video, canvas { width: 300px; height: 150px; }
+   video { object-fit: contain; }
    audio { display: none; }
    audio[controls] { display: inline-block; width: 300px; height: 54px; background: #f1f3f4; border-radius: 27px; }
    progress { display: inline-block; width: 160px; height: 16px; vertical-align: -0.2em; }

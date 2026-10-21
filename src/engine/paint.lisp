@@ -571,6 +571,24 @@ and gaps between known stops are split evenly."
   (cairo-close-path cr)
   (cairo-fill cr))
 
+(defun paint-video-poster (cr box)
+  "Paint a video poster with the video's object-fit. Chromium uses contain."
+  (let* ((el (box-element box))
+         (st (box-style box)))
+    (when (and el st (string= (or (box-tag box) "") "video"))
+      (let* ((path (image-pathname (dom-attr el "poster")))
+             (surface (and path (load-image-surface path))))
+        (when surface
+          (multiple-value-bind (bt br bb bl) (border4 st)
+            (multiple-value-bind (pt pr pb pl) (pad4 st (box-w box))
+              (paint-surface-in-box cr surface
+                                    (+ (box-x box) bl pl)
+                                    (+ (box-y box) bt pt)
+                                    (max 0d0 (- (box-w box) bl br pl pr))
+                                    (max 0d0 (- (box-h box) bt bb pt pb))
+                                    :fit (or (computed-object-fit st) :contain)
+                                    :position (or (computed-object-position st) :center)))))))))
+
 (defun paint-image (cr box)
   "Paint a replaced image into its content box, honoring object-fit."
   (let* ((el (box-element box))
@@ -1665,6 +1683,7 @@ but paint a 1px gray rounded edge around the background."
                                   (string-equal (or (dom-attr (box-element box) "type") "")
                                                 "image"))))
                 (paint-image cr box))
+              (paint-video-poster cr box)
               (when (and (box-tag box) (string= (box-tag box) "svg"))
                 (paint-svg cr box))
               (when (and (box-tag box)
