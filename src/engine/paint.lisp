@@ -1620,6 +1620,18 @@ but paint a 1px gray rounded edge around the background."
 
 (defvar *iframe-depth* 0)
 
+(defun image-url-p (url)
+  "True when URL's path is a PNG, GIF, or JPEG."
+  (let* ((q (position #\? url))
+         (h (position #\# url))
+         (path (string-downcase (subseq url 0 (or (and q h (min q h)) q h (length url))))))
+    (or (and (>= (length path) 4)
+             (or (string= (subseq path (- (length path) 4)) ".png")
+                 (string= (subseq path (- (length path) 4)) ".gif")
+                 (string= (subseq path (- (length path) 4)) ".jpg")))
+        (and (>= (length path) 5)
+             (string= (subseq path (- (length path) 5)) ".jpeg")))))
+
 (defun iframe-source (el)
   "HTML for an iframe, and the base URL it resolves against.
 srcdoc wins over src. about:blank and a missing file stay empty."
@@ -1630,7 +1642,9 @@ srcdoc wins over src. about:blank and a missing file stay empty."
         (let* ((src (string-trim '(#\space #\newline #\tab #\return)
                                  (or (dom-attr el "src") "")))
                (abs (and (plusp (length src)) (resolve-url src *document-base*))))
-          (when (and abs (member (url-scheme abs) '("http" "https" "file") :test #'string=))
+          (when (and abs
+                     (member (url-scheme abs) '("http" "https" "file") :test #'string=)
+                     (not (image-url-p abs)))
             (let ((text (fetch-css-text abs)))
               (when (and text (plusp (length text)))
                 (values text abs))))))))
@@ -1684,11 +1698,37 @@ srcdoc wins over src. about:blank and a missing file stay empty."
                 (paint-box cr inner)
                 (cairo-restore cr)))))))))
 
+(defun paint-iframe-image (cr box)
+  "Paint an image resource at the top left of an iframe. Returns T when drawn."
+  (when (and (box-element box)
+             (string= (or (box-tag box) "") "iframe")
+             (box-style box)
+             (zerop (length (string-trim '(#\space #\newline #\tab #\return)
+                                         (or (dom-attr (box-element box) "srcdoc") "")))))
+    (let* ((src (string-trim '(#\space #\newline #\tab #\return)
+                             (or (dom-attr (box-element box) "src") "")))
+           (abs (and (plusp (length src)) (resolve-url src *document-base*))))
+      (when (and abs (image-url-p abs))
+        (let ((surface (let ((path (image-pathname abs)))
+                         (and path (load-image-surface path)))))
+          (when surface
+            (multiple-value-bind (bt br bb bl) (border4 (box-style box))
+              (multiple-value-bind (pt pr pb pl) (pad4 (box-style box) (box-w box))
+                (let ((cw (max 0d0 (- (box-w box) bl br pl pr)))
+                      (ch (max 0d0 (- (box-h box) bt bb pt pb)))
+                      (cx (+ (box-x box) bl pl))
+                      (cy (+ (box-y box) bt pt)))
+                  (when (and (> cw 1d0) (> ch 1d0))
+                    (paint-surface-in-box cr surface cx cy cw ch
+                                          :fit :none :position '(:left :top))
+                    t))))))))))
+
 (defun paint-iframe-srcdoc (cr box)
-  "Paint an iframe srcdoc or src document inside the content box."
+  "Paint an iframe srcdoc, image, or src document inside the content box."
   (when (and (box-element box) (string= (or (box-tag box) "") "iframe"))
-    (multiple-value-bind (html base) (iframe-source (box-element box))
-      (paint-clipped-document cr box html base))))
+    (unless (paint-iframe-image cr box)
+      (multiple-value-bind (html base) (iframe-source (box-element box))
+        (paint-clipped-document cr box html base)))))
 
 (defun paint-replaced-html (cr box)
   "Paint an HTML document inside an object or embed."

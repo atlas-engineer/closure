@@ -1423,6 +1423,27 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-iframe-image ()
+  (let* ((url "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (out "/tmp/closure-engine-iframe-image.png")
+         (html (format nil "<iframe id='f' src='~A' width='80' height='40'></iframe>" url))
+         (root (closure.engine:render-html html :width 200 :height 80 :output out
+                                          :stylesheet "body{margin:0}"))
+         (box (closure.engine:find-box root "f")))
+    (check "image iframe" box)
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x box) 4))
+                 (round (+ (closure.engine:box-y box) 4)))
+      (check "iframe src paints the image"
+             (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x box) 60))
+                 (round (+ (closure.engine:box-y box) 20)))
+      (check "the image stays at its own size"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-object-html ()
   (let* ((url "file:///home/jmercouris/Source/closure/screenshots/frame.html")
          (out "/tmp/closure-engine-object-html.png")
@@ -7695,6 +7716,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-iframe-image)
   (test-object-html)
   (test-iframe-src)
   (test-iframe-srcdoc)
