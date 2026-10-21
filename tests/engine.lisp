@@ -2683,8 +2683,11 @@ b</div>"
          (canvas (closure.engine:find-box root "c"))
          (progress (closure.engine:find-box root "g"))
          (meter (closure.engine:find-box root "m"))
-         (audio (closure.engine:find-box root "a")))
-    (check "replaced widgets" (and video canvas progress meter))
+         (audio (closure.engine:find-box root "a"))
+         (para (closure.engine:find-box root "p")))
+    (check "replaced widgets" (and video canvas progress meter para))
+    (check "the video line is 154px, the progress line gap does not stretch it"
+           (and para (~ (closure.engine:box-height para) 154d0 0.2d0)))
     (check "video and canvas are 300 by 150"
            (and video canvas
                 (~ (closure.engine:box-width video) 300d0)

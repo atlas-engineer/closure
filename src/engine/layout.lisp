@@ -1000,9 +1000,11 @@ then adds one pixel: size/5 for sub, size/3 for super."
                 (unless (member (align-kind item) '(:top :bottom :text-top :text-bottom))
                   (let* ((ry (raw-y item))
                          (st (or (box-style item) style))
-                         ;; The line box includes the item's line gap, which
-                         ;; sits below the glyphs.
-                         (extent (max (box-h item) (used-line-height st))))
+                         ;; Text keeps its line gap. A replaced or atomic box
+                         ;; contributes only its own height.
+                         (extent (if (eq (box-kind item) :text)
+                                     (max (box-h item) (used-line-height st))
+                                     (box-h item))))
                     (setf top (min top ry)
                           bottom (max bottom (+ ry extent))))))
               (dolist (item line)

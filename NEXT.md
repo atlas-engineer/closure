@@ -433,6 +433,8 @@ from the Lisp engine without calling Node or another browser engine.
   sample control is 65px wide and 19px tall.
 - An open dialog stays where it would have sat in the flow, centered on
   that line. The block after it starts in the same place.
+- A video line is 154px. Progress and meter sit on it without adding their
+  font's line gap.
 
 ## Next
 
