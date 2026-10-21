@@ -478,6 +478,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A fieldset's bottom groove uses the last pixel whose center is inside the box.
 - A text input's border is a one-pixel gray line, the same edge Chromium paints.
 - A range track is 6px and centered in the control, matching Chromium's bar.
+- An embed with a source paints that image, the same as an img.
 
 ## Next
 

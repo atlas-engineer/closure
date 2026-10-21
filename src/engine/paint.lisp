@@ -1198,7 +1198,8 @@ It does not apply when borders are collapsed."
         (if (eq (box-kind box) :text)
             (paint-text-box cr box)
             (progn
-              (when (and (box-tag box) (string= (box-tag box) "img"))
+              (when (and (box-tag box)
+                         (member (box-tag box) '("img" "embed") :test #'string=))
                 (paint-image cr box))
               (when (and (box-tag box) (string= (box-tag box) "svg"))
                 (paint-svg cr box))

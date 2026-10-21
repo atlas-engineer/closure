@@ -2776,6 +2776,17 @@ b</div>"
                 (~ (closure.engine:box-y r2) 80d0)
                 (~ (closure.engine:box-height r2) 320d0)))))
 
+(defun test-embed-paint ()
+  (let ((path "/tmp/closure-engine-embed.png"))
+    (closure.engine:render-html
+     "<embed src='square.png' width='40' height='20'>"
+     :width 80 :height 40
+     :stylesheet "body{margin:0}"
+     :base "file:///home/jmercouris/Source/closure/screenshots/page.html"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 10 10)
+      (check "an embed paints its image" (and (> r 180) (< g 40) (< b 40))))))
+
 (defun test-embed-size ()
   (let* ((root (closure.engine:layout-html
                 "<embed id='e0' width='40' height='20'><embed id='e2' src='square.png'><embed id='e3' src='square.png' width='40' height='20'><iframe id='f0'></iframe><iframe id='f1' width='80' height='40'></iframe><iframe id='f2' width='80' height='40'></iframe><object id='o1' width='70' height='25'></object>"
@@ -5120,6 +5131,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-ruby-rb)
   (test-ruby)
   (test-frameset)
+  (test-embed-paint)
   (test-embed-size)
   (test-obsolete-tail)
   (test-listing-abbr)
