@@ -1328,6 +1328,35 @@ The script is the smaller second child."
                 :baseline (+ top asc)
                 :children (nreverse pieces)))))
 
+(defun layout-math-root (el)
+  "An nth root. The index is half size and sits in the radical's upper corner."
+  (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
+         (base-el (first kids))
+         (index-el (second kids))
+         (st (dom-element-style el))
+         (em (if st (computed-font-size st) 16d0))
+         (gutter (* em (+ 0.55d0 (/ 5d0 18d0))))
+         (top (* em 0.16d0))
+         (tail (* em 0.2d0))
+         (base (and base-el (math-piece base-el))))
+    (when base
+      (setf (box-x base) gutter
+            (box-y base) top)
+      (let ((children (list base))
+            (bottom (+ top (box-h base))))
+        (when index-el
+          (let ((index (math-token-box index-el)))
+            (setf (box-x index) (* em (/ 5d0 18d0))
+                  (box-y index) 0d0)
+            (push index children)
+            (setf bottom (max bottom (box-h index)))))
+        (make-box :kind :inline :style st :element el
+                  :tag (dom-element-tag el) :id (dom-element-id el)
+                  :w (+ gutter (box-w base))
+                  :h (+ bottom tail)
+                  :baseline (+ top (or (box-baseline base) 0d0))
+                  :children (nreverse children))))))
+
 (defun layout-inline-run (nodes x y width style &key (float-inset 0d0) (float-avoid 0d0) (float-span 0d0) avail-h)
   (let ((font (computed-font-size style))
         (family (computed-font-family style))
@@ -1483,6 +1512,15 @@ The script is the smaller second child."
                                  :w px :advance px :h 0d0 :baseline 0d0)
                        current)
                  (incf current-w px)))
+             (emit-math-root (el)
+               (let ((b (layout-math-root el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-math-sqrt (el)
                (let ((b (layout-math-sqrt el)))
                  (when b
@@ -1583,6 +1621,8 @@ The script is the smaller second child."
                        (emit-math-fraction n))
                       ((string= (dom-element-tag n) "msqrt")
                        (emit-math-sqrt n))
+                      ((string= (dom-element-tag n) "mroot")
+                       (emit-math-root n))
                       ((string= (dom-element-tag n) "br")
                        (break-line (and (dom-element-style n)
                                         (computed-clear (dom-element-style n)))))

@@ -4644,6 +4644,29 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
         (check "the radical bar is black"
                (and (< r 40) (< g 40) (< b 40)))))))
 
+(defun test-math-root ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><math><mroot id='r'><mi id='bx'>x</mi><mn id='ix'>3</mn></mroot></math></p>"
+                :width 180 :height 50
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (radical (closure.engine:find-box root "r"))
+         (base (closure.engine:find-box root "bx"))
+         (index (closure.engine:find-box root "ix")))
+    (check "root boxes" (and radical base index))
+    (check "the index is half size"
+           (and index (~ (closure.engine::computed-font-size
+                          (closure.engine::box-style index))
+                         (* 16d0 0.5041d0) 0.15d0)))
+    (check "the radicand starts after the indexed radical"
+           (and radical base
+                (~ (- (closure.engine:box-x base) (closure.engine:box-x radical))
+                   (* 16d0 (+ 0.55d0 (/ 5d0 18d0))) 0.3d0)))
+    (check "the index sits in the upper corner"
+           (and radical index base
+                (~ (- (closure.engine:box-x index) (closure.engine:box-x radical))
+                   (* 16d0 (/ 5d0 18d0)) 0.3d0)
+                (< (closure.engine:box-y index) (closure.engine:box-y base))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8631,6 +8654,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-script)
   (test-math-fraction)
   (test-math-sqrt)
+  (test-math-root)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)
