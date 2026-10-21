@@ -154,8 +154,16 @@ is 19.92, and Chromium lays that out as 19.90625."
           (setf (box-w box) (+ (or cw 0d0) extra-w)
                 (box-h box) (+ (or ch 0d0) extra-h)))))))
 
+(defun parse-srcset-number (desc)
+  "The leading number of a w or x descriptor."
+  (let* ((end (position-if-not (lambda (c) (or (digit-char-p c) (char= c #\.))) desc))
+         (num (subseq desc 0 (or end (length desc)))))
+    (when (and (plusp (length num)) (find-if #'digit-char-p num))
+      (let ((n (ignore-errors (read-from-string num))))
+        (when (numberp n) (float n 1d0))))))
+
 (defun srcset-candidates (srcset)
-  "Parse SRCSET into (url . width). Width is the w descriptor, or NIL."
+  "Parse SRCSET into (url width density). A bare URL is density 1."
   (let ((s (string-trim '(#\space #\newline #\tab #\return) (or srcset "")))
         (out nil)
         (start 0))
@@ -167,14 +175,16 @@ is 19.92, and Chromium lays that out as 19.90625."
           (unless (zerop (length part))
             (let ((sp (position #\space part)))
               (if (null sp)
-                  (push (cons part nil) out)
-                  (let ((desc (string-trim '(#\space) (subseq part (1+ sp)))))
-                    (push (cons (subseq part 0 sp)
-                                (and (plusp (length desc))
-                                     (char-equal (char desc (1- (length desc))) #\w)
-                                     (ignore-errors
-                                      (parse-integer desc :junk-allowed t))))
-                          out)))))
+                  (push (list part nil 1d0) out)
+                  (let* ((desc (string-downcase (string-trim '(#\space) (subseq part (1+ sp)))))
+                         (n (parse-srcset-number desc))
+                         (url (subseq part 0 sp)))
+                    (cond
+                      ((and n (char= (char desc (1- (length desc))) #\w))
+                       (push (list url n nil) out))
+                      ((and n (char= (char desc (1- (length desc))) #\x))
+                       (push (list url nil n) out))
+                      (t (push (list url nil 1d0) out)))))))
           (unless comma (return))
           (setf start (1+ comma)))))
     (nreverse out)))
@@ -192,18 +202,32 @@ is 19.92, and Chromium lays that out as 19.90625."
          (or (and n (float n 1d0)) (float *viewport-width* 1d0))))
       (t (float *viewport-width* 1d0)))))
 
+(defun closer-density (a b)
+  "The candidate whose x descriptor is closer to a 1x screen."
+  (let ((da (abs (- (or (third a) 1d0) 1d0)))
+        (db (abs (- (or (third b) 1d0) 1d0))))
+    (cond ((< da db) a)
+          ((> da db) b)
+          ((>= (or (third a) 1d0) (or (third b) 1d0)) a)
+          (t b))))
+
 (defun select-srcset (srcset &optional sizes)
   "The srcset URL Chromium would pick for the current viewport."
   (let ((cands (srcset-candidates srcset)))
     (when cands
-      (if (notany #'cdr cands)
-          (car (first cands))
+      (if (some #'second cands)
           (let* ((slot (srcset-slot sizes))
-                 (fits (remove-if (lambda (c) (or (null (cdr c)) (< (cdr c) slot))) cands)))
+                 (fits (remove-if (lambda (c)
+                                    (or (null (second c)) (< (second c) slot)))
+                                  cands)))
             (car (if fits
-                     (reduce (lambda (a b) (if (<= (cdr a) (cdr b)) a b)) fits)
-                     (reduce (lambda (a b) (if (>= (or (cdr a) 0) (or (cdr b) 0)) a b))
-                             cands))))))))
+                     (reduce (lambda (a b)
+                               (if (<= (second a) (second b)) a b))
+                             fits)
+                     (reduce (lambda (a b)
+                               (if (>= (or (second a) 0) (or (second b) 0)) a b))
+                             cands))))
+          (car (reduce #'closer-density cands))))))
 
 (defun source-type-ok (type)
   "True when TYPE is empty or an image kind this engine can decode."

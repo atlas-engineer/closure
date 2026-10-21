@@ -1423,6 +1423,28 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-srcset-density ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (out "/tmp/closure-engine-srcset-density.png")
+         (html (format nil "<img id='a' srcset='/tmp/closure-does-not-exist.png 2x, ~A 1x' width='40' height='20'>
+                         <img id='b' srcset='~A 2x, /tmp/closure-does-not-exist.png 1x' width='40' height='20'>"
+                      png png))
+         (root (closure.engine:render-html html :width 200 :height 40 :output out
+                                          :stylesheet "body{margin:0}"))
+         (one (closure.engine:find-box root "a"))
+         (two (closure.engine:find-box root "b")))
+    (labels ((red-p (box)
+               (multiple-value-bind (r g b)
+                   (png-rgb out
+                            (round (+ (closure.engine:box-x box) 8))
+                            (round (+ (closure.engine:box-y box) 8)))
+                 (and (> r 180) (< g 40) (< b 40)))))
+      (check "density boxes" (and one two))
+      (check "a 1x descriptor wins on this screen"
+             (red-p one))
+      (check "a 2x descriptor is skipped on this screen"
+             (not (red-p two))))))
+
 (defun test-srcset-width ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (html (format nil "<img id='a' srcset='~A 100w, /tmp/closure-does-not-exist.png 800w' width='40' height='20'>"
@@ -7577,6 +7599,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-srcset-density)
   (test-srcset-width)
   (test-img-srcset)
   (test-picture-source)

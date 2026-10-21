@@ -574,6 +574,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A picture source that matches replaces the img. One that does not is skipped.
 - An img srcset replaces a broken src, including a width descriptor.
 - A srcset width descriptor follows the viewport. A narrow window keeps the smaller image.
+- A srcset density descriptor picks 1x on this screen. 2x is left for a denser display.
 
 ## Next
 
