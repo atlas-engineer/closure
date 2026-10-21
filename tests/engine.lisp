@@ -6363,6 +6363,39 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-svg-percent ()
+  (let* ((root (closure.engine:layout-html
+                "<div style='width:200px;height:40px'>
+                   <svg id='s' width='50%' height='50%'></svg>
+                   <svg id='px' width='40' height='10'></svg>
+                   <svg id='own' width='50%' height='50%' style='width:30px;height:8px'></svg>
+                   <svg id='vb' viewBox='0 0 20 10' width='50%'></svg>
+                 </div>
+                 <p style='width:200px;margin:0'><svg id='auto' width='50%' height='50%'></svg></p>"
+                :width 400 :height 240
+                :stylesheet "body{margin:0}"))
+         (s (closure.engine:find-box root "s"))
+         (px (closure.engine:find-box root "px"))
+         (own (closure.engine:find-box root "own"))
+         (vb (closure.engine:find-box root "vb"))
+         (auto (closure.engine:find-box root "auto")))
+    (check "svg percentage boxes" (and s px own vb auto))
+    (check "an svg percentage is a share of its container"
+           (and (~ (closure.engine:box-width s) 100d0)
+                (~ (closure.engine:box-height s) 20d0)))
+    (check "an svg pixel size stays in pixels"
+           (and (~ (closure.engine:box-width px) 40d0)
+                (~ (closure.engine:box-height px) 10d0)))
+    (check "an author size wins over an svg percentage"
+           (and (~ (closure.engine:box-width own) 30d0)
+                (~ (closure.engine:box-height own) 8d0)))
+    (check "a viewBox keeps its ratio when only the width is a percentage"
+           (and (~ (closure.engine:box-width vb) 100d0)
+                (~ (closure.engine:box-height vb) 50d0)))
+    (check "an svg percentage height is the default when the container height is auto"
+           (and (~ (closure.engine:box-width auto) 100d0)
+                (~ (closure.engine:box-height auto) 150d0)))))
+
 (defun test-canvas-percent ()
   (let* ((root (closure.engine:layout-html
                 "<canvas id='c' width='50%' height='50%'></canvas>
@@ -8173,6 +8206,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-svg-percent)
   (test-canvas-percent)
   (test-img-percent-height)
   (test-img-percent)
