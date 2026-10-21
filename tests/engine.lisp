@@ -4916,6 +4916,47 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
       (check "a child inherits a percentage mathsize"
              (and child (~ (fs child) 8d0 0.1d0))))))
 
+(defun test-math-space ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p' style='margin:0'>A<math><mspace id='s' width='20px' height='10px'></mspace>B</p>
+                 <p style='margin:0'>A<math><mspace id='d' width='1em' height='10px' depth='8px'></mspace>B</p>
+                 <p style='margin:0'>A<math><mspace id='w' width='12px'></mspace>B</p>"
+                :width 200 :height 80
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (space (closure.engine:find-box root "s"))
+         (deep (closure.engine:find-box root "d"))
+         (wide (closure.engine:find-box root "w"))
+         (texts nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (member (closure.engine::box-text b) '("A" "B") :test #'string=))
+                   (push b texts))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (let ((a (find "A" texts :key #'closure.engine::box-text :test #'string= :from-end t))
+          (b (find "B" texts :key #'closure.engine::box-text :test #'string= :from-end t)))
+      (check "space boxes" (and space deep wide a b))
+      (check "width and height leave a gap on the baseline"
+             (and space
+                  (~ (closure.engine:box-width space) 20d0 0.1d0)
+                  (~ (closure.engine:box-height space) 10d0 0.1d0)
+                  (~ (closure.engine::box-baseline space) 10d0 0.1d0)))
+      (check "the following letter starts after the gap"
+             (and a b space
+                  (~ (closure.engine:box-x b)
+                     (+ (closure.engine:box-x a) (closure.engine:box-width a) 20d0)
+                     0.5d0)))
+      (check "depth hangs below the baseline"
+             (and deep
+                  (~ (closure.engine:box-width deep) 16d0 0.1d0)
+                  (~ (closure.engine:box-height deep) 18d0 0.1d0)
+                  (~ (closure.engine::box-baseline deep) 10d0 0.1d0)))
+      (check "width alone has no height"
+             (and wide
+                  (~ (closure.engine:box-width wide) 12d0 0.1d0)
+                  (~ (closure.engine:box-height wide) 0d0 0.1d0))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8911,6 +8952,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-enclose)
   (test-math-color)
   (test-math-size)
+  (test-math-space)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)

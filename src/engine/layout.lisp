@@ -1342,6 +1342,28 @@ The script is the smaller second child."
                                 (or (box-baseline base) 0d0))
                   :children (list base script))))))
 
+(defun math-length (raw em)
+  "A math length in pixels. em is the element's font size."
+  (let ((s (string-trim '(#\space #\newline #\tab #\return) (or raw ""))))
+    (when (plusp (length s))
+      (let ((len (parse-one-length (css-tokenize s))))
+        (cond
+          ((and (consp len) (eq (car len) :px)) (float (cdr len) 1d0))
+          ((and (consp len) (eq (car len) :em)) (* (cdr len) em))
+          ((and (consp len) (eq (car len) :%)) (* 0.01d0 (cdr len) em))
+          (t nil))))))
+
+(defun layout-math-space (el)
+  "mspace width is horizontal. height sits above the baseline and depth below it."
+  (let* ((st (dom-element-style el))
+         (em (if st (computed-font-size st) 16d0))
+         (w (or (math-length (dom-attr el "width") em) 0d0))
+         (h (or (math-length (dom-attr el "height") em) 0d0))
+         (d (or (math-length (dom-attr el "depth") em) 0d0)))
+    (make-box :kind :inline :style st :element el
+              :tag (dom-element-tag el) :id (dom-element-id el)
+              :w (max 0d0 w) :h (max 0d0 (+ h d)) :baseline (max 0d0 h))))
+
 (defun layout-math-enclose (el)
   "The enclosure is the size of its contents. The notation is painted on that box."
   (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
@@ -1684,6 +1706,15 @@ The script is the smaller second child."
                    (push b current)
                    (incf current-w (box-w b))
                    (setf previous (dom-element-style el)))))
+             (emit-math-space (el)
+               (let ((b (layout-math-space el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-math-enclose (el)
                (let ((b (layout-math-enclose el)))
                  (when b
@@ -1797,6 +1828,8 @@ The script is the smaller second child."
                        (emit-math-underover n))
                       ((string= (dom-element-tag n) "menclose")
                        (emit-math-enclose n))
+                      ((string= (dom-element-tag n) "mspace")
+                       (emit-math-space n))
                       ((string= (dom-element-tag n) "mfrac")
                        (emit-math-fraction n))
                       ((string= (dom-element-tag n) "msqrt")

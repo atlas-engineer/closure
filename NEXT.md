@@ -624,6 +624,7 @@ from the Lisp engine without calling Node or another browser engine.
 - menclose notation=box draws a rectangle around its contents, and updiagonalstrike draws a line from the lower left to the upper right. The box stays the size of the contents.
 - mathcolor sets the text color and mathbackground sets the background. An author color still wins, and a child inherits the color.
 - mathsize sets the font size from a length or a percentage. small, normal, and big stay at the inherited size, and an author font-size still wins.
+- mspace width is a gap. height sits above the baseline and depth sits below it.
 
 ## Next
 
