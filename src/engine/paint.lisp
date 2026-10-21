@@ -936,9 +936,11 @@ on spaces so a line fits MAX-W."
             (cond
               ((paint-list-style-image cr st cx my))
               ((eq marker :disclosure-open)
-               (cairo-move-to cr (- dx 4d0) (- cy 4d0))
-               (cairo-line-to cr (+ dx 5.5d0) (- cy 4d0))
-               (cairo-line-to cr dx (+ cy 5d0))
+               ;; A pixel wider on the right than the closed mark, and the
+               ;; tip sits on Chromium's row.
+               (cairo-move-to cr (- dx 4.5d0) (- cy 4d0))
+               (cairo-line-to cr (+ dx 6.5d0) (- cy 4d0))
+               (cairo-line-to cr (+ dx 1d0) (+ cy 5.5d0))
                (cairo-close-path cr)
                (cairo-fill cr))
               ((eq marker :disclosure-closed)

@@ -5424,6 +5424,23 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-disclosure-open ()
+  (let ((path "/tmp/closure-engine-disclosure-open.png"))
+    (closure.engine:render-html
+     "<details open><summary>Open</summary>Shown</details>"
+     :width 200 :height 40
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 9 4)
+      (check "an open triangle reaches Chromium's right edge"
+             (and (< r 40) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b) (png-rgb path 5 12)
+      (check "the open triangle tip sits on Chromium's row"
+             (and (< r 160) (< g 160) (< b 160))))
+    (multiple-value-bind (r g b) (png-rgb path 14 4)
+      (check "the open triangle stops before the label"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-dotted-underline ()
   (let* ((path "/tmp/closure-engine-dotted.png")
          (root (closure.engine:render-html
@@ -6430,6 +6447,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-disclosure-open)
   (test-dotted-underline)
   (test-optgroup-list)
   (test-fieldset-disabled)
