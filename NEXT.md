@@ -565,6 +565,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A broken image with no size collapses. An image with only alt shows that text.
 - A broken image with only a width or a height leaves the other side empty. A loaded image keeps its ratio.
 - A details element with no summary still shows Chromium's disclosure row.
+- An image with only alt leaves 16px for Chromium's broken-image icon.
 
 ## Next
 

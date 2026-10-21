@@ -1493,8 +1493,8 @@
            (and gone
                 (< (closure.engine:box-width gone) 1d0)
                 (< (closure.engine:box-height gone) 1d0)))
-    (check "an image with only alt is the text size"
-           (and alt (~ (closure.engine:box-width alt) adv)
+    (check "an image with only alt leaves room for the broken-image icon"
+           (and alt (~ (closure.engine:box-width alt) (+ adv 16d0) 1d0)
                 (string= (closure.engine::box-text alt) "missing")))
     (let ((ink (closure.engine::count-ink out)))
       (format t "~&  alt ink pixels: ~D~%" ink)

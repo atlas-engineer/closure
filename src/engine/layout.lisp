@@ -173,11 +173,13 @@ A replaced image does not stretch to the container the way an ordinary block doe
               (setf (box-w box) 0d0 (box-h box) 0d0)
               (let ((alt (dom-attr el "alt")))
                 (when (and alt (plusp (length alt)))
-                  (setf (box-w box) (text-advance alt
-                                                  (computed-font-size style)
-                                                  (computed-font-family style)
-                                                  (computed-font-weight style)
-                                                  (computed-font-style style))
+                  ;; Chromium puts a 16px broken-image icon before the alt text.
+                  (setf (box-w box) (+ 16d0
+                                       (text-advance alt
+                                                     (computed-font-size style)
+                                                     (computed-font-family style)
+                                                     (computed-font-weight style)
+                                                     (computed-font-style style)))
                         (box-h box) (used-line-height style)
                         (box-text box) alt))))
           (return-from apply-image-size nil))

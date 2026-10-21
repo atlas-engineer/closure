@@ -556,6 +556,21 @@ and gaps between known stops are split evenly."
                                           (cairo-restore cr)))
                         (cairo-restore cr)))))))))))))
 
+(defun paint-broken-image-icon (cr x y)
+  "The small picture Chromium shows before alt text."
+  (set-color cr (color-bytes 180 180 180))
+  (cairo-set-line-width cr 1d0)
+  (cairo-rectangle cr (+ x 0.5d0) (+ y 1d0) 14d0 14d0)
+  (cairo-stroke cr)
+  (set-color cr (color-bytes 150 150 150))
+  (cairo-move-to cr (+ x 2d0) (+ y 13d0))
+  (cairo-line-to cr (+ x 6d0) (+ y 7d0))
+  (cairo-line-to cr (+ x 9d0) (+ y 11d0))
+  (cairo-line-to cr (+ x 12d0) (+ y 8d0))
+  (cairo-line-to cr (+ x 15d0) (+ y 13d0))
+  (cairo-close-path cr)
+  (cairo-fill cr))
+
 (defun paint-image (cr box)
   "Paint a replaced image into its content box, honoring object-fit."
   (let* ((el (box-element box))
@@ -590,11 +605,18 @@ and gaps between known stops are split evenly."
                                    (cairo-slant (computed-font-style st))
                                    (cairo-weight (computed-font-weight st))
                                    (computed-font-size st))
-                 (cairo-move-to cr x
-                                (+ y (font-ascent (computed-font-size st)
-                                                  (computed-font-family st)
-                                                  (computed-font-weight st)
-                                                  (computed-font-style st))))
+                 (let ((icon (if (plusp (length (string-trim
+                                                     '(#\space #\newline #\tab #\return)
+                                                     (or (dom-attr el "src") ""))))
+                                 0d0
+                                 16d0)))
+                   (when (> icon 0d0)
+                     (paint-broken-image-icon cr x y))
+                   (cairo-move-to cr (+ x icon)
+                                  (+ y (font-ascent (computed-font-size st)
+                                                    (computed-font-family st)
+                                                    (computed-font-weight st)
+                                                    (computed-font-style st)))))
                  (cairo-show-text cr alt)
                  (cairo-restore cr)))))))))))
 
