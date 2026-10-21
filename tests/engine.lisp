@@ -6363,6 +6363,29 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-marquee-spacing ()
+  (let* ((root (closure.engine:layout-html
+                "<marquee id='h' hspace='12' width='80'>Hi</marquee>
+                 <marquee id='v' vspace='6' width='80'>Hi</marquee>
+                 <marquee id='a' hspace='12' style='margin-left:2px' width='80'>Hi</marquee>"
+                :width 400 :height 80
+                :stylesheet "body{margin:0}"))
+         (h (closure.engine::box-style (closure.engine:find-box root "h")))
+         (v (closure.engine::box-style (closure.engine:find-box root "v")))
+         (a (closure.engine::box-style (closure.engine:find-box root "a"))))
+    (check "marquee spacing boxes" (and h v a))
+    (check "hspace sets both horizontal margins"
+           (and (~ (closure.engine::computed-ml h) 12d0)
+                (~ (closure.engine::computed-mr h) 12d0)
+                (~ (closure.engine::computed-mt h) 0d0)))
+    (check "vspace sets both vertical margins"
+           (and (~ (closure.engine::computed-mt v) 6d0)
+                (~ (closure.engine::computed-mb v) 6d0)
+                (~ (closure.engine::computed-ml v) 0d0)))
+    (check "an author margin wins on one side"
+           (and (~ (closure.engine::computed-ml a) 2d0)
+                (~ (closure.engine::computed-mr a) 12d0)))))
+
 (defun test-row-group-background ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (out "/tmp/closure-engine-rowgroup-bg.png")
@@ -7999,6 +8022,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-marquee-spacing)
   (test-row-group-background)
   (test-col-background)
   (test-col-bgcolor)

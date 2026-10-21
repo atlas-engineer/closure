@@ -2017,7 +2017,7 @@
               (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
     ;; hspace and vspace set the two sides. An author margin on one side wins.
     (when (and (not pseudo)
-               (or (member (dom-element-tag element) '("img" "image" "object" "embed")
+               (or (member (dom-element-tag element) '("img" "image" "object" "embed" "marquee")
                            :test #'string-equal)
                    (and (string-equal (dom-element-tag element) "input")
                         (string-equal (or (dom-attr element "type") "") "image"))))
@@ -2035,7 +2035,8 @@
                 (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))
         (let* ((raw (string-trim '(#\space #\newline #\tab #\return)
                                  (or (dom-attr element "border") "")))
-               (n (and (plusp (length raw))
+               (n (and (not (string-equal (dom-element-tag element) "marquee"))
+                       (plusp (length raw))
                        (ignore-errors (parse-integer raw :junk-allowed t)))))
           (when (and n (>= n 0))
             (let ((decl (make-css-decl :property :border
