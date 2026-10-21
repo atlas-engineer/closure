@@ -30,12 +30,12 @@ script element after style and layout. Left unset until that engine exists.")
    h4 { font-size: 1em; margin-top: 1.33em; margin-bottom: 1.33em; }
    h5 { font-size: 0.83em; margin-top: 1.67em; margin-bottom: 1.67em; }
    h6 { font-size: 0.67em; margin-top: 2.33em; margin-bottom: 2.33em; }
-   p, ul, ol, dl, blockquote, pre { margin-top: 1em; margin-bottom: 1em; }
-   ul, ol { padding-left: 40px; }
+   p, ul, ol, menu, dl, blockquote, pre { margin-top: 1em; margin-bottom: 1em; }
+   ul, ol, menu { padding-left: 40px; }
    dd { margin-left: 40px; }
    blockquote { margin-left: 40px; margin-right: 40px; }
    figure { margin: 1em 40px; }
-   ul { list-style-type: disc; }
+   ul, menu { list-style-type: disc; }
    ol { list-style-type: decimal; }
    li { display: list-item; }
    span, a, b, i, em, strong, code, small, big, tt, nobr, wbr, label, mark, time, abbr, cite, dfn,

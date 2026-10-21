@@ -424,9 +424,11 @@ from the Lisp engine without calling Node or another browser engine.
   it. A map and its areas take no space between the words around them.
 - A col covers its cell and a colgroup covers the row. A slot's fallback
   is ordinary text. A datalist is not shown.
+- A footer row is painted after the body even when it comes first in the
+  source. A menu indents its item by 40px. A heading group holds its
+  heading.
 
 ## Next
 
-1. The done condition is not met. The sample page now includes the tags
-   that paint, but a real document still needs more of the web than this
-   viewport.
+1. The done condition is not met. The tags that paint are on the sample
+   page, but a real document still needs more of the web than this viewport.

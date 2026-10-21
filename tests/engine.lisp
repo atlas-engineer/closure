@@ -1041,6 +1041,29 @@
       (walk box))
     out))
 
+(defun test-tfoot-menu ()
+  (let* ((root (closure.engine:layout-html
+                "<table id='t'><tfoot><tr><td id='f'>Foot</td></tr></tfoot><tbody><tr><td id='b'>Body</td></tr></tbody></table>
+                 <menu id='m'><li id='i'>Item</li></menu>
+                 <hgroup id='g'><h2 id='h'>Title</h2><p>Sub</p></hgroup>"
+                :width 400 :height 200
+                :stylesheet "body{margin:0} menu{margin:0}"))
+         (foot (closure.engine:find-box root "f"))
+         (body (closure.engine:find-box root "b"))
+         (item (closure.engine:find-box root "i"))
+         (menu (closure.engine:find-box root "m"))
+         (group (closure.engine:find-box root "g"))
+         (heading (closure.engine:find-box root "h")))
+    (check "footer, menu, and group" (and foot body item menu group heading))
+    (check "a footer row is painted after the body"
+           (and foot body (> (closure.engine:box-y foot) (closure.engine:box-y body))))
+    (check "a menu indents its item by 40px"
+           (and menu item (~ (- (closure.engine:box-x item) (closure.engine:box-x menu)) 40d0)))
+    (check "a heading group contains its heading"
+           (and group heading
+                (~ (closure.engine:box-x heading) (closure.engine:box-x group))
+                (>= (closure.engine:box-height group) (closure.engine:box-height heading))))))
+
 (defun test-slot-columns ()
   (let* ((root (closure.engine:layout-html
                 "<table id='t'><colgroup id='cg'><col id='c1'><col id='c2'></colgroup><tr><td id='a'>One</td><td id='b'>Two</td></tr></table>
@@ -4465,6 +4488,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-size-lengths)
   (test-background-size-percent)
   (test-background-position-percent)
+  (test-tfoot-menu)
   (test-slot-columns)
   (test-picture-map)
   (test-dialog-search)
