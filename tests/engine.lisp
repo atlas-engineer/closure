@@ -3147,6 +3147,31 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
       (check "an image input does not draw a text field"
              (and (> r 240) (> g 240) (> b 240))))))
 
+(defun test-select-list ()
+  (let* ((path "/tmp/closure-engine-select-list.png")
+         (root (closure.engine:render-html
+                "<select id='s' size='4'><option>Red</option><option selected>Blue</option><option>Green</option><option>Gold</option></select>"
+                :width 120 :height 100
+                :stylesheet "body{margin:0}"
+                :output path))
+         (box (closure.engine:find-box root "s")))
+    (check "a list select is four rows tall"
+           (and box (~ (closure.engine:box-height box) 70d0 1d0)
+                (< (closure.engine:box-width box) 80d0)))
+    (multiple-value-bind (r g b) (png-rgb path 40 8)
+      (check "an unselected option stays white"
+             (and (> r 240) (> g 240) (> b 240))))
+    (multiple-value-bind (r g b) (png-rgb path 40 22)
+      (check "the selected option is gray"
+             (and (< (abs (- r 206)) 16)
+                  (< (abs (- g 206)) 16)
+                  (< (abs (- b 206)) 16))))
+    (multiple-value-bind (r g b) (png-rgb path 10 69)
+      (check "a list select keeps its border"
+             (and (< (abs (- r 118)) 16)
+                  (< (abs (- g 118)) 16)
+                  (< (abs (- b 118)) 16))))))
+
 (defun test-file-input-paint ()
   (let ((path "/tmp/closure-engine-file.png"))
     (closure.engine:render-html
@@ -5385,6 +5410,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-textarea-grip)
   (test-password-paint)
   (test-image-input)
+  (test-select-list)
   (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)

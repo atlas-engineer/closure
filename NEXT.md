@@ -502,6 +502,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A textarea paints Chromium's resize grip, two gray diagonal marks in the bottom-right corner.
 - A password field masks each character with a disc, 0.35em apart, instead of the typed text.
 - An image input is the image's own size and paints that image, with no text-field border.
+- A select with a size shows each option on a 17px row, and the selected row is gray.
 
 ## Next
 

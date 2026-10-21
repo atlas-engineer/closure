@@ -215,6 +215,16 @@
         (concatenate 'string body (if (position #\? body) "&" "?") query frag)
         abs)))
 
+(defun select-list-rows (el)
+  "Visible rows when SELECT is a list, or NIL for a dropdown."
+  (when (and (dom-element-p el) (string= (dom-element-tag el) "select"))
+    (let* ((raw (dom-attr el "size"))
+           (n (and raw (ignore-errors (parse-integer raw :junk-allowed t)))))
+      (cond
+        ((and n (> n 1)) n)
+        ((dom-attr el "multiple") 4)
+        (t nil)))))
+
 (defun control-label (el)
   "Text painted inside a form control."
   (let ((tag (dom-element-tag el)))
@@ -223,7 +233,8 @@
             (member (string-downcase (or (dom-attr el "type") "text"))
                     '("checkbox" "radio") :test #'string=))
        "")
-      ((string= tag "select") (form-control-value el))
+      ((string= tag "select")
+       (if (select-list-rows el) "" (form-control-value el)))
       ((string= tag "textarea") (dom-text-content el))
       ((string= tag "input")
        (let ((type (string-downcase (or (dom-attr el "type") "text"))))

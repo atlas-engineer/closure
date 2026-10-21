@@ -563,13 +563,23 @@ A replaced image does not stretch to the container the way an ordinary block doe
                            (lh (font-height (computed-font-size style)
                                             (computed-font-family style)
                                             (computed-font-weight style)
-                                            (computed-font-style style))))
+                                            (computed-font-style style)))
+                           (rows (select-list-rows el)))
                       (multiple-value-bind (bt br bb bl) (border4 style)
                         (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)
-                          ;; The dropdown arrow sits past the label, and the control
-                          ;; is a couple of pixels taller than the font.
-                          (setf (box-w box) (+ adv bl br pl pr 17.5d0)
-                                (box-h box) (+ lh 2d0 bt bb pt pb))))))
+                          (if rows
+                              ;; A list has no arrow. Each row is 17px at the
+                              ;; default control font, the row Chromium uses.
+                              (let ((row (max 17d0 lh)))
+                                (setf (computed-background style)
+                                      (color-bytes 255 255 255)
+                                      (box-w box) (+ adv bl br pl pr 4d0)
+                                      (box-h box) (+ (* row (float rows 1d0))
+                                                     bt bb pt pb)))
+                              ;; The dropdown arrow sits past the label, and the control
+                              ;; is a couple of pixels taller than the font.
+                              (setf (box-w box) (+ adv bl br pl pr 17.5d0)
+                                    (box-h box) (+ lh 2d0 bt bb pt pb)))))))
                   (when (member (dom-element-tag el) '("button" "input" "select") :test #'string=)
                     (let* ((fs (computed-font-size style))
                            (fam (computed-font-family style))
