@@ -2674,6 +2674,48 @@ b</div>"
            (and ruby rt (> (closure.engine:box-width rt) (closure.engine:box-width ruby))
                 (< (closure.engine:box-x rt) (closure.engine:box-x ruby))))))
 
+(defun test-frameset ()
+  (let* ((root (closure.engine:layout-html
+                "<frameset id='fs' cols='100,*'><frame id='a'></frame><frame id='b'></frame><noframes id='nf'>fallback</noframes></frameset>"
+                :width 800 :height 400))
+         (set (closure.engine:find-box root "fs"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (fallback (closure.engine:find-box root "nf"))
+         (stars (closure.engine:layout-html
+                 "<frameset cols='2*,*'><frame id='a'></frame><frame id='b'></frame></frameset>"
+                 :width 800 :height 300))
+         (sa (closure.engine:find-box stars "a"))
+         (sb (closure.engine:find-box stars "b"))
+         (nested (closure.engine:layout-html
+                  "<frameset cols='100,*' border='0'><frame id='a'></frame><frameset rows='80,*' border='0'><frame id='r1'></frame><frame id='r2'></frame></frameset></frameset>"
+                  :width 800 :height 400))
+         (na (closure.engine:find-box nested "a"))
+         (r1 (closure.engine:find-box nested "r1"))
+         (r2 (closure.engine:find-box nested "r2")))
+    (check "frameset, frames, and no fallback" (and set a b (not fallback) sa sb na r1 r2))
+    (check "the default border leaves a 6px gap and the star takes the rest"
+           (and set a b
+                (~ (closure.engine:box-width set) 800d0)
+                (~ (closure.engine:box-height set) 400d0)
+                (~ (closure.engine:box-width a) 100d0)
+                (~ (closure.engine:box-height a) 400d0)
+                (~ (closure.engine:box-x b) 106d0)
+                (~ (closure.engine:box-width b) 694d0)))
+    (check "star columns split the space that remains after the gap"
+           (and sa sb
+                (~ (closure.engine:box-width sa) 529d0)
+                (~ (closure.engine:box-x sb) 535d0)
+                (~ (closure.engine:box-width sb) 265d0)))
+    (check "a nested frameset fills its cell, and border 0 has no gap"
+           (and na r1 r2
+                (~ (closure.engine:box-width na) 100d0)
+                (~ (closure.engine:box-x r1) 100d0)
+                (~ (closure.engine:box-width r1) 700d0)
+                (~ (closure.engine:box-height r1) 80d0)
+                (~ (closure.engine:box-y r2) 80d0)
+                (~ (closure.engine:box-height r2) 320d0)))))
+
 (defun test-embed-size ()
   (let* ((root (closure.engine:layout-html
                 "<embed id='e0' width='40' height='20'><embed id='e2' src='square.png'><embed id='e3' src='square.png' width='40' height='20'><iframe id='f0'></iframe><iframe id='f1' width='80' height='40'></iframe><iframe id='f2' width='80' height='40'></iframe><object id='o1' width='70' height='25'></object>"
@@ -4778,6 +4820,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-wbr)
   (test-address)
   (test-ruby)
+  (test-frameset)
   (test-embed-size)
   (test-obsolete-tail)
   (test-listing-abbr)

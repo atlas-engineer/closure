@@ -443,6 +443,8 @@ from the Lisp engine without calling Node or another browser engine.
   isindex adds no search form. plaintext is preformatted.
 - An embed with a resource uses its image or its width and height. Those
   attributes also size an iframe and an object, unless author CSS sets them.
+- A frameset fills the viewport. Columns and rows use pixels, percentages,
+  or stars, and the default border leaves a 6px gap. noframes is hidden.
 
 ## Next
 

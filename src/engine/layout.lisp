@@ -2095,11 +2095,126 @@ outside the border box, so the box is content plus padding plus one border."
                   (box-children box) (nreverse kids))
             box)))))))
 
+(defun frameset-gap (el)
+  "The default frameset border is 6px. border=0 removes the gap."
+  (let ((raw (and (dom-element-p el) (dom-attr el "border"))))
+    (if (or (null raw) (zerop (length (string-trim '(#\space #\newline #\tab) raw))))
+        6d0
+        (float (or (ignore-errors (parse-integer raw :junk-allowed t)) 0) 1d0))))
+
+(defun frameset-track-specs (raw)
+  "cols or rows: pixels, a percentage, or a star weight."
+  (let ((parts (loop for piece in (uiop:split-string (or raw "") :separator '(#\,))
+                     for s = (string-trim '(#\space) piece)
+                     when (plusp (length s)) collect s)))
+    (if (null parts)
+        '((:star 1d0))
+        (mapcar (lambda (s)
+                  (cond
+                    ((char= (char s (1- (length s))) #\*)
+                     (let ((n (if (= (length s) 1)
+                                  1
+                                  (ignore-errors (parse-integer s :end (1- (length s))
+                                                                :junk-allowed t)))))
+                       (list :star (float (or n 1) 1d0))))
+                    ((char= (char s (1- (length s))) #\%)
+                     (list :% (float (or (ignore-errors (parse-integer s :junk-allowed t)) 0) 1d0)))
+                    (t
+                     (list :px (float (or (ignore-errors (parse-integer s :junk-allowed t)) 0) 1d0)))))
+                parts))))
+
+(defun frameset-sizes (specs total gap)
+  "Track lengths along one axis. Percentages use the space left after gaps.
+Star tracks share what remains, and the last star absorbs the rounding."
+  (let* ((n (length specs))
+         (avail (max 0d0 (- (float total 1d0) (* gap (max 0 (1- n))))))
+         (sizes (make-array n :initial-element 0d0))
+         (used 0d0)
+         (stars nil))
+    (loop for spec in specs
+          for i from 0
+          do (cond
+               ((eq (car spec) :px)
+                (let ((w (max 0d0 (min (cadr spec) (- avail used)))))
+                  (setf (aref sizes i) w)
+                  (incf used w)))
+               ((eq (car spec) :%)
+                (let ((w (max 0d0 (min (* avail 0.01d0 (cadr spec)) (- avail used)))))
+                  (setf (aref sizes i) w)
+                  (incf used w)))
+               (t (push i stars))))
+    (setf stars (nreverse stars))
+    (let* ((left (max 0d0 (- avail used)))
+           (weight (reduce #'+ stars
+                           :key (lambda (i) (cadr (nth i specs)))
+                           :initial-value 0d0))
+           (remain left))
+      (when (and stars (> weight 0d0))
+        (loop for i in stars
+              for lastp = (eq i (car (last stars)))
+              for part = (cadr (nth i specs))
+              for size = (if lastp
+                             remain
+                             (float (floor (/ (* left part) weight)) 1d0))
+              do (setf (aref sizes i) (max 0d0 size))
+                 (decf remain (aref sizes i)))))
+    (coerce sizes 'list)))
+
+(defun frameset-panes (el)
+  (remove-if-not (lambda (c)
+                   (and (dom-element-p c)
+                        (member (dom-element-tag c) '("frame" "frameset") :test #'string-equal)))
+                 (dom-node-children el)))
+
+(defun layout-frameset (el x y w h)
+  (let* ((style (dom-element-style el))
+         (box (make-element-box el :block style))
+         (rows (dom-attr el "rows"))
+         (cols (dom-attr el "cols"))
+         (vertical (and rows (plusp (length (string-trim '(#\space) rows)))
+                        (or (null cols) (zerop (length (string-trim '(#\space) cols))))))
+         (specs (frameset-track-specs (if vertical rows cols)))
+         (gap (frameset-gap el))
+         (sizes (frameset-sizes specs (if vertical h w) gap))
+         (kids nil)
+         (pos 0d0))
+    (setf (box-x box) (float x 1d0)
+          (box-y box) (float y 1d0)
+          (box-w box) (float w 1d0)
+          (box-h box) (float h 1d0))
+    (loop for child in (frameset-panes el)
+          for size in sizes
+          do (let ((cx (if vertical x (+ x pos)))
+                   (cy (if vertical (+ y pos) y))
+                   (cw (if vertical w size))
+                   (ch (if vertical size h)))
+               (push (if (string-equal (dom-element-tag child) "frameset")
+                         (layout-frameset child cx cy cw ch)
+                         (let ((fb (make-element-box child :block (dom-element-style child))))
+                           (setf (box-x fb) (float cx 1d0)
+                                 (box-y fb) (float cy 1d0)
+                                 (box-w fb) (float cw 1d0)
+                                 (box-h fb) (float ch 1d0))
+                           fb))
+                     kids)
+               (incf pos (+ size gap))))
+    (setf (box-children box) (nreverse kids))
+    box))
+
+(defun document-frameset (html-element)
+  (unless (find-element html-element "body")
+    (find-if (lambda (c)
+               (and (dom-element-p c) (string-equal (dom-element-tag c) "frameset")))
+             (dom-node-children html-element))))
+
 (defun layout-document (html-element)
-  (let ((root (layout-element html-element 0d0 0d0 *viewport-width* *viewport-height* nil)))
-    (when (and root (> (box-collapsed-top root) 0d0))
-      (translate-box root 0d0 (box-collapsed-top root)))
-    root))
+  (let ((frameset (document-frameset html-element)))
+    (if frameset
+        (layout-frameset frameset 0d0 0d0 *viewport-width* *viewport-height*)
+        (let ((root (layout-element html-element 0d0 0d0 *viewport-width* *viewport-height* nil)))
+          (when (and root (> (box-collapsed-top root) 0d0))
+            (translate-box root 0d0 (box-collapsed-top root)))
+          root))))
 
 (defun box-width (box) (box-w box))
 (defun box-height (box) (box-h box))
