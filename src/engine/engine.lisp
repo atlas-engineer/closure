@@ -108,7 +108,24 @@ script element after style and layout. Left unset until that engine exists.")
      box-sizing: border-box; width: auto; height: 23px; padding: 0 0 0 4px;
      border: 1px solid #767676; font-family: monospace; }
    select { background: #efefef; border: 1px solid #767676; padding: 0; }
-   textarea { font-family: monospace; background: #fff; border: 1px solid #767676; padding: 2px; width: 175px; height: 34px; }")
+   textarea { font-family: monospace; background: #fff; border: 1px solid #767676; padding: 2px; width: 175px; height: 34px; }
+   button:disabled {
+     color: rgba(16, 16, 16, 0.3);
+     background-color: rgba(239, 239, 239, 0.3);
+     border-top-color: rgba(118, 118, 118, 0.3);
+     border-right-color: rgba(118, 118, 118, 0.3);
+     border-bottom-color: rgba(118, 118, 118, 0.3);
+     border-left-color: rgba(118, 118, 118, 0.3);
+   }
+   input:disabled, textarea:disabled {
+     color: rgb(84, 84, 84);
+     background-color: rgba(239, 239, 239, 0.3);
+     border-top-color: rgba(118, 118, 118, 0.3);
+     border-right-color: rgba(118, 118, 118, 0.3);
+     border-bottom-color: rgba(118, 118, 118, 0.3);
+     border-left-color: rgba(118, 118, 118, 0.3);
+   }
+   select:disabled { color: rgb(128, 128, 128); background-color: #efefef; opacity: 0.7; }")
 
 (defun collect-rules (sheets)
   (let ((rules nil)

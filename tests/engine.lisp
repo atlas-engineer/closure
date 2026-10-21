@@ -5424,6 +5424,38 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-disabled ()
+  (let* ((html "<button id='a' disabled>OK</button><button id='b'>OK</button><input id='c' disabled value='Hi'><input id='d' disabled value='Hi' style='color:#c00'>")
+         (path "/tmp/closure-engine-disabled.png")
+         (root (closure.engine:render-html html :width 400 :height 40
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (c (closure.engine:find-box root "c"))
+         (d (closure.engine:find-box root "d"))
+         (as (and a (closure.engine::box-style a)))
+         (cs (and c (closure.engine::box-style c)))
+         (ds (and d (closure.engine::box-style d))))
+    (check "disabled controls" (and a b c d as cs ds))
+    (check "a disabled button fades its text and face"
+           (and as
+                (< (fourth (closure.engine::computed-color as)) 0.5d0)
+                (< (fourth (closure.engine::computed-background as)) 0.5d0)))
+    (check "a disabled field uses gray text and a faded background"
+           (and cs
+                (~ (* (first (closure.engine::computed-color cs)) 255d0) 84d0 2d0)
+                (< (fourth (closure.engine::computed-background cs)) 0.5d0)))
+    (check "an author color wins on a disabled field"
+           (and ds (> (first (closure.engine::computed-color ds)) 0.7d0)))
+    (let ((x (round (+ (closure.engine:box-x c) 60d0)))
+          (y (round (+ (closure.engine:box-y c) 10d0))))
+      (multiple-value-bind (r g b) (png-rgb path x y)
+        (check "the disabled field is the faded gray"
+               (and (< r 254) (> r 240)
+                    (< g 254) (> g 240)
+                    (< b 254) (> b 240)))))))
+
 (defun test-dir-attr ()
   (let* ((html "<div id='box' dir='rtl' style='width:200px'><span id='a'>One</span> <span id='b'>Two</span></div>
                 <div dir='ltr' style='width:200px'><span id='c'>One</span></div>
@@ -6073,6 +6105,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-disabled)
   (test-dir-attr)
   (test-hidden-attr)
   (test-reversed-list)
