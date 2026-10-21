@@ -1342,6 +1342,32 @@ The script is the smaller second child."
                                 (or (box-baseline base) 0d0))
                   :children (list base script))))))
 
+(defun layout-math-enclose (el)
+  "The enclosure is the size of its contents. The notation is painted on that box."
+  (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
+         (st (dom-element-style el))
+         (pieces nil)
+         (x 0d0)
+         (asc 0d0))
+    (dolist (kid kids)
+      (let ((piece (math-piece kid)))
+        (when piece
+          (setf (box-x piece) x)
+          (incf x (box-w piece))
+          (setf asc (max asc (or (box-baseline piece) 0d0)))
+          (push piece pieces))))
+    (when pieces
+      (dolist (piece pieces)
+        (setf (box-y piece) (- asc (or (box-baseline piece) 0d0))))
+      (make-box :kind :inline :style st :element el
+                :tag (dom-element-tag el) :id (dom-element-id el)
+                :w x
+                :h (reduce #'max pieces
+                           :key (lambda (p) (+ (box-y p) (box-h p)))
+                           :initial-value 0d0)
+                :baseline asc
+                :children (nreverse pieces)))))
+
 (defun display-math-p (el)
   "True when EL is inside a display=block math element."
   (loop for node = (dom-node-parent el) then (dom-node-parent node)
@@ -1396,6 +1422,8 @@ The script is the smaller second child."
      (layout-math-limit el))
     ((string-equal (dom-element-tag el) "munderover")
      (layout-math-underover el))
+    ((string-equal (dom-element-tag el) "menclose")
+     (layout-math-enclose el))
     (t (math-token-box el))))
 
 (defun layout-math-sqrt (el)
@@ -1656,6 +1684,15 @@ The script is the smaller second child."
                    (push b current)
                    (incf current-w (box-w b))
                    (setf previous (dom-element-style el)))))
+             (emit-math-enclose (el)
+               (let ((b (layout-math-enclose el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-math-underover (el)
                (let ((b (layout-math-underover el)))
                  (when b
@@ -1758,6 +1795,8 @@ The script is the smaller second child."
                        (emit-math-limit n))
                       ((string= (dom-element-tag n) "munderover")
                        (emit-math-underover n))
+                      ((string= (dom-element-tag n) "menclose")
+                       (emit-math-enclose n))
                       ((string= (dom-element-tag n) "mfrac")
                        (emit-math-fraction n))
                       ((string= (dom-element-tag n) "msqrt")

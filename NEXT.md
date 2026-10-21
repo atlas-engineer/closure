@@ -621,6 +621,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A combined subscript and superscript stack in one column beside the base. The subscript sits higher than it would alone.
 - An accent sits above its base, and an underscript sits below it. The narrower one is centered.
 - An under-over limit stacks in display math and sits beside the base when the math is inline. The limits are centered on the base.
+- menclose notation=box draws a rectangle around its contents, and updiagonalstrike draws a line from the lower left to the upper right. The box stays the size of the contents.
 
 ## Next
 

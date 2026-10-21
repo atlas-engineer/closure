@@ -768,6 +768,29 @@ on spaces so a line fits MAX-W."
                           (float (+ (- bottom 4) i) 1d0)
                           1d0 1d0 gray)))))
 
+(defun menclose-note-p (box name)
+  (let ((el (box-element box)))
+    (and el
+         (member name
+                 (split-ws (string-downcase (or (dom-attr el "notation") "")))
+                 :test #'string=))))
+
+(defun paint-math-enclose (cr box)
+  "A box around the contents, or a strike from the lower left to the upper right."
+  (when (and (string= (or (box-tag box) "") "menclose")
+             (> (box-w box) 1d0) (> (box-h box) 1d0))
+    (set-color cr (color-bytes 0 0 0))
+    (cairo-set-line-width cr 1d0)
+    (when (menclose-note-p box "box")
+      (cairo-rectangle cr (+ (box-x box) 0.5d0) (+ (box-y box) 0.5d0)
+                       (- (box-w box) 1d0) (- (box-h box) 1d0))
+      (cairo-stroke cr))
+    (when (menclose-note-p box "updiagonalstrike")
+      (cairo-set-line-width cr 1.6d0)
+      (cairo-move-to cr (box-x box) (+ (box-y box) (box-h box) -0.5d0))
+      (cairo-line-to cr (+ (box-x box) (box-w box) -0.5d0) (box-y box))
+      (cairo-stroke cr))))
+
 (defun paint-math-sqrt (cr box)
   "A radical sign and the bar over the radicand."
   (when (and (member (or (box-tag box) "") '("msqrt" "mroot") :test #'string=)
@@ -1955,7 +1978,8 @@ An author margin in the framed document still wins."
               (paint-math-sqrt cr box)
               (paint-math-fraction cr box)
               (dolist (c (box-children box))
-                (paint-box cr c scroll-y))))
+                (paint-box cr c scroll-y))
+              (paint-math-enclose cr box)))
         (when (< opacity 1d0)
           (cairo-pop-group-to-source cr)
           (cairo-paint-with-alpha cr opacity)))

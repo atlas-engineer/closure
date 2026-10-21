@@ -4815,6 +4815,41 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                          (closure.engine:box-height dover)))
                    (* 16d0 0.15d0) 0.3d0)))))
 
+(defun test-math-enclose ()
+  (let* ((path "/tmp/closure-engine-enclose.png")
+         (root (closure.engine:render-html
+                "<p style='margin:0'><math><menclose id='b' notation='box'><mi id='x'>x</mi></menclose></math>
+                 <math><menclose id='s' notation='updiagonalstrike'><mi id='y'>y</mi></menclose></math></p>"
+                :width 200 :height 40
+                :stylesheet "body{margin:0;font-size:16px}"
+                :output path))
+         (box (closure.engine:find-box root "b"))
+         (x (closure.engine:find-box root "x"))
+         (strike (closure.engine:find-box root "s"))
+         (y (closure.engine:find-box root "y")))
+    (check "enclose boxes" (and box x strike y))
+    (check "the enclosure is the size of its contents"
+           (and box x strike y
+                (~ (closure.engine:box-width box) (closure.engine:box-width x) 0.3d0)
+                (~ (closure.engine:box-height box) (closure.engine:box-height x) 0.3d0)
+                (~ (closure.engine:box-width strike) (closure.engine:box-width y) 0.3d0)))
+    (let ((px (round (+ (closure.engine:box-x box)
+                        (/ (closure.engine:box-width box) 2d0))))
+          (py (round (closure.engine:box-y box))))
+      (multiple-value-bind (r g b) (png-rgb path px py)
+        (check "notation=box paints the top edge"
+               (and (< r 40) (< g 40) (< b 40)))))
+    (let ((cx (round (+ (closure.engine:box-x strike)
+                        (/ (closure.engine:box-width strike) 2d0))))
+          (cy (round (+ (closure.engine:box-y strike)
+                        (/ (closure.engine:box-height strike) 2d0)))))
+      (check "the diagonal strike crosses the box"
+             (some (lambda (d)
+                     (multiple-value-bind (r g b)
+                         (png-rgb path (+ cx (car d)) (+ cy (cdr d)))
+                       (< (+ r g b) 240)))
+                   '((0 . 0) (-1 . 0) (1 . 0) (0 . -1) (0 . 1)))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8807,6 +8842,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-subsup)
   (test-math-limit)
   (test-math-underover)
+  (test-math-enclose)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)
