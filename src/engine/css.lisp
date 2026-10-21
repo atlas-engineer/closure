@@ -2619,6 +2619,26 @@ The nearer attribute wins. An author vertical-align still wins."
     (paint "mathcolor" :color #'(setf computed-color))
     (paint "mathbackground" :background-color #'(setf computed-background))))
 
+(defun apply-math-size (element style specified)
+  "mathsize sets the font size. small, normal, and big stay put, and an
+author font-size still wins."
+  (let ((raw (string-downcase (string-trim '(#\space #\newline #\tab #\return)
+                                           (or (dom-attr element "mathsize") "")))))
+    (when (and (plusp (length raw))
+               (not (author-specified-p specified :font-size))
+               (not (member raw '("small" "normal" "big") :test #'string=)))
+      (let ((len (parse-one-length (css-tokenize raw))))
+        (when len
+          (let* ((parent (computed-font-size style))
+                 (px (cond
+                       ((and (consp len) (eq (car len) :px)) (float (cdr len) 1d0))
+                       ((and (consp len) (eq (car len) :em)) (* (cdr len) parent))
+                       ((and (consp len) (eq (car len) :%))
+                        (* 0.01d0 (cdr len) parent))
+                       (t nil))))
+            (when (and px (> px 0d0))
+              (setf (computed-font-size style) px))))))))
+
 (defun apply-math-display (element style specified)
   "display=block turns math into a centered block. An author rule still wins."
   (when (and (string-equal (dom-element-tag element) "math")
@@ -2764,6 +2784,7 @@ The nearer attribute wins. An author vertical-align still wins."
           (apply-font-presentational element style best)
           (apply-bgcolor-presentational element style best)
           (apply-math-color element style best)
+          (apply-math-size element style best)
           (apply-math-display element style best)
           (apply-align-presentational element style best)
           (apply-valign-presentational element style best)

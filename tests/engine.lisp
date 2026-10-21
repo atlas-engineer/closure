@@ -4882,6 +4882,40 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
         (check "mathbackground fills the math block"
                (and (> r 150) (< g 80) (< b 80)))))))
 
+(defun test-math-size ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><math>
+                 <mi id='px' mathsize='32px'>x</mi>
+                 <mi id='em' mathsize='2em'>x</mi>
+                 <mi id='pct' mathsize='50%'>x</mi>
+                 <mi id='sm' mathsize='small'>x</mi>
+                 <mi id='au' mathsize='32px' style='font-size:10px'>x</mi>
+                 </math>
+                 <math id='m' mathsize='50%'><mi id='ch'>x</mi></math></p>"
+                :width 400 :height 60
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (px (closure.engine:find-box root "px"))
+         (em (closure.engine:find-box root "em"))
+         (pct (closure.engine:find-box root "pct"))
+         (small (closure.engine:find-box root "sm"))
+         (author (closure.engine:find-box root "au"))
+         (child (closure.engine:find-box root "ch")))
+    (labels ((fs (box)
+               (closure.engine::computed-font-size (closure.engine::box-style box))))
+      (check "math size boxes" (and px em pct small author child))
+      (check "a pixel mathsize is that size"
+             (and px (~ (fs px) 32d0 0.1d0)))
+      (check "an em mathsize uses the parent size"
+             (and em (~ (fs em) 32d0 0.1d0)))
+      (check "a percentage mathsize is a share of the parent"
+             (and pct (~ (fs pct) 8d0 0.1d0)))
+      (check "mathsize=small stays at the inherited size"
+             (and small (~ (fs small) 16d0 0.1d0)))
+      (check "an author font-size wins over mathsize"
+             (and author (~ (fs author) 10d0 0.1d0)))
+      (check "a child inherits a percentage mathsize"
+             (and child (~ (fs child) 8d0 0.1d0))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8876,6 +8910,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-underover)
   (test-math-enclose)
   (test-math-color)
+  (test-math-size)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)
