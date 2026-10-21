@@ -512,7 +512,8 @@ Indented group options count only for a list select."
       (walk el)
       best)))
 
-(defun layout-element (el x y avail-w avail-h containing &key shrink)
+(defun layout-element (el x y avail-w avail-h containing &key shrink
+                                                   intrude-left intrude-right intrude-span)
   (let* ((style (dom-element-style el))
          (disp (computed-display style)))
     (cond
@@ -533,9 +534,14 @@ Indented group options count only for a list select."
            (layout-block el x y avail-w avail-h containing :shrink t)
            (layout-inline-element el x y avail-w)))
       (t
-       (layout-block el x y avail-w avail-h containing :shrink (or shrink (eq disp :inline-block)))))))
+       (layout-block el x y avail-w avail-h containing
+                     :shrink (or shrink (eq disp :inline-block))
+                     :intrude-left intrude-left
+                     :intrude-right intrude-right
+                     :intrude-span intrude-span)))))
 
-(defun layout-block (el x y avail-w avail-h containing &key shrink)
+(defun layout-block (el x y avail-w avail-h containing &key shrink
+                                                 intrude-left intrude-right intrude-span)
   (let* ((style (dom-element-style el))
          (box (make-element-box el :block style)))
     (multiple-value-bind (bw ml mr cw) (solve-width style avail-w)
@@ -565,9 +571,11 @@ Indented group options count only for a list select."
                    (kids nil)
                    (pending nil)
                    (abs nil)
-                   (float-clear 0d0)
-                   (float-right 0d0)
-                   (float-avoid 0d0)
+                   (float-clear (max 0d0 (- (or intrude-span 0d0) bt pt)))
+                   (float-right (if (and (> float-clear 0d0) (> (or intrude-left 0d0) 0d0))
+                                    (+ content-x intrude-left)
+                                    0d0))
+                   (float-avoid (if (> float-clear 0d0) (or intrude-right 0d0) 0d0))
                    (open-margin 0d0)
                    (flow-started nil)
                    (child-h (unless (eq (computed-height style) :auto)
@@ -639,13 +647,28 @@ Indented group options count only for a list select."
                                  (push node pending))
                                 (t
                                  (flush-inline)
-                                 (setf flow-y (max flow-y float-clear))
-                                 (when (member (computed-clear cs) '(:left :right :both))
+                                 ;; A normal block keeps its place. Its lines
+                                 ;; shorten beside the floats. A cleared block
+                                 ;; or a new block formatting context drops below.
+                                 (when (or (member (computed-clear cs) '(:left :right :both))
+                                           (not (member (or (computed-overflow cs) :visible)
+                                                        '(:visible))))
                                    (setf flow-y (max flow-y float-clear)))
-                                 (let ((cb (layout-element node content-x
+                                 (let* ((mt (snap-used-margin
+                                             (px (computed-mt cs) cw)))
+                                        (guess (max open-margin mt))
+                                        (span (max 0d0 (- float-clear flow-y guess)))
+                                        (cb (layout-element node content-x
                                                            (+ (box-y box) bt pt flow-y)
                                                            cw child-h cont
-                                                           :shrink (string= (dom-element-tag node) "legend"))))
+                                                           :shrink (string= (dom-element-tag node) "legend")
+                                                           :intrude-left (if (> span 0d0)
+                                                                             (max 0d0 (- float-right content-x))
+                                                                             0d0)
+                                                           :intrude-right (if (> span 0d0)
+                                                                              float-avoid
+                                                                              0d0)
+                                                           :intrude-span span)))
                                    (when cb
                                      (let* ((mt (snap-used-margin
                                                  (px (computed-mt (dom-element-style node)) cw)))

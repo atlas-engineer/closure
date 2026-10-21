@@ -2959,6 +2959,42 @@ b</div>"
            (and b (~ (closure.engine:box-x b) 0d0)
                 (~ (closure.engine:box-y b) 20d0)))))
 
+(defun test-float-both ()
+  (let* ((root (closure.engine:layout-html
+                "<div id='d' style='width:200px'><div id='l' style='float:left;width:40px;height:30px'></div><div id='r' style='float:right;width:40px;height:30px'></div><p id='p' style='margin:0'>Words wrap beside both floats and then continue.</p></div>"
+                :width 300 :height 120
+                :stylesheet "body{margin:0}"))
+         (d (closure.engine:find-box root "d"))
+         (p (closure.engine:find-box root "p"))
+         (words nil))
+    (labels ((walk (b)
+               (when b
+                 (when (and (eq (closure.engine::box-kind b) :text)
+                            (closure.engine::box-text b)
+                            (not (string= (closure.engine::box-text b) " ")))
+                   (push b words))
+                 (dolist (c (closure.engine::box-children b)) (walk c)))))
+      (walk root))
+    (check "both floats and the paragraph" (and d p words))
+    (check "the paragraph starts beside the floats"
+           (and p (~ (closure.engine:box-y p) 0d0)
+                (~ (closure.engine:box-height p) 54d0 1d0)))
+    (check "the container is the paragraph, not the floats stacked under it"
+           (and d (~ (closure.engine:box-height d) 54d0 1d0)))
+    (check "words beside the floats stay between them"
+           (every (lambda (w)
+                    (or (>= (closure.engine:box-y w) 30d0)
+                        (and (>= (closure.engine:box-x w) 40d0)
+                             (<= (+ (closure.engine:box-x w)
+                                    (closure.engine:box-width w))
+                                 160d0))))
+                  words))
+    (check "the line after the floats returns to the left"
+           (some (lambda (w)
+                   (and (>= (closure.engine:box-y w) 30d0)
+                        (~ (closure.engine:box-x w) 0d0 1d0)))
+                 words))))
+
 (defun test-float-below ()
   (let ((png "/tmp/closure-float-below.png"))
     (write-solid-png png 40 10 0.2d0 0.4d0 0.8d0)
@@ -8421,6 +8457,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-parent-child-bottom-margin)
   (test-margin-separation)
   (test-margin-bottom-separation)
+  (test-float-both)
   (test-float-below)
   (test-br)
   (test-nested-inline)

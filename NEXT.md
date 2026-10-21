@@ -609,6 +609,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A disabled button is a light gray face. An enabled button keeps its darker edge.
 - A circle list marker is a hollow ring. It does not grow a line to the text.
 - A long ruby annotation widens the base. Each character takes an equal share.
+- Text stays between a left float and a right float. It continues underneath them.
 
 ## Next
 
