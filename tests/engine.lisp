@@ -2897,6 +2897,47 @@ b</div>"
                 (~ (closure.engine:box-width cell) 42.65625d0 1d0)
                 (~ (closure.engine:box-height cell) 34d0 1d0)))))
 
+(defun test-table-bordercolor ()
+  (let* ((html "<table id='t' border='1' bordercolor='#c00'><tr><td id='a'>A</td></tr></table>
+                <table id='css' border='1' bordercolor='#c00' style='border-top-color:#00c;border-right-color:#00c;border-bottom-color:#00c;border-left-color:#00c'><tr><td id='e'>E</td></tr></table>
+                <table id='plain' bordercolor='red'><tr><td id='f'>F</td></tr></table>")
+         (path "/tmp/closure-engine-bordercolor.png")
+         (root (closure.engine:render-html html :width 200 :height 80
+                                          :stylesheet "body{margin:0}"
+                                          :output path))
+         (table (closure.engine:find-box root "t"))
+         (cell (closure.engine:find-box root "a"))
+         (css (closure.engine:find-box root "css"))
+         (authored (closure.engine:find-box root "e"))
+         (plain (closure.engine:find-box root "plain")))
+    (check "bordercolor tables" (and table cell css authored plain))
+    (let ((st (closure.engine::box-style table))
+          (cs (closure.engine::box-style cell)))
+      (check "bordercolor makes the frame and the cell solid red"
+             (and st cs
+                  (eq (closure.engine::computed-bts st) :solid)
+                  (eq (closure.engine::computed-bts cs) :solid)
+                  (> (first (closure.engine::computed-btc st)) 0.7d0)
+                  (< (second (closure.engine::computed-btc st)) 0.1d0)
+                  (> (first (closure.engine::computed-btc cs)) 0.7d0)
+                  (< (second (closure.engine::computed-btc cs)) 0.1d0))))
+    (let ((st (closure.engine::box-style css))
+          (cs (closure.engine::box-style authored)))
+      (check "an author border color wins over bordercolor"
+             (and st cs
+                  (< (first (closure.engine::computed-btc st)) 0.1d0)
+                  (> (third (closure.engine::computed-btc st)) 0.7d0)
+                  (< (first (closure.engine::computed-btc cs)) 0.1d0)
+                  (> (third (closure.engine::computed-btc cs)) 0.7d0))))
+    (let ((st (closure.engine::box-style plain)))
+      (check "bordercolor without a border draws no frame"
+             (and st (eq (closure.engine::computed-bts st) :none))))
+    (let ((x (round (+ (closure.engine:box-x table) 2d0)))
+          (y (round (closure.engine:box-y table))))
+      (multiple-value-bind (r g b) (png-rgb path x y)
+        (check "the bordercolor frame is painted red"
+               (and (> r 180) (< g 40) (< b 40)))))))
+
 (defun test-table-frame ()
   (let* ((html "<table id='above' frame='above' border='1'><tr><td id='a'>A</td></tr></table>
                 <table id='sides' frame='hsides'><tr><td id='h'>H</td></tr></table>
@@ -5823,6 +5864,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-align-attr)
   (test-bgcolor)
   (test-table-cell-attrs)
+  (test-table-bordercolor)
   (test-table-frame)
   (test-table-rules)
   (test-table-border-attr)

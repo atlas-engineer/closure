@@ -2129,14 +2129,20 @@ of that width, both Chromium's gray. An author border is left alone."
                  (ignore-errors (parse-integer raw :junk-allowed t))))
          (style (dom-element-style el)))
     (when (and style n (> n 0) (eq (computed-bts style) :none))
-      (let ((px (float n 1d0))
-            (gray (color-bytes 128 128 128)))
+      (let* ((px (float n 1d0))
+             (gray (color-bytes 128 128 128))
+             (colored (plusp (length (string-trim '(#\space #\newline #\tab #\return)
+                                                  (or (dom-attr el "bordercolor") "")))))
+             (edge (if colored :solid :outset))
+             (cell-edge (if colored :solid :inset))
+             (ink (if colored (or (computed-btc style) gray) gray)))
         (setf (computed-bt style) px (computed-br style) px
               (computed-bb style) px (computed-bl style) px
-              (computed-bts style) :outset (computed-brs style) :outset
-              (computed-bbs style) :outset (computed-bls style) :outset
-              (computed-btc style) gray (computed-brc style) gray
-              (computed-bbc style) gray (computed-blc style) gray)
+              (computed-bts style) edge (computed-brs style) edge
+              (computed-bbs style) edge (computed-bls style) edge)
+        (unless colored
+          (setf (computed-btc style) gray (computed-brc style) gray
+                (computed-bbc style) gray (computed-blc style) gray))
         (labels ((walk (node)
                    (dolist (c (dom-node-children node))
                      (when (dom-element-p c)
@@ -2145,10 +2151,10 @@ of that width, both Chromium's gray. An author border is left alone."
                              (when (and st (eq (computed-bts st) :none))
                                (setf (computed-bt st) 1d0 (computed-br st) 1d0
                                      (computed-bb st) 1d0 (computed-bl st) 1d0
-                                     (computed-bts st) :inset (computed-brs st) :inset
-                                     (computed-bbs st) :inset (computed-bls st) :inset
-                                     (computed-btc st) gray (computed-brc st) gray
-                                     (computed-bbc st) gray (computed-blc st) gray)))
+                                     (computed-bts st) cell-edge (computed-brs st) cell-edge
+                                     (computed-bbs st) cell-edge (computed-bls st) cell-edge
+                                     (computed-btc st) ink (computed-brc st) ink
+                                     (computed-bbc st) ink (computed-blc st) ink)))
                            (walk c))))))
           (walk el))))))
 
@@ -2189,7 +2195,10 @@ An author border is left alone."
     (when (and style (member value '("none" "rows" "cols" "all" "groups") :test #'string=))
       (when (eq (computed-border-collapse style) :separate)
         (setf (computed-border-collapse style) :collapse))
-      (let ((gray (color-bytes 128 128 128))
+      (let ((gray (or (and (plusp (length (string-trim '(#\space #\newline #\tab #\return)
+                                                             (or (dom-attr el "bordercolor") ""))))
+                               (computed-btc style))
+                          (color-bytes 128 128 128)))
             (marks nil))
         (labels ((mark (cell &key top right bottom left)
                    (when (dom-element-p cell)
@@ -2294,7 +2303,9 @@ supplies the width, defaulting to 1px. An author border is left alone."
              (px (if (zerop (length braw))
                      1d0
                      (float (or (ignore-errors (parse-integer braw :junk-allowed t)) 0) 1d0)))
-             (gray (color-bytes 128 128 128)))
+             (gray (color-bytes 128 128 128))
+             (colored (plusp (length (string-trim '(#\space #\newline #\tab #\return)
+                                                  (or (dom-attr el "bordercolor") ""))))))
         (flet ((side (name)
                  (if (member name sides) (values px :solid) (values 0d0 :hidden))))
           (multiple-value-bind (tw ts) (side :top)
@@ -2304,9 +2315,10 @@ supplies the width, defaulting to 1px. An author border is left alone."
                   (setf (computed-bt style) tw (computed-bts style) ts
                         (computed-br style) rw (computed-brs style) rs
                         (computed-bb style) bw (computed-bbs style) bs
-                        (computed-bl style) lw (computed-bls style) ls
-                        (computed-btc style) gray (computed-brc style) gray
-                        (computed-bbc style) gray (computed-blc style) gray))))))))))
+                        (computed-bl style) lw (computed-bls style) ls)
+                  (unless colored
+                    (setf (computed-btc style) gray (computed-brc style) gray
+                          (computed-bbc style) gray (computed-blc style) gray)))))))))))
 
 (defun layout-table (el x y avail-w avail-h containing)
   (declare (ignore containing))

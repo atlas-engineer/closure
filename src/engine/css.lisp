@@ -1894,6 +1894,17 @@
                                        :raw raw :origin :author :order 0)))
               (dolist (pair (expand-declaration (css-decl-property decl) raw))
                 (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
+    ;; bordercolor loses to an author border-color.
+    (when (and (not pseudo) (string-equal (dom-element-tag element) "table"))
+      (let ((raw (string-trim '(#\space #\newline #\tab #\return)
+                              (or (dom-attr element "bordercolor") ""))))
+        (when (plusp (length raw))
+          (let ((decl (make-css-decl :property :border-top-color :raw raw
+                                     :origin :author :order 0)))
+            (dolist (prop '(:border-top-color :border-right-color
+                            :border-bottom-color :border-left-color))
+              (dolist (pair (expand-declaration prop raw))
+                (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found)))))))
     found))
 
 (defun html-dimension-raw (raw)

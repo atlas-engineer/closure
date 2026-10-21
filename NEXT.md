@@ -517,6 +517,7 @@ from the Lisp engine without calling Node or another browser engine.
 - width and height on a table, row, cell, column, or rule set the size Chromium uses.
 - rules collapses a table and draws only the row, column, or group lines Chromium draws.
 - frame draws only the outer sides Chromium draws, at the border attribute's width.
+- bordercolor paints the table and its cells in that color. An author border color wins.
 
 ## Next
 
