@@ -2942,6 +2942,22 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-check-paint ()
+  (let ((path "/tmp/closure-engine-checks.png"))
+    (closure.engine:render-html
+     "<input type='checkbox' checked><input type='checkbox'><input type='radio' checked>"
+     :width 40 :height 50
+     :stylesheet "body{margin:0} input{display:block}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 1 1)
+      (declare (ignore g))
+      (check "a checked checkbox is blue" (and (< r 40) (> b 200))))
+    (multiple-value-bind (r g b) (png-rgb path 6 19)
+      (check "an unchecked checkbox is white inside" (and (> r 250) (> g 250) (> b 250))))
+    (multiple-value-bind (r g b) (png-rgb path 6 32)
+      (declare (ignore g))
+      (check "a checked radio is blue" (and (< r 40) (> b 200))))))
+
 (defun test-select-arrow ()
   (let ((path "/tmp/closure-engine-select.png"))
     (closure.engine:render-html
@@ -4987,6 +5003,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-check-paint)
   (test-select-arrow)
   (test-file-input-paint)
   (test-range-color-paint)

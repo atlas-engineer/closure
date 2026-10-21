@@ -463,6 +463,7 @@ from the Lisp engine without calling Node or another browser engine.
   its value.
 - A file input paints a Choose File button and the label No file chosen.
 - A select paints a downward triangle in the gutter at its right edge.
+- A checked checkbox and radio are blue. An empty checkbox is a gray box.
 
 ## Next
 

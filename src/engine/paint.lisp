@@ -839,6 +839,51 @@ It does not apply when borders are collapsed."
         0d0
         (max 0d0 (min 1d0 (/ (- value min) (- max min)))))))
 
+(defun paint-check (cr box)
+  "A checkbox or radio. Checked controls are the blue Chromium uses."
+  (let ((el (box-element box)))
+    (when (and el (string= (box-tag box) "input")
+               (> (box-w box) 0d0) (> (box-h box) 0d0))
+      (let ((type (string-downcase (or (dom-attr el "type") ""))))
+        (when (member type '("checkbox" "radio") :test #'string=)
+          (let* ((checked (and (dom-attr el "checked") t))
+                 (x (box-x box))
+                 (y (box-y box))
+                 (w (box-w box))
+                 (h (box-h box))
+                 (blue (color-bytes 0 117 255))
+                 (gray (color-bytes 118 118 118)))
+            (if (string= type "radio")
+                (let ((cx (+ x (/ w 2d0)))
+                      (cy (+ y (/ h 2d0)))
+                      (r (max 1d0 (- (/ (min w h) 2d0) 0.5d0))))
+                  (set-color cr (if checked blue (color-bytes 255 255 255)))
+                  (cairo-arc cr cx cy r 0d0 (* 2d0 pi))
+                  (cairo-fill cr)
+                  (unless checked
+                    (set-color cr gray)
+                    (cairo-set-line-width cr 1d0)
+                    (cairo-arc cr cx cy (max 0.5d0 (- r 0.5d0)) 0d0 (* 2d0 pi))
+                    (cairo-stroke cr)))
+                (progn
+                  (set-color cr (if checked blue (color-bytes 255 255 255)))
+                  (cairo-rectangle cr x y w h)
+                  (cairo-fill cr)
+                  (if checked
+                      (progn
+                        (set-color cr (color-bytes 255 255 255))
+                        (cairo-set-line-width cr 1.6d0)
+                        (cairo-move-to cr (+ x 2.5d0) (+ y 6.5d0))
+                        (cairo-line-to cr (+ x 5d0) (+ y 9.5d0))
+                        (cairo-line-to cr (+ x 10d0) (+ y 3.5d0))
+                        (cairo-stroke cr))
+                      (progn
+                        (set-color cr gray)
+                        (cairo-set-line-width cr 1d0)
+                        (cairo-rectangle cr (+ x 0.5d0) (+ y 0.5d0)
+                                         (- w 1d0) (- h 1d0))
+                        (cairo-stroke cr)))))))))))
+
 (defun paint-select-arrow (cr box)
   "The downward triangle in the select's right gutter."
   (when (and (string= (box-tag box) "select") (> (box-w box) 16d0))
@@ -985,7 +1030,8 @@ It does not apply when borders are collapsed."
             (paint-range cr box)
             (paint-color-input cr box)
             (paint-file-input cr box)
-            (paint-select-arrow cr box)))
+            (paint-select-arrow cr box)
+            (paint-check cr box)))
         (paint-marker cr box)
         (if (eq (box-kind box) :text)
             (paint-text-box cr box)
