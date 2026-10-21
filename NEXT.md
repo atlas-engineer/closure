@@ -473,6 +473,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A color input keeps its swatch inside a gray frame instead of filling the control.
 - An iframe border is gray, matching Chromium's inset frame instead of black.
 - The default hr is Chromium's two grays, 154 over 238.
+- A range has Chromium's 2px side margin, so the controls after it sit 4px farther right.
 
 ## Next
 

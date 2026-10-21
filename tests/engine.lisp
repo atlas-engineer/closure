@@ -3085,6 +3085,10 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
            (~ (- (closure.engine:box-y file) (closure.engine:box-y color)) 6d0 0.2d0))
     (check "a range sits 5px below the color input"
            (~ (- (closure.engine:box-y range) (closure.engine:box-y color)) 5d0 0.2d0))
+    (check "a range keeps a 2px side margin"
+           (~ (- (closure.engine:box-x range)
+                 (+ (closure.engine:box-x file) (closure.engine:box-width file)))
+              6d0 1d0))
     (check "a time input sits 4.5px below the color input"
            (~ (- (closure.engine:box-y time) (closure.engine:box-y color)) 4.5d0 0.2d0))))
 

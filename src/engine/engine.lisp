@@ -95,7 +95,7 @@ script element after style and layout. Left unset until that engine exists.")
    input[type=submit], input[type=reset], input[type=button] {
      background: #efefef; border: 2px outset #efefef; padding: 1px 6px; width: auto; height: auto; }
    input[type=file] { width: 253px; height: 21px; padding: 0; border: none; }
-   input[type=range] { width: 129px; height: 16px; padding: 0; border: none; }
+   input[type=range] { width: 129px; height: 16px; padding: 0; border: none; margin-left: 2px; margin-right: 2px; }
    input[type=color] { box-sizing: border-box; width: 50px; height: 27px; padding: 1px 2px;
      border: 1px solid #767676; background: #efefef; }
    input[type=time] { box-sizing: border-box; width: 103px; height: 24px; padding: 0 0 0 4px;
