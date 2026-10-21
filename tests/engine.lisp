@@ -3007,7 +3007,10 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 110 8)
       (check "the range track past the thumb is gray" (and (> r 200) (> g 200) (> b 200))))
     (multiple-value-bind (r g b) (png-rgb path 10 26)
-      (check "the color input shows its value" (and (> r 200) (< g 40) (< b 40))))))
+      (check "the color input shows its value" (and (> r 200) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b) (png-rgb path 2 18)
+      (check "the color swatch leaves a gray margin"
+             (and (> r 220) (> g 220) (> b 220) (< r 250))))))
 
 (defun test-gauge-paint ()
   (let ((path "/tmp/closure-engine-gauge.png"))
