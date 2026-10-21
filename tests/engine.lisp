@@ -1423,6 +1423,40 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-popover ()
+  (labels ((text-box (root word)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (and (eq (closure.engine::box-kind b) :text)
+                                       (string= (or (closure.engine::box-text b) "") word))
+                              (setf found b))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               found)))
+    (let* ((root (closure.engine:layout-html
+                  "<p>A<span id='p' popover>Hi</span>B</p>
+                   <span id='m' popover='manual'>No</span>
+                   <span id='s' popover style='display:block'>See</span>"
+                  :width 300 :height 80
+                  :stylesheet "body{margin:0} p{margin:0}"))
+           (a (text-box root "A"))
+           (b (text-box root "B"))
+           (see (text-box root "See")))
+      (check "popover boxes" (and a b see))
+      (check "a popover is not shown until opened"
+             (and (null (closure.engine:find-box root "p"))
+                  (null (closure.engine:find-box root "m"))
+                  (null (text-box root "Hi"))
+                  (null (text-box root "No"))))
+      (check "the words around a popover stay together"
+             (and a b
+                  (~ (closure.engine:box-x b)
+                     (+ (closure.engine:box-x a) (closure.engine:box-width a))
+                     0.6d0)))
+      (check "an author display shows a popover"
+             (and see (string= (closure.engine::box-text see) "See"))))))
+
 (defun test-details-no-summary ()
   (let* ((root (closure.engine:layout-html
                 "<details id='e'></details>
@@ -7360,6 +7394,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-popover)
   (test-details-no-summary)
   (test-image-one-axis)
   (test-image-alt)

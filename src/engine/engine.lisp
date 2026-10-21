@@ -79,6 +79,7 @@ script element after style and layout. Left unset until that engine exists.")
    slot { display: contents; }
    dialog { display: none; position: absolute; border: 3px solid #000; padding: 1em; background: #fff; }
    dialog[open] { display: block; }
+   [popover] { position: fixed; display: none; background: #fff; border: 3px solid; padding: 0.25em; }
    img, video, canvas, svg, input, select, textarea, iframe { display: inline-block; }
    iframe { width: 300px; height: 150px; border: 2px solid #9a9a9a; }
    object { display: inline; width: 300px; height: 150px; }
