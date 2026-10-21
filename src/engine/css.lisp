@@ -2604,9 +2604,16 @@ scrollbar gutter. An author width or height is left alone."
                  ((string= value "right")
                   (unless (gethash :margin-left specified)
                     (setf (computed-ml style) :auto)))))
+          ;; Chromium keeps a caption centered. align=bottom moves it
+          ;; under the table. An author caption-side wins.
+          ((and (string= tag "caption")
+                (not (gethash :caption-side specified))
+                (member value '("top" "bottom") :test #'string=))
+           (setf (computed-caption-side style)
+                 (if (string= value "bottom") :bottom :top)))
           ((and (not (gethash :text-align specified))
                 (member tag '("div" "p" "h1" "h2" "h3" "h4" "h5" "h6"
-                              "td" "th" "caption" "tr" "center" "legend")
+                              "td" "th" "tr" "center" "legend")
                         :test #'string=))
            (let ((align (cond ((string= value "center") :center)
                               ((string= value "right") :right)

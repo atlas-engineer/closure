@@ -5424,6 +5424,37 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-caption-align ()
+  (let* ((root (closure.engine:layout-html
+                "<table><caption id='b' align='bottom'>Bottom</caption><tr><td id='bc'>A</td></tr></table>
+                 <table><caption id='t' align='top'>Top</caption><tr><td id='tc'>A</td></tr></table>
+                 <table><caption id='l' align='left'>Left</caption><tr><td>A</td></tr></table>
+                 <table><caption id='a' align='bottom' style='caption-side:top'>Auth</caption><tr><td id='ac'>A</td></tr></table>"
+                :width 300 :height 200
+                :stylesheet "body{margin:0} table{margin:0}"))
+         (b (closure.engine:find-box root "b"))
+         (bc (closure.engine:find-box root "bc"))
+         (top (closure.engine:find-box root "t"))
+         (tc (closure.engine:find-box root "tc"))
+         (left (closure.engine:find-box root "l"))
+         (a (closure.engine:find-box root "a"))
+         (ac (closure.engine:find-box root "ac")))
+    (check "caption align boxes" (and b bc top tc left a ac))
+    (check "align=bottom puts the caption under the cells"
+           (and b bc (> (closure.engine:box-y b) (closure.engine:box-y bc))
+                (eq (closure.engine::computed-caption-side (closure.engine::box-style b))
+                    :bottom)))
+    (check "align=top keeps the caption above the cells"
+           (and top tc (< (closure.engine:box-y top) (closure.engine:box-y tc))))
+    (check "align=left leaves the caption centered"
+           (and left
+                (eq (closure.engine::computed-text-align (closure.engine::box-style left))
+                    :center)))
+    (check "an author caption-side wins over align=bottom"
+           (and a ac (< (closure.engine:box-y a) (closure.engine:box-y ac))
+                (eq (closure.engine::computed-caption-side (closure.engine::box-style a))
+                    :top)))))
+
 (defun test-marquee-presentational ()
   (let* ((root (closure.engine:layout-html
                 "<marquee id='m' width='120' height='30' bgcolor='#c00'>scroll</marquee>
@@ -6681,6 +6712,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-caption-align)
   (test-marquee-presentational)
   (test-img-align)
   (test-frameborder)

@@ -547,6 +547,7 @@ from the Lisp engine without calling Node or another browser engine.
 - frameborder=0 removes an iframe's border. A non-zero integer keeps it, and an author border wins.
 - align on an image sets top, middle, absmiddle, bottom, or absbottom. An author vertical-align wins.
 - width, height, and bgcolor on a marquee set the size and color Chromium uses. An author rule wins.
+- caption align=bottom puts the caption under the table. Left and right stay centered. An author caption-side wins.
 
 ## Next
 
