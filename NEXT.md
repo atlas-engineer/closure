@@ -572,6 +572,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An object with image data paints that image.
 - A video poster is drawn with object-fit contain.
 - A picture source that matches replaces the img. One that does not is skipped.
+- An img srcset replaces a broken src, including a width descriptor.
 
 ## Next
 

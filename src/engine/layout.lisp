@@ -197,7 +197,9 @@ is 19.92, and Chromium lays that out as 19.90625."
       ((string-equal (dom-element-tag el) "object")
        (dom-attr el "data"))
       ((member (dom-element-tag el) '("img" "image") :test #'string-equal)
-       (or (picture-source-url el) (dom-attr el "src")))
+       (or (picture-source-url el)
+           (source-candidate (dom-attr el "srcset"))
+           (dom-attr el "src")))
       (t (dom-attr el "src")))))
 
 (defun apply-image-size (box el avail-w avail-h)

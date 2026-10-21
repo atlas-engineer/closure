@@ -1423,6 +1423,30 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-img-srcset ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (out "/tmp/closure-engine-srcset.png")
+         (html (format nil "<img id='a' src='/tmp/closure-does-not-exist.png' srcset='~A 100w' width='40' height='20'>
+                         <img id='b' srcset='~A' width='40' height='20'>"
+                      png png))
+         (root (closure.engine:render-html html :width 200 :height 40 :output out
+                                          :stylesheet "body{margin:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b")))
+    (check "srcset boxes" (and a b))
+    (multiple-value-bind (r g bcol)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x a) 8))
+                 (round (+ (closure.engine:box-y a) 8)))
+      (check "srcset replaces a broken src"
+             (and (> r 180) (< g 40) (< bcol 40))))
+    (multiple-value-bind (r g bcol)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x b) 8))
+                 (round (+ (closure.engine:box-y b) 8)))
+      (check "srcset alone still paints the image"
+             (and (> r 180) (< g 40) (< bcol 40))))))
+
 (defun test-picture-source ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (out "/tmp/closure-engine-picture.png")
@@ -7533,6 +7557,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-img-srcset)
   (test-picture-source)
   (test-video-poster)
   (test-object-image)
