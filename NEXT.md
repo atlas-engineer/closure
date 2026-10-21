@@ -415,9 +415,10 @@ from the Lisp engine without calling Node or another browser engine.
   grows to 26px.
 - A button is 35 by 21, a text field is 177 by 21, a select fits its
   label at 49 by 19, and a textarea is 181 by 40.
+- An iframe is 300 by 150 inside a 2px border, and an object is 300 by
+  150 on the same baseline. bdi, bdo, and data are ordinary inline words.
 
 ## Next
 
-1. The done condition is not met. Embedded elements such as iframe and
-   object, and the remaining text-level tags, are still missing from the
-   sample page.
+1. The done condition is not met. A few embedded and interactive tags,
+   including dialog and picture, are still missing from the sample page.

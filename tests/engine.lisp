@@ -1041,6 +1041,31 @@
       (walk box))
     out))
 
+(defun test-iframe-object ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'><iframe id='f'></iframe> <object id='o'></object></p><p><bdi id='b'>bdi</bdi> <data id='d'>data</data></p>"
+                :width 1024 :height 220
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (frame (closure.engine:find-box root "f"))
+         (object (closure.engine:find-box root "o"))
+         (bdi (closure.engine:find-box root "b"))
+         (data (closure.engine:find-box root "d")))
+    (check "iframe and object" (and frame object bdi data))
+    (check "an iframe is 300 by 150 inside a 2px border"
+           (and frame
+                (~ (closure.engine:box-width frame) 304d0)
+                (~ (closure.engine:box-height frame) 154d0)))
+    (check "an object is 300 by 150 and shares the iframe baseline"
+           (and frame object
+                (~ (closure.engine:box-width object) 300d0)
+                (~ (closure.engine:box-height object) 150d0)
+                (~ (closure.engine:box-x object) 308d0)
+                (~ (- (closure.engine:box-y object) (closure.engine:box-y frame)) 4d0)))
+    (check "bdi and data are ordinary inline words"
+           (and bdi data
+                (~ (closure.engine:box-width bdi) 20.45d0 0.2d0)
+                (~ (closure.engine:box-width data) 26.66d0 0.2d0)))))
+
 (defun test-form-metrics ()
   (let* ((root (closure.engine:layout-html
                 "<button id='b'>OK</button><input id='n' value='Hi'><select id='s'><option selected>Blue</option></select><textarea id='t'>note</textarea>"
@@ -4357,6 +4382,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-background-size-lengths)
   (test-background-size-percent)
   (test-background-position-percent)
+  (test-iframe-object)
   (test-form-metrics)
   (test-form-controls)
   (test-external-css)

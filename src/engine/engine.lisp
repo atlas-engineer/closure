@@ -39,6 +39,7 @@ script element after style and layout. Left unset until that engine exists.")
    ol { list-style-type: decimal; }
    li { display: list-item; }
    span, a, b, i, em, strong, code, small, big, tt, nobr, wbr, label, mark, time, abbr, cite, dfn,
+   bdi, bdo, data,
    kbd, samp, var, sub, sup, u, ins, s, del, q, button { display: inline; }
    s, del { text-decoration: line-through; }
    u, ins { text-decoration: underline; }
@@ -69,7 +70,9 @@ script element after style and layout. Left unset until that engine exists.")
               padding: 0.35em 0.75em 0.625em; }
    legend { padding-left: 2px; padding-right: 2px; }
    summary { display: list-item; list-style-type: disclosure-closed; list-style-position: inside; }
-   img, video, canvas, svg, input, select, textarea, iframe { display: inline-block; }
+   img, video, canvas, svg, object, input, select, textarea, iframe { display: inline-block; }
+   iframe { width: 300px; height: 150px; border: 2px solid #000; }
+   object { width: 300px; height: 150px; }
    video, canvas { width: 300px; height: 150px; }
    audio { display: none; }
    progress { display: inline-block; width: 160px; height: 16px; vertical-align: -0.2em; }
