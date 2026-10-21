@@ -92,6 +92,7 @@ script element after style and layout. Left unset until that engine exists.")
    button { display: inline-block; background: #efefef; border: 2px outset #efefef; padding: 1px 6px; }
    input { background: #fff; box-sizing: border-box; border: 1px solid #767676;
      padding: 1px 2px; width: 177px; height: 21px; }
+   input[type=hidden] { display: none; }
    input[type=submit], input[type=reset], input[type=button] {
      background: #efefef; border: 2px outset #efefef; padding: 1px 6px; width: auto; height: auto; }
    input[type=file] { width: 253px; height: 21px; padding: 0; border: none; }

@@ -1328,7 +1328,9 @@
       (cond
         ((eq op :present) (not (null have)))
         ((null have) nil)
-        ((eq op :=) (string= have value))
+        ((eq op :=) (if (string-equal name "type")
+                        (string-equal have value)
+                        (string= have value)))
         ((eq op :~=) (member value (split-ws have) :test #'string=))
         ((eq op :lang-prefix) (or (string= have value)
                          (and (>= (length have) (1+ (length value)))

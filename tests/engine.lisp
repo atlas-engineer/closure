@@ -2728,6 +2728,45 @@ b</div>"
                 (~ (closure.engine:box-height rb) 17d0)
                 (~ (closure.engine:box-x rb) (closure.engine:box-x ruby) 0.2d0)))))
 
+(defun test-hidden-input ()
+  (labels ((text-box (root word)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (and (eq (closure.engine::box-kind b) :text)
+                                       (string= (or (closure.engine::box-text b) "") word))
+                              (setf found b))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               found)))
+    (let* ((root (closure.engine:layout-html
+                  "<p>A<input id='h' type='hidden' value='secret'>B</p>
+                   <p>C<input id='u' type='Hidden' value='no'>D</p>
+                   <input id='shown' type='hidden' style='display:inline-block' value='See'>"
+                  :width 300 :height 80
+                  :stylesheet "body{margin:0} p{margin:0}"))
+           (a (text-box root "A"))
+           (b (text-box root "B"))
+           (c (text-box root "C"))
+           (d (text-box root "D"))
+           (shown (closure.engine:find-box root "shown")))
+      (check "hidden input boxes" (and a b c d shown))
+      (check "a hidden input is not shown"
+             (and (null (closure.engine:find-box root "h"))
+                  (null (closure.engine:find-box root "u"))
+                  (null (text-box root "secret"))
+                  (null (text-box root "no"))))
+      (check "the words around a hidden input stay together"
+             (and a b c d
+                  (~ (closure.engine:box-x b)
+                     (+ (closure.engine:box-x a) (closure.engine:box-width a))
+                     0.6d0)
+                  (~ (closure.engine:box-x d)
+                     (+ (closure.engine:box-x c) (closure.engine:box-width c))
+                     0.6d0)))
+      (check "an author display shows a hidden input"
+             (and shown (> (closure.engine:box-width shown) 20d0))))))
+
 (defun test-object-fallback ()
   (labels ((text-box (root word)
              (let ((found nil))
@@ -7140,6 +7179,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-hidden-input)
   (test-object-fallback)
   (test-noembed-param)
   (test-bdo-rtl)

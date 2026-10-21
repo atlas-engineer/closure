@@ -560,6 +560,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A right-to-left bdo reverses its characters. A left-to-right bdo does not.
 - noembed and param are hidden. An author display still shows a noembed.
 - An object with fallback content shrinks to that content. An empty object stays 300 by 150.
+- A hidden input is not shown. An author display still shows it.
 
 ## Next
 
