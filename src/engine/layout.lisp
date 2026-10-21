@@ -495,6 +495,20 @@ A replaced image does not stretch to the container the way an ordinary block doe
                     (setf (box-w box) 13d0
                           (box-h box) 13d0))
                   (when (and (string= (dom-element-tag el) "input")
+                             (string= (string-downcase (or (dom-attr el "type") "")) "date")
+                             (eq (computed-width style) :auto))
+                    (let ((adv (text-advance "mm/dd/yyyy"
+                                             (computed-font-size style)
+                                             (computed-font-family style)
+                                             (computed-font-weight style)
+                                             (computed-font-style style))))
+                      (multiple-value-bind (bt br bb bl) (border4 style)
+                        (declare (ignore bt bb))
+                        (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)
+                          (declare (ignore pt pb))
+                          ;; The placeholder, a calendar icon, and the borders.
+                          (setf (box-w box) (+ adv pl pr bl br 22d0))))))
+                  (when (and (string= (dom-element-tag el) "input")
                              (member (string-downcase (or (dom-attr el "type") ""))
                                      '("submit" "reset" "button") :test #'string=))
                     (let* ((kind (string-downcase (dom-attr el "type")))

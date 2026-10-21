@@ -3183,6 +3183,30 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
       (declare (ignore g b))
       (check "a time input paints a clock" (< r 80)))))
 
+(defun test-date-input ()
+  (let* ((root (closure.engine:layout-html
+                "<input id='d' type='date'>"
+                :width 400 :height 40
+                :stylesheet "body{margin:0}"))
+         (date (closure.engine:find-box root "d"))
+         (path "/tmp/closure-engine-date.png"))
+    (check "a date input is sized from its placeholder"
+           (and date
+                (~ (closure.engine:box-height date) 23d0)
+                (> (closure.engine:box-width date) 90d0)
+                (< (closure.engine:box-width date) 180d0)))
+    (closure.engine:render-html
+     "<input type='date'>"
+     :width 200 :height 40
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 6 12)
+      (check "an empty date input shows its placeholder"
+             (and (< r 120) (< g 120) (< b 160))))
+    (multiple-value-bind (r g b) (png-rgb path (- (round (closure.engine:box-width date)) 12) 8)
+      (declare (ignore g b))
+      (check "a date input paints a calendar" (< r 80)))))
+
 (defun test-time-input ()
   (let* ((root (closure.engine:layout-html
                 "<input id='t' type='time'>"
@@ -5253,6 +5277,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-gauge-paint)
   (test-text-input-border)
   (test-time-paint)
+  (test-date-input)
   (test-time-input)
   (test-control-baseline)
   (test-input-widgets)
