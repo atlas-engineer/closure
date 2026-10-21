@@ -5424,6 +5424,49 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-align-hr-legend ()
+  (let* ((root (closure.engine:layout-html
+                "<hr id='r' align='right' width='80'>
+                 <hr id='c' align='center' width='80'>
+                 <hr id='l' align='left' width='80'>
+                 <hr id='a' align='right' width='80' style='margin-left:10px'>
+                 <fieldset id='fr'><legend id='lr' align='right'>Legend</legend>Field</fieldset>
+                 <fieldset id='fc'><legend id='lc' align='center'>Legend</legend>Field</fieldset>
+                 <fieldset id='fl'><legend id='ll' align='left'>Legend</legend>Field</fieldset>
+                 <fieldset><legend id='la' align='right' style='text-align:left'>Legend</legend>Field</fieldset>"
+                :width 400 :height 300
+                :stylesheet "body{margin:0}"))
+         (right (closure.engine:find-box root "r"))
+         (center (closure.engine:find-box root "c"))
+         (left (closure.engine:find-box root "l"))
+         (author (closure.engine:find-box root "a"))
+         (lr (closure.engine:find-box root "lr"))
+         (lc (closure.engine:find-box root "lc"))
+         (ll (closure.engine:find-box root "ll"))
+         (la (closure.engine:find-box root "la"))
+         (fr (closure.engine:find-box root "fr")))
+    (check "hr and legend align boxes" (and right center left author lr lc ll la fr))
+    (check "hr align=right sits on the right"
+           (and right (> (closure.engine:box-x right) 250d0)))
+    (check "hr align=center sits in the middle"
+           (and center (> (closure.engine:box-x center) 100d0)
+                (< (closure.engine:box-x center) 220d0)))
+    (check "hr align=left stays at the start"
+           (and left (< (closure.engine:box-x left) 4d0)))
+    (check "an author margin wins over hr align"
+           (and author (~ (closure.engine:box-x author) 10d0 1d0)))
+    (check "legend align=right sits on the right of the fieldset"
+           (and lr fr (> (closure.engine:box-x lr)
+                         (+ (closure.engine:box-x fr)
+                            (/ (closure.engine:box-width fr) 2d0)))))
+    (check "legend align=center sits in the middle"
+           (and lc (> (closure.engine:box-x lc) 120d0)
+                (< (closure.engine:box-x lc) 260d0)))
+    (check "legend align=left stays at the start"
+           (and ll (< (closure.engine:box-x ll) 30d0)))
+    (check "an author text-align wins over legend align"
+           (and la (< (closure.engine:box-x la) 30d0)))))
+
 (defun test-body-margin ()
   (labels ((margins (html)
              (let* ((root (closure.engine:layout-html html :width 400 :height 80
@@ -6553,6 +6596,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-align-hr-legend)
   (test-body-margin)
   (test-table-background)
   (test-body-presentational)
