@@ -38,6 +38,7 @@
   "The empty text Chromium shows for a date, month, or week field."
   (cond ((string-equal type "month") "--------- ----")
         ((string-equal type "week") "Week --, ----")
+        ((string-equal type "datetime-local") "mm/dd/yyyy, --:-- --")
         (t "mm/dd/yyyy")))
 
 (defun snap-used-margin (px)
@@ -502,7 +503,7 @@ A replaced image does not stretch to the container the way an ordinary block doe
                           (box-h box) 13d0))
                   (when (and (string= (dom-element-tag el) "input")
                              (member (string-downcase (or (dom-attr el "type") ""))
-                                     '("date" "month" "week") :test #'string=)
+                                     '("date" "month" "week" "datetime-local") :test #'string=)
                              (eq (computed-width style) :auto))
                     (let ((adv (text-advance (calendar-placeholder
                                               (string-downcase (dom-attr el "type")))

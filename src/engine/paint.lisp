@@ -1137,7 +1137,7 @@ It does not apply when borders are collapsed."
   (let ((el (box-element box)))
     (when (and el (string= (box-tag box) "input")
                (member (string-downcase (or (dom-attr el "type") ""))
-                       '("date" "month" "week") :test #'string=)
+                       '("date" "month" "week" "datetime-local") :test #'string=)
                (> (box-w box) 20d0) (> (box-h box) 8d0))
       (let* ((st (box-style box))
              (x (box-x box))

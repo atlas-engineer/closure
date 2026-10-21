@@ -494,6 +494,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An empty date field is sized from mm/dd/yyyy and paints that placeholder with a calendar.
 - The date field leaves room for Chromium's calendar, a gray frame with a black header.
 - Month and week fields use the same calendar and their own placeholders.
+- A datetime-local field shows mm/dd/yyyy, --:-- -- and the same calendar.
 
 ## Next
 

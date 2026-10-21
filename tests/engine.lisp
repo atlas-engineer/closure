@@ -3225,7 +3225,17 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                 (~ (closure.engine:box-height month) 23d0)
                 (> (closure.engine:box-width month) (closure.engine:box-width date))))
     (check "a week field is taller than a text line"
-           (and week (~ (closure.engine:box-height week) 23d0)))))
+           (and week (~ (closure.engine:box-height week) 23d0)))
+    (let ((local (closure.engine:find-box
+                  (closure.engine:layout-html
+                   "<input id='l' type='datetime-local'>"
+                   :width 500 :height 40
+                   :stylesheet "body{margin:0}")
+                  "l")))
+      (check "a datetime-local field is wider than a month field"
+             (and local month
+                  (~ (closure.engine:box-height local) 23d0)
+                  (> (closure.engine:box-width local) (closure.engine:box-width month)))))))
 
 (defun test-time-input ()
   (let* ((root (closure.engine:layout-html
