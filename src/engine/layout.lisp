@@ -2500,12 +2500,16 @@ supplies the width, defaulting to 1px. An author border is left alone."
                 (dolist (spec (table-column-specs el))
                   (destructuring-bind (node span group) spec
                     (declare (ignore group))
-                    (let ((w (and (= span 1)
+                    (let ((w (and (string-equal (dom-element-tag node) "col")
                                   (dom-element-style node)
                                   (definite-length (computed-width (dom-element-style node))
                                                    avail-w))))
-                      (when (and (numberp w) (< col-i ncols))
-                        (setf (aref cols col-i) (max (aref cols col-i) w))))
+                      ;; A col span covers each column, not the sum.
+                      (when (numberp w)
+                        (loop for i from 0 below span
+                              for col = (+ col-i i)
+                              when (< col ncols)
+                              do (setf (aref cols col) (max (aref cols col) w)))))
                     (incf col-i span)))
               (let* ((fixed (if (> space-x 0d0)
                                 (* space-x (1+ ncols))

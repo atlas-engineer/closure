@@ -5424,6 +5424,26 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-col-span-width ()
+  (let* ((root (closure.engine:layout-html
+                "<table><col id='c' span='2' width='40'><tr><td id='a'>A</td><td id='b'>B</td><td id='d'>C</td></tr></table>
+                 <table><col id='u' span='2' width='40' style='width:10px'><tr><td id='e'>A</td><td id='f'>B</td></tr></table>"
+                :width 300 :height 80
+                :stylesheet "body{margin:0} td{padding:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (d (closure.engine:find-box root "d"))
+         (e (closure.engine:find-box root "e"))
+         (f (closure.engine:find-box root "f")))
+    (check "col span boxes" (and a b d e f))
+    (check "a col span gives each column that width"
+           (and a b (~ (closure.engine:box-width a) 40d0 1d0)
+                (~ (closure.engine:box-width b) 40d0 1d0)
+                (< (closure.engine:box-width d) 25d0)))
+    (check "an author width wins over the col span"
+           (and e f (< (closure.engine:box-width e) 20d0)
+                (< (closure.engine:box-width f) 20d0)))))
+
 (defun test-table-align-float ()
   (let* ((root (closure.engine:layout-html
                 "<table id='l' align='left'><tr><td>Left</td></tr></table>
@@ -6741,6 +6761,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-col-span-width)
   (test-table-align-float)
   (test-caption-align)
   (test-marquee-presentational)
