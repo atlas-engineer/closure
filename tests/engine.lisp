@@ -6363,6 +6363,30 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-replaced-align ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (root (closure.engine:layout-html
+                (format nil "<p>X<object id='om' align='middle' width='20' height='20'></object><img id='im' align='middle' src='~A' width='20' height='20'><embed id='et' align='top' src='~A' width='20' height='20'><iframe id='ib' align='bottom' width='40' height='20'></iframe><iframe id='iab' align='absbottom' width='40' height='20'></iframe><object id='own' align='middle' style='vertical-align:top' width='20' height='20'></object></p>"
+                       png png)
+                :width 700 :height 80
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (om (closure.engine:find-box root "om"))
+         (im (closure.engine:find-box root "im"))
+         (et (closure.engine:find-box root "et"))
+         (ib (closure.engine:find-box root "ib"))
+         (iab (closure.engine:find-box root "iab"))
+         (own (closure.engine:find-box root "own")))
+    (check "replaced align boxes" (and om im et ib iab own))
+    (check "object align=middle matches an image"
+           (and om im (~ (closure.engine:box-y om) (closure.engine:box-y im) 1d0)))
+    (check "embed align=top sits at the top of the line"
+           (and et (~ (closure.engine:box-y et) 0d0 1d0)))
+    (check "iframe align=absbottom sits lower than align=bottom"
+           (and ib iab (> (+ (closure.engine:box-y iab) (closure.engine:box-height iab))
+                          (+ (closure.engine:box-y ib) (closure.engine:box-height ib)))))
+    (check "an author vertical-align wins on an object"
+           (and own et (~ (closure.engine:box-y own) (closure.engine:box-y et) 1d0)))))
+
 (defun test-img-align ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'>X<img id='top' align='top' src='square.png' width='20' height='20'><img id='mid' align='middle' src='square.png' width='20' height='20'><img id='abs' align='absmiddle' src='square.png' width='20' height='20'><img id='bot' align='absbottom' src='square.png' width='20' height='20'><img id='base' align='bottom' src='square.png' width='20' height='20'><img id='own' align='middle' style='vertical-align:top' src='square.png' width='20' height='20'></p>"
@@ -7795,6 +7819,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-replaced-align)
   (test-iframe-margin)
   (test-frame-margin)
   (test-frame-src)

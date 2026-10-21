@@ -583,6 +583,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A frame src paints its image or document inside the frame.
 - A frame marginwidth and marginheight replace the body margin. An author margin still wins.
 - An iframe marginwidth and marginheight inset the document the same way. An author margin still wins.
+- align on an object, embed, or iframe moves it the way it moves an image.
 
 ## Next
 

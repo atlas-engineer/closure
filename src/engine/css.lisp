@@ -2607,7 +2607,7 @@ scrollbar gutter. An author width or height is left alone."
                 (not (gethash :float specified)))
            (cond ((string= value "left") (setf (computed-float style) :left))
                  ((string= value "right") (setf (computed-float style) :right))))
-          ((and (member tag '("img" "image") :test #'string=)
+          ((and (member tag '("img" "image" "object" "embed" "iframe") :test #'string=)
                 (not (gethash :vertical-align specified)))
            (cond ((string= value "top") (setf (computed-vertical-align style) :top))
                  ((string= value "middle")
