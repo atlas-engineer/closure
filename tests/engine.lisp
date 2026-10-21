@@ -4448,6 +4448,46 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
                   (< (abs (- g 118)) 16)
                   (< (abs (- b 118)) 16))))))
 
+(defun test-button-label ()
+  (let* ((path "/tmp/closure-engine-button-label.png")
+         (root (closure.engine:render-html
+                "<input id='r' type='reset'>
+                 <input id='s' type='submit'>
+                 <input id='b' type='button'>
+                 <input id='v' type='reset' value='Go'>
+                 <input id='e' type='submit' value=''>"
+                :width 400 :height 40
+                :stylesheet "body{margin:0}"
+                :output path))
+         (reset (closure.engine:find-box root "r"))
+         (submit (closure.engine:find-box root "s"))
+         (blank (closure.engine:find-box root "b"))
+         (named (closure.engine:find-box root "v"))
+         (empty (closure.engine:find-box root "e")))
+    (check "button label boxes" (and reset submit blank named empty))
+    (check "a reset button is as wide as its Reset label"
+           (and reset named (> (closure.engine:box-width reset)
+                               (closure.engine:box-width blank))))
+    (check "a submit button is wider than a reset button"
+           (and submit reset (> (closure.engine:box-width submit)
+                                (closure.engine:box-width reset))))
+    (check "an author value replaces the default label"
+           (and named reset (< (closure.engine:box-width named)
+                               (closure.engine:box-width reset))))
+    (check "an empty value stays empty"
+           (and empty (~ (closure.engine:box-width empty)
+                         (closure.engine:box-width blank) 1d0)))
+    (let ((x (round (+ (closure.engine:box-x reset) 10d0)))
+          (y (round (+ (closure.engine:box-y reset) 8d0))))
+      (multiple-value-bind (r g b) (png-rgb path x y)
+        (check "the reset label is painted"
+               (and (< (+ r g b) 400)))))
+    (let ((x (round (+ (closure.engine:box-x blank) 6d0)))
+          (y (round (+ (closure.engine:box-y blank) 8d0))))
+      (multiple-value-bind (r g b) (png-rgb path x y)
+        (check "a valueless button stays blank"
+               (and (> r 200) (> g 200) (> b 200)))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8430,6 +8470,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-password-paint)
   (test-image-input)
   (test-select-list)
+  (test-button-label)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)

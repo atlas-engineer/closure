@@ -611,6 +611,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A long ruby annotation widens the base. Each character takes an equal share.
 - Text stays between a left float and a right float. It continues underneath them.
 - An hr with a width is centered. align=left keeps it at the start, and an author margin still wins.
+- A reset button paints Reset and a submit button paints Submit when they have no value. An author value still wins.
 
 ## Next
 

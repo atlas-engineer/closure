@@ -817,11 +817,7 @@ Indented group options count only for a list select."
                   (when (and (string= (dom-element-tag el) "input")
                              (member (string-downcase (or (dom-attr el "type") ""))
                                      '("submit" "reset" "button") :test #'string=))
-                    (let* ((kind (string-downcase (dom-attr el "type")))
-                           (label (or (dom-attr el "value")
-                                      (cond ((string= kind "reset") "Reset")
-                                            ((string= kind "submit") "Submit")
-                                            (t ""))))
+                    (let* ((label (control-label el))
                            (adv (text-advance label
                                               (computed-font-size style)
                                               (computed-font-family style)

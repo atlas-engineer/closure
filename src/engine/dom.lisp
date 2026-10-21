@@ -282,6 +282,8 @@
               (if (and value (plusp (length value)))
                   ""
                   (or (dom-attr el "placeholder") ""))))
+           ((member type '("submit" "reset" "button") :test #'string=)
+            (form-control-value el))
            (t (or (dom-attr el "value") (dom-attr el "placeholder") "")))))
       (t ""))))
 
