@@ -472,6 +472,7 @@ from the Lisp engine without calling Node or another browser engine.
 - An empty time input shows --:-- -- and a clock inside a gray border.
 - A color input keeps its swatch inside a gray frame instead of filling the control.
 - An iframe border is gray, matching Chromium's inset frame instead of black.
+- The default hr is Chromium's two grays, 154 over 238.
 
 ## Next
 

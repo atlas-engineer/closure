@@ -4690,6 +4690,10 @@ mono two</pre>")
         (check "hr paints the right of the rule" (ink (rgb 196 y)))
         (check "the inset top edge is darker than the bottom"
                (and top bot (< (first top) (first bot))))
+        (check "the default rule matches Chromium gray"
+               (and top bot
+                    (< (abs (- (first top) 154)) 20)
+                    (< (abs (- (first bot) 238)) 20)))
         (check "the rule does not paint past its borders"
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
