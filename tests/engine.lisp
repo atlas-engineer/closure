@@ -2942,6 +2942,19 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (check "audio is not shown"
            (not audio))))
 
+(defun test-file-input-paint ()
+  (let ((path "/tmp/closure-engine-file.png"))
+    (closure.engine:render-html
+     "<input type='file'>"
+     :width 280 :height 30
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 20 6)
+      (check "the file button is gray" (and (> r 200) (> g 200) (> b 200) (< r 250))))
+    (multiple-value-bind (r g b) (png-rgb path 240 6)
+      (check "the rest of the file input stays empty"
+             (and (> r 250) (> g 250) (> b 250))))))
+
 (defun test-range-color-paint ()
   (let ((path "/tmp/closure-engine-range.png"))
     (closure.engine:render-html
@@ -4964,6 +4977,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-listing-abbr)
   (test-font-marquee)
   (test-replaced-widgets)
+  (test-file-input-paint)
   (test-range-color-paint)
   (test-gauge-paint)
   (test-time-input)
