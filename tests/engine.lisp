@@ -3047,9 +3047,9 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
      :width 120 :height 40
      :stylesheet "body{margin:0}"
      :output path)
-    (multiple-value-bind (r g b) (png-rgb path 0 12)
+    (multiple-value-bind (r g b) (png-rgb path 4 0)
       (check "a time input has a gray border"
-             (and (< (abs (- r 118)) 20) (< (abs (- g 118)) 20) (< (abs (- b 118)) 20))))
+             (and (< (abs (- r 118)) 8) (< (abs (- g 118)) 8) (< (abs (- b 118)) 8))))
     (multiple-value-bind (r g b) (png-rgb path 8 11)
       (check "an empty time input shows its placeholder"
              (not (and (> r 250) (> g 250) (> b 250)))))
