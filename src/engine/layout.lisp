@@ -1281,11 +1281,43 @@ The script is the smaller second child."
                   :baseline (+ bar-y (* bar 0.5d0))
                   :children (list num den))))))
 
+(defun layout-math-subsup (el)
+  "A base with a subscript and a superscript in one column."
+  (let* ((kids (remove-if-not #'dom-element-p (dom-node-children el)))
+         (base-el (first kids))
+         (sub-el (second kids))
+         (sup-el (third kids))
+         (st (dom-element-style el))
+         (em (if st (computed-font-size st) 16d0)))
+    (when (and base-el sub-el sup-el)
+      (let* ((base (math-token-box base-el))
+             (sub (math-token-box sub-el))
+             (sup (math-token-box sup-el))
+             (base-y (* em 0.4d0))
+             (sub-y (+ base-y (* em 0.29d0)))
+             (script-w (max (box-w sub) (box-w sup))))
+        (setf (box-x base) 0d0
+              (box-y base) base-y
+              (box-x sub) (box-w base)
+              (box-y sub) sub-y
+              (box-x sup) (box-w base)
+              (box-y sup) 0d0)
+        (make-box :kind :inline :style st :element el
+                  :tag (dom-element-tag el) :id (dom-element-id el)
+                  :w (+ (box-w base) script-w)
+                  :h (max (+ base-y (box-h base))
+                          (+ sub-y (box-h sub))
+                          (box-h sup))
+                  :baseline (+ base-y (or (box-baseline base) 0d0))
+                  :children (list base sub sup))))))
+
 (defun math-piece (el)
   "One child of a square root: a script, a fraction, or a token."
   (cond
     ((member (dom-element-tag el) '("msup" "msub") :test #'string=)
      (layout-math-script el))
+    ((string-equal (dom-element-tag el) "msubsup")
+     (layout-math-subsup el))
     ((string-equal (dom-element-tag el) "mfrac")
      (layout-math-fraction el))
     (t (math-token-box el))))
@@ -1539,6 +1571,15 @@ The script is the smaller second child."
                    (push b current)
                    (incf current-w (box-w b))
                    (setf previous (dom-element-style el)))))
+             (emit-math-subsup (el)
+               (let ((b (layout-math-subsup el)))
+                 (when b
+                   (when (and (> current-w 0d0) (> (+ current-w (box-w b)) wrap-limit)
+                              (not (member white '(:nowrap :pre))))
+                     (break-line))
+                   (push b current)
+                   (incf current-w (box-w b))
+                   (setf previous (dom-element-style el)))))
              (emit-math-script (el)
                (let ((b (layout-math-script el)))
                  (when b
@@ -1617,6 +1658,8 @@ The script is the smaller second child."
                        (emit-ruby n))
                       ((member (dom-element-tag n) '("msup" "msub") :test #'string=)
                        (emit-math-script n))
+                      ((string= (dom-element-tag n) "msubsup")
+                       (emit-math-subsup n))
                       ((string= (dom-element-tag n) "mfrac")
                        (emit-math-fraction n))
                       ((string= (dom-element-tag n) "msqrt")

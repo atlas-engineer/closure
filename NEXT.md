@@ -618,6 +618,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A square root draws a radical beside the expression and a bar over it.
 - An nth root puts a half-size index in the radical's upper corner. The radicand still starts after the sign.
 - display=block makes math a block and centers it. An author alignment still wins.
+- A combined subscript and superscript stack in one column beside the base. The subscript sits higher than it would alone.
 
 ## Next
 

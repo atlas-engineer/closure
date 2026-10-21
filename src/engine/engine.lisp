@@ -51,7 +51,8 @@ script element after style and layout. Left unset until that engine exists.")
    q:after { content: close-quote; }
    ruby, rt { display: inline; }
    mi { font-style: italic; }
-   msup > :nth-child(2), msub > :nth-child(2) { font-size: 71%; }
+   msup > :nth-child(2), msub > :nth-child(2),
+   msubsup > :nth-child(2), msubsup > :nth-child(3) { font-size: 71%; }
    mfrac > :nth-child(1), mfrac > :nth-child(2) { font-size: 71%; }
    mroot > :nth-child(2) { font-size: 50.41%; }
    ruby > rt { font-size: 50%; }

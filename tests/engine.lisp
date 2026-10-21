@@ -4707,6 +4707,37 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
            (and author left
                 (~ (closure.engine:box-x left) (closure.engine:box-x author) 1d0)))))
 
+(defun test-math-subsup ()
+  (let* ((root (closure.engine:layout-html
+                "<p style='margin:0'><math><msubsup id='s'><mi id='b'>x</mi><mn id='lo'>2</mn><mn id='hi'>3</mn></msubsup></math></p>"
+                :width 200 :height 60
+                :stylesheet "body{margin:0;font-size:16px}"))
+         (base (closure.engine:find-box root "b"))
+         (sub (closure.engine:find-box root "lo"))
+         (sup (closure.engine:find-box root "hi")))
+    (check "subsup boxes" (and base sub sup))
+    (check "both scripts are the smaller size"
+           (and sub sup
+                (~ (closure.engine::computed-font-size (closure.engine::box-style sub))
+                   (* 16d0 0.71d0) 0.2d0)
+                (~ (closure.engine::computed-font-size (closure.engine::box-style sup))
+                   (* 16d0 0.71d0) 0.2d0)))
+    (check "the scripts share a column beside the base"
+           (and base sub sup
+                (~ (closure.engine:box-x sub) (closure.engine:box-x sup) 0.3d0)
+                (~ (closure.engine:box-x sub)
+                   (+ (closure.engine:box-x base) (closure.engine:box-width base))
+                   0.3d0)))
+    (check "the superscript sits above the base"
+           (and base sup
+                (~ (- (closure.engine:box-y base) (closure.engine:box-y sup))
+                   (* 16d0 0.4d0) 0.3d0)))
+    (check "the subscript sits just below the base top"
+           (and base sub
+                (~ (- (closure.engine:box-y sub) (closure.engine:box-y base))
+                   (* 16d0 0.29d0) 0.3d0)
+                (< (closure.engine:box-y sup) (closure.engine:box-y sub))))))
+
 (defun test-disclosure-marker ()
   (let ((path "/tmp/closure-engine-disclosure.png"))
     (closure.engine:render-html
@@ -8696,6 +8727,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-math-sqrt)
   (test-math-root)
   (test-math-display)
+  (test-math-subsup)
   (test-disclosure-marker)
   (test-ordered-marker)
   (test-file-input-paint)
