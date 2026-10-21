@@ -506,8 +506,10 @@ A replaced image does not stretch to the container the way an ordinary block doe
                         (declare (ignore bt bb))
                         (multiple-value-bind (pt pr pb pl) (pad4 style avail-w)
                           (declare (ignore pt pb))
-                          ;; The placeholder, a calendar icon, and the borders.
-                          (setf (box-w box) (+ adv pl pr bl br 22d0))))))
+                          ;; The placeholder, the calendar button, and the borders.
+                          ;; The button is wider than the glyph so the field
+                          ;; matches the room Chromium leaves after the text.
+                          (setf (box-w box) (+ adv pl pr bl br 38d0))))))
                   (when (and (string= (dom-element-tag el) "input")
                              (member (string-downcase (or (dom-attr el "type") ""))
                                      '("submit" "reset" "button") :test #'string=))

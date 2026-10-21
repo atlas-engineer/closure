@@ -3203,9 +3203,13 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 6 12)
       (check "an empty date input shows its placeholder"
              (and (< r 120) (< g 120) (< b 160))))
-    (multiple-value-bind (r g b) (png-rgb path (- (round (closure.engine:box-width date)) 12) 8)
-      (declare (ignore g b))
-      (check "a date input paints a calendar" (< r 80)))))
+    (let ((ix (- (round (closure.engine:box-width date)) 12)))
+      (multiple-value-bind (r g b) (png-rgb path ix 7)
+        (declare (ignore g b))
+        (check "a date input paints a calendar" (< r 40)))
+      (multiple-value-bind (r g b) (png-rgb path ix 11)
+        (check "the calendar page is white"
+               (and (> r 240) (> g 240) (> b 240)))))))
 
 (defun test-time-input ()
   (let* ((root (closure.engine:layout-html
