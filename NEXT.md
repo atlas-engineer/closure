@@ -534,6 +534,7 @@ from the Lisp engine without calling Node or another browser engine.
 - size on a text field sets its width in characters. An author width wins.
 - textarea wrap=off stays on one line, and soft wraps. An author white-space wins.
 - A meter is green in the optimum region, yellow beside it, and red on the far side.
+- width and height on a canvas or video set the size Chromium uses. An author size wins.
 
 ## Next
 

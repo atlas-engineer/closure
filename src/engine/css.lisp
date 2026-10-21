@@ -1888,7 +1888,7 @@
     ;; width and height attributes beat the user-agent size and lose to author CSS.
     (when (and (not pseudo)
                (member (dom-element-tag element)
-                       '("iframe" "object" "embed"
+                       '("iframe" "object" "embed" "canvas" "video"
                          "table" "td" "th" "tr" "col" "colgroup" "hr")
                        :test #'string-equal))
       (dolist (name '("width" "height"))

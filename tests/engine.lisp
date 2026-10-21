@@ -5424,6 +5424,32 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-canvas-size ()
+  (let* ((root (closure.engine:layout-html
+                "<canvas id='c' width='40' height='20'></canvas>
+                 <video id='v' width='80' height='30'></video>
+                 <canvas id='d'></canvas>
+                 <canvas id='a' width='40' height='20' style='width:10px;height:12px'></canvas>"
+                :width 400 :height 500
+                :stylesheet "body{margin:0} canvas,video{display:block}"))
+         (c (closure.engine:find-box root "c"))
+         (v (closure.engine:find-box root "v"))
+         (d (closure.engine:find-box root "d"))
+         (a (closure.engine:find-box root "a")))
+    (check "canvas and video sizes" (and c v d a))
+    (check "a canvas width and height are its border box"
+           (and c (~ (closure.engine:box-width c) 40d0)
+                (~ (closure.engine:box-height c) 20d0)))
+    (check "a video width and height are its border box"
+           (and v (~ (closure.engine:box-width v) 80d0)
+                (~ (closure.engine:box-height v) 30d0)))
+    (check "a canvas with no size stays 300 by 150"
+           (and d (~ (closure.engine:box-width d) 300d0)
+                (~ (closure.engine:box-height d) 150d0)))
+    (check "an author size wins over the canvas attribute"
+           (and a (~ (closure.engine:box-width a) 10d0)
+                (~ (closure.engine:box-height a) 12d0)))))
+
 (defun test-meter-color ()
   (let* ((html "<meter id='g' value='0.8' low='0.2' high='0.8' optimum='0.9'></meter>
                 <meter id='y' value='0.5' low='0.2' high='0.8' optimum='0.9'></meter>
@@ -6264,6 +6290,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-canvas-size)
   (test-meter-color)
   (test-textarea-wrap)
   (test-input-size)
