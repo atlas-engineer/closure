@@ -571,6 +571,7 @@ from the Lisp engine without calling Node or another browser engine.
 - Audio with controls is Chromium's 300 by 54 bar. Without controls it stays hidden.
 - An object with image data paints that image.
 - A video poster is drawn with object-fit contain.
+- A picture source that matches replaces the img. One that does not is skipped.
 
 ## Next
 

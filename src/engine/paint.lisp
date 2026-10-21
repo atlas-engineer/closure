@@ -592,9 +592,7 @@ and gaps between known stops are split evenly."
 (defun paint-image (cr box)
   "Paint a replaced image into its content box, honoring object-fit."
   (let* ((el (box-element box))
-         (path (and el (image-pathname
-                        (dom-attr el (if (string= (or (box-tag box) "") "object")
-                                         "data" "src")))))
+         (path (and el (image-pathname (image-url el))))
          (surface (and path (load-image-surface path)))
          (st (box-style box)))
     (when (and el st)

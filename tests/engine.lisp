@@ -1423,6 +1423,30 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-picture-source ()
+  (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
+         (out "/tmp/closure-engine-picture.png")
+         (html (format nil "<picture><source srcset='~A' media='(min-width:1px)'><img id='a' src='/tmp/closure-does-not-exist.png' width='40' height='20' alt='no'></picture>
+                        <picture><source srcset='~A' type='image/avif'><img id='b' src='/tmp/closure-does-not-exist.png' width='40' height='20'></picture>"
+                      png png))
+         (root (closure.engine:render-html html :width 200 :height 40 :output out
+                                          :stylesheet "body{margin:0}"))
+         (hit (closure.engine:find-box root "a"))
+         (miss (closure.engine:find-box root "b")))
+    (check "picture boxes" (and hit miss))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x hit) 8))
+                 (round (+ (closure.engine:box-y hit) 8)))
+      (check "a matching source replaces the image"
+             (and (> r 180) (< g 40) (< b 40))))
+    (multiple-value-bind (r g b)
+        (png-rgb out
+                 (round (+ (closure.engine:box-x miss) 8))
+                 (round (+ (closure.engine:box-y miss) 8)))
+      (check "a source type we cannot decode is skipped"
+             (and (> r 250) (> g 250) (> b 250))))))
+
 (defun test-video-poster ()
   (let* ((out "/tmp/closure-engine-video-poster.png")
          (root (closure.engine:render-html
@@ -7509,6 +7533,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-picture-source)
   (test-video-poster)
   (test-object-image)
   (test-audio-controls)

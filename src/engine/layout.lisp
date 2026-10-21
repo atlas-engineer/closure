@@ -154,12 +154,58 @@ is 19.92, and Chromium lays that out as 19.90625."
           (setf (box-w box) (+ (or cw 0d0) extra-w)
                 (box-h box) (+ (or ch 0d0) extra-h)))))))
 
+(defun source-candidate (srcset)
+  "The first URL in a srcset, without its width or density descriptor."
+  (let ((s (string-trim '(#\space #\newline #\tab #\return) (or srcset ""))))
+    (when (plusp (length s))
+      (let* ((cand (string-trim '(#\space)
+                                (subseq s 0 (or (position #\, s) (length s)))))
+             (sp (position #\space cand)))
+        (if sp (subseq cand 0 sp) cand)))))
+
+(defun source-type-ok (type)
+  "True when TYPE is empty or an image kind this engine can decode."
+  (let ((s (string-downcase (string-trim '(#\space) (or type "")))))
+    (or (zerop (length s))
+        (search "png" s)
+        (search "jpeg" s)
+        (search "jpg" s)
+        (search "gif" s))))
+
+(defun picture-source-url (el)
+  "The first matching picture source before this img, or NIL."
+  (let ((parent (and (dom-element-p el) (dom-node-parent el))))
+    (when (and (dom-element-p parent)
+               (string-equal (dom-element-tag parent) "picture"))
+      (dolist (c (dom-node-children parent))
+        (when (eq c el) (return nil))
+        (when (and (dom-element-p c)
+                   (string-equal (dom-element-tag c) "source"))
+          (let ((media (string-trim '(#\space #\newline #\tab #\return)
+                                    (or (dom-attr c "media") "")))
+                (url (source-candidate (dom-attr c "srcset"))))
+            (when (and url
+                       (source-type-ok (dom-attr c "type"))
+                       (or (zerop (length media))
+                           (media-matches media *viewport-width* *viewport-height*)))
+              (return-from picture-source-url url))))))))
+
+(defun image-url (el)
+  "The URL to paint for an image, object, or embed."
+  (when (dom-element-p el)
+    (cond
+      ((string-equal (dom-element-tag el) "object")
+       (dom-attr el "data"))
+      ((member (dom-element-tag el) '("img" "image") :test #'string-equal)
+       (or (picture-source-url el) (dom-attr el "src")))
+      (t (dom-attr el "src")))))
+
 (defun apply-image-size (box el avail-w avail-h)
   "Size an img from CSS, then HTML width/height, then the file's intrinsic pixels.
 A replaced image does not stretch to the container the way an ordinary block does."
   (let* ((style (box-style box))
          (src (string-trim '(#\space #\newline #\tab #\return)
-                           (or (dom-attr el "src") "")))
+                           (or (image-url el) "")))
          (path (image-pathname src))
          (attr-w (attr-px el "width"))
          (attr-h (attr-px el "height")))
