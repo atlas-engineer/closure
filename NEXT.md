@@ -431,6 +431,8 @@ from the Lisp engine without calling Node or another browser engine.
   option or group label. wbr wraps a narrow line, and noscript is not shown.
 - An optgroup label is bold, so a select is as wide as that label. The
   sample control is 65px wide and 19px tall.
+- An open dialog stays where it would have sat in the flow, centered on
+  that line. The block after it starts in the same place.
 
 ## Next
 

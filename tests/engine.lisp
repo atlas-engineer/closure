@@ -1149,17 +1149,21 @@
 
 (defun test-dialog-search ()
   (let* ((root (closure.engine:layout-html
-                "<dialog id='c'>Dialog</dialog><dialog id='d' open>Dialog</dialog><search id='s'>Search</search><p><output id='o'>42</output></p>"
-                :width 400 :height 200
+                "<dialog id='c'>Dialog</dialog><p id='b'>Before</p><dialog id='d' open>Dialog</dialog><search id='s'>Search</search><p><output id='o'>42</output></p>"
+                :width 400 :height 240
                 :stylesheet "body{margin:0} p{margin:0}"))
          (closed (closure.engine:find-box root "c"))
+         (before (closure.engine:find-box root "b"))
          (open (closure.engine:find-box root "d"))
          (search (closure.engine:find-box root "s"))
          (output (closure.engine:find-box root "o")))
-    (check "dialog and search" (and (not closed) open search output))
-    (check "an open dialog is centered, 13px down, and one padded line tall"
-           (and open
-                (~ (closure.engine:box-y open) 13d0)
+    (check "dialog and search" (and (not closed) open search output before))
+    (check "an open dialog sits at the static position and is centered"
+           (and open search before
+                (~ (closure.engine:box-y before) 0d0)
+                (~ (closure.engine:box-height before) 18d0)
+                (~ (closure.engine:box-y open) 18d0)
+                (~ (closure.engine:box-y search) 18d0)
                 (~ (closure.engine:box-height open) 56d0)
                 (~ (closure.engine:box-x open)
                    (/ (- 400d0 (closure.engine:box-width open)) 2d0)

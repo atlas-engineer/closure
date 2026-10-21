@@ -74,7 +74,7 @@ script element after style and layout. Left unset until that engine exists.")
    output { display: inline; }
    datalist { display: none; }
    slot { display: contents; }
-   dialog { display: none; position: absolute; top: 13px; border: 3px solid #000; padding: 1em; background: #fff; }
+   dialog { display: none; position: absolute; border: 3px solid #000; padding: 1em; background: #fff; }
    dialog[open] { display: block; }
    img, video, canvas, svg, object, input, select, textarea, iframe { display: inline-block; }
    iframe { width: 300px; height: 150px; border: 2px solid #000; }

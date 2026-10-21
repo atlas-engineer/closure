@@ -340,7 +340,9 @@ A replaced image does not stretch to the container the way an ordinary block doe
                               (cond
                                 ((member (computed-position cs) '(:absolute :fixed))
                                  (flush-inline)
-                                 (push node abs))
+                                 ;; top:auto uses this static position: where a
+                                 ;; block would start, including the pending margin.
+                                 (push (cons node (+ (max flow-y float-clear) open-margin)) abs))
                                 ((member (computed-float cs) '(:left :right))
                                  (flush-inline)
                                  (consume-margin)
@@ -437,7 +439,9 @@ A replaced image does not stretch to the container the way an ordinary block doe
                   (when (and (eq pos :sticky) (not (eq (computed-top style) :auto)))
                     (setf (box-sticky-top box) (px (computed-top style) (or avail-h 0d0))))
                   (dolist (a (nreverse abs))
-                    (let ((ab (layout-absolute a box content-x (+ (box-y box) bt pt) cw content-h)))
+                    (let ((ab (layout-absolute (car a) box content-x
+                                               (+ (box-y box) bt pt) cw content-h
+                                               (+ (box-y box) bt pt (cdr a)))))
                       (when ab (push ab kids))))
                   (when (and (numberp (computed-column-count style))
                              (> (computed-column-count style) 1)
@@ -1099,7 +1103,7 @@ then adds one pixel: size/5 for sub, size/3 for super."
   (let ((b (layout-inline-run (list el) x y avail (dom-element-style el))))
     b))
 
-(defun layout-absolute (el containing cx cy cw ch)
+(defun layout-absolute (el containing cx cy cw ch &optional static-y)
   (declare (ignore cx cy cw ch))
   (let* ((style (dom-element-style el))
          (cbx (if containing (box-x containing) 0d0))
@@ -1119,7 +1123,7 @@ then adds one pixel: size/5 for sub, size/3 for super."
                    (t cbw))))
       (let ((b (layout-block el
                              (+ cbx (or left 0d0))
-                             (+ cby (or top 0d0))
+                             (if top (+ cby top) (or static-y cby))
                              avail cbh containing)))
         (when (and b (string= (dom-element-tag el) "dialog"))
           (let ((ink (line-items-width b)))
