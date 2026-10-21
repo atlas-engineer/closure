@@ -1244,6 +1244,31 @@ It does not apply when borders are collapsed."
         (cairo-arc cr cx cy 7d0 0d0 (* 2d0 pi))
         (cairo-fill cr)))))
 
+(defun meter-fill (el)
+  "Chromium's meter color: green in the optimum region, yellow beside it,
+red on the far side of the optimum."
+  (let* ((min (attr-float el "min" 0d0))
+         (max (attr-float el "max" 1d0))
+         (max (if (<= max min) (+ min 1d0) max))
+         (value (max min (min max (attr-float el "value" min))))
+         (low (attr-float el "low" min))
+         (high (attr-float el "high" max))
+         (opt (attr-float el "optimum" (/ (+ min max) 2d0)))
+         (region (cond
+                   ((< opt low)
+                    (cond ((<= value low) :good)
+                          ((<= value high) :sub)
+                          (t :bad)))
+                   ((> opt high)
+                    (cond ((>= value high) :good)
+                          ((>= value low) :sub)
+                          (t :bad)))
+                   (t (if (<= low value high) :good :sub)))))
+    (case region
+      (:good (color-bytes 16 124 16))
+      (:sub (color-bytes 255 185 0))
+      (t (color-bytes 216 59 1)))))
+
 (defun paint-gauge (cr box)
   "The thin track Chromium paints inside progress and meter."
   (when (and (box-element box)
@@ -1258,7 +1283,7 @@ It does not apply when borders are collapsed."
            (progress (string= (box-tag box) "progress"))
            (fill (if progress
                      (color-bytes 0 117 255)
-                     (color-bytes 16 124 16)))
+                     (meter-fill (box-element box))))
            (ey (- y 1d0))
            (eh (+ h 2d0))
            (fill-w (max 0d0 (* w ratio)))

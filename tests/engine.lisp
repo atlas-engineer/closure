@@ -5424,6 +5424,37 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-meter-color ()
+  (let* ((html "<meter id='g' value='0.8' low='0.2' high='0.8' optimum='0.9'></meter>
+                <meter id='y' value='0.5' low='0.2' high='0.8' optimum='0.9'></meter>
+                <meter id='r' value='0.1' low='0.2' high='0.8' optimum='0.9'></meter>
+                <meter id='p' value='0.5'></meter>")
+         (path "/tmp/closure-engine-meter.png")
+         (root (closure.engine:render-html html :width 120 :height 120
+                                          :stylesheet "body{margin:0} meter{display:block}"
+                                          :output path)))
+    (labels ((at (id)
+               (let ((box (closure.engine:find-box root id)))
+                 (and box
+                      (multiple-value-list
+                       (png-rgb path
+                                (round (+ (closure.engine:box-x box) 4d0))
+                                (round (+ (closure.engine:box-y box)
+                                          (/ (closure.engine:box-height box) 2d0)))))))))
+      (destructuring-bind (gr gg gb) (at "g")
+        (destructuring-bind (yr yg yb) (at "y")
+          (destructuring-bind (rr rg rb) (at "r")
+            (destructuring-bind (pr pg pb) (at "p")
+              (check "meter colors" (and gr yr rr pr))
+              (check "a value on the optimum side is green"
+                     (and (< gr 40) (> gg 100) (< gb 40)))
+              (check "a value between low and high is yellow"
+                     (and (> yr 200) (> yg 150) (< yb 40)))
+              (check "a value on the far side is red"
+                     (and (> rr 180) (< rg 80) (< rb 40)))
+              (check "a meter without bounds stays green"
+                     (and (< pr 40) (> pg 100) (< pb 40))))))))))
+
 (defun test-textarea-wrap ()
   (let* ((html "<textarea id='off' wrap='off' cols='8'>one two three</textarea>
                 <textarea id='soft' wrap='soft' cols='8'>one two three</textarea>
@@ -6233,6 +6264,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-meter-color)
   (test-textarea-wrap)
   (test-input-size)
   (test-textarea-size)
