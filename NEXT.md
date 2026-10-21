@@ -607,6 +607,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A checkbox corner is rounded. The inside of a checked box stays blue.
 - A disabled checkbox is gray. An enabled one stays blue.
 - A disabled button is a light gray face. An enabled button keeps its darker edge.
+- A circle list marker is a hollow ring. It does not grow a line to the text.
 
 ## Next
 

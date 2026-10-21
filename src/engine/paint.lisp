@@ -993,10 +993,13 @@ on spaces so a line fits MAX-W."
                (cairo-rectangle cr (- cx 2.5d0) (- my 2.5d0) 5d0 5d0)
                (cairo-fill cr))
               ((eq marker :circle)
+               ;; A current point would add a line into the ring.
+               (cairo-new-sub-path cr)
                (cairo-set-line-width cr 1d0)
                (cairo-arc cr cx my 2.5d0 0d0 (* 2d0 pi))
                (cairo-stroke cr))
               (t
+               (cairo-new-sub-path cr)
                (cairo-arc cr cx my 2.1d0 0d0 (* 2d0 pi))
                (cairo-fill cr))))))))
 

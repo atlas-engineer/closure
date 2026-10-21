@@ -4212,6 +4212,23 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 39 10)
       (check "the select paints a dark arrow" (and (< r 40) (< g 40) (< b 40))))))
 
+(defun test-circle-marker ()
+  (let ((path "/tmp/closure-engine-circle.png"))
+    (closure.engine:render-html
+     "<ul type='circle' style='margin:0;padding-left:40px'><li>Ring</li></ul>"
+     :width 120 :height 40
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 42 8)
+      (declare (ignore g b))
+      (check "a circle marker has a dark ring" (< r 80)))
+    (multiple-value-bind (r g b) (png-rgb path 45 8)
+      (declare (ignore g b))
+      (check "a circle marker is hollow" (> r 140)))
+    (multiple-value-bind (r g b) (png-rgb path 33 8)
+      (check "a circle marker does not grow a line"
+             (and (> r 240) (> g 240) (> b 240))))))
+
 (defun test-disabled-button ()
   (let ((path "/tmp/closure-engine-disabled-button.png"))
     (closure.engine:render-html
@@ -8308,6 +8325,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-radio-shape)
   (test-check-paint)
   (test-select-arrow)
+  (test-circle-marker)
   (test-disabled-button)
   (test-button-border)
   (test-textarea-grip)
