@@ -1187,6 +1187,19 @@
     (check "output is an inline word"
            (and output (~ (closure.engine:box-width output) 16d0 0.5d0)))))
 
+(defun test-iframe-border ()
+  (let ((path "/tmp/closure-engine-iframe.png"))
+    (closure.engine:render-html
+     "<iframe></iframe>"
+     :width 320 :height 170
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 4 1)
+      (check "an iframe border is gray"
+             (and (< (abs (- r 154)) 40)
+                  (< (abs (- g 154)) 40)
+                  (< (abs (- b 154)) 40))))))
+
 (defun test-iframe-object ()
   (let* ((root (closure.engine:layout-html
                 "<p id='p'><iframe id='f'></iframe> <object id='o'></object></p><p><bdi id='b'>bdi</bdi> <data id='d'>data</data></p>"
@@ -4974,6 +4987,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-slot-columns)
   (test-picture-map)
   (test-dialog-search)
+  (test-iframe-border)
   (test-iframe-object)
   (test-form-metrics)
   (test-form-controls)

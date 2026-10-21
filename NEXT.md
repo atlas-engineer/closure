@@ -471,6 +471,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A fieldset groove is a dark pixel beside the border color, not one dark stroke.
 - An empty time input shows --:-- -- and a clock inside a gray border.
 - A color input keeps its swatch inside a gray frame instead of filling the control.
+- An iframe border is gray, matching Chromium's inset frame instead of black.
 
 ## Next
 
