@@ -5424,6 +5424,33 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-list-type-attr ()
+  (let* ((html "<ol type='a' start='3'><li id='a'>One</li><li id='b'>Two</li></ol>
+                <ol type='I'><li id='r' value='4'>Four</li><li id='s'>Five</li></ol>
+                <ul type='square'><li id='q'>Item</li></ul>
+                <ol type='a'><li id='css' style='list-style-type:decimal'>X</li></ol>")
+         (root (closure.engine:layout-html html :width 200
+                                          :stylesheet "body{margin:0}"))
+         (a (closure.engine:find-box root "a"))
+         (b (closure.engine:find-box root "b"))
+         (r (closure.engine:find-box root "r"))
+         (s (closure.engine:find-box root "s"))
+         (q (closure.engine:find-box root "q"))
+         (css (closure.engine:find-box root "css")))
+    (check "typed lists" (and a b r s q css))
+    (check "type=a with start counts letters"
+           (and a b
+                (string= (closure.engine::box-marker a) "c.")
+                (string= (closure.engine::box-marker b) "d.")))
+    (check "type=I and value use roman numerals"
+           (and r s
+                (string= (closure.engine::box-marker r) "IV.")
+                (string= (closure.engine::box-marker s) "V.")))
+    (check "ul type=square uses a square marker"
+           (and q (eq (closure.engine::box-marker q) :square)))
+    (check "an author list-style-type wins over type"
+           (and css (string= (closure.engine::box-marker css) "1.")))))
+
 (defun test-nowrap-attr ()
   (let* ((html "<table id='wide' style='width:40px'><tr><td id='a' nowrap>one two three</td></tr></table>
                 <table id='wrap' style='width:40px'><tr><td id='b'>one two three</td></tr></table>
@@ -5856,6 +5883,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-list-type-attr)
   (test-nowrap-attr)
   (test-hr-size)
   (test-q)

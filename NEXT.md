@@ -520,6 +520,7 @@ from the Lisp engine without calling Node or another browser engine.
 - bordercolor paints the table and its cells in that color. An author border color wins.
 - hr size sets the rule's height, and noshade paints it as a solid gray bar.
 - nowrap keeps a cell on one line and widens the table. An author white-space wins.
+- type on a list or item sets the marker: letters, roman numerals, or a square. An author list style wins.
 
 ## Next
 

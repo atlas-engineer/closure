@@ -1100,7 +1100,9 @@
       ((:background-origin) (kw '("border-box" "padding-box" "content-box")))
       ((:object-fit) (kw '("fill" "contain" "cover" "none" "scale-down")))
       ((:list-style :list-style-type)
-       (kw '("disc" "circle" "square" "decimal" "none" "disclosure-closed" "disclosure-open")))
+       (kw '("disc" "circle" "square" "decimal" "none"
+             "lower-alpha" "upper-alpha" "lower-roman" "upper-roman"
+             "disclosure-closed" "disclosure-open")))
       ((:list-style-position) (kw '("outside" "inside")))
       ((:list-style-image)
        (cond ((and tokens (eq (tok-kind (car tokens)) :ident)
@@ -1926,7 +1928,30 @@
                                  :origin :author :order 0)))
         (dolist (pair (expand-declaration :white-space "nowrap"))
           (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))
+    ;; ol/ul/li type loses to an author list-style-type.
+    (when (and (not pseudo)
+               (member (dom-element-tag element) '("ol" "ul" "li") :test #'string-equal))
+      (let ((mapped (list-type-name (dom-attr element "type"))))
+        (when mapped
+          (let ((decl (make-css-decl :property :list-style-type :raw mapped
+                                     :origin :author :order 0)))
+            (dolist (pair (expand-declaration :list-style-type mapped))
+              (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
     found))
+
+(defun list-type-name (raw)
+  "The list-style-type name for an HTML type attribute, or nil."
+  (let ((s (string-trim '(#\space #\newline #\tab #\return) (or raw ""))))
+    (cond ((string= s "a") "lower-alpha")
+          ((string= s "A") "upper-alpha")
+          ((string= s "i") "lower-roman")
+          ((string= s "I") "upper-roman")
+          ((zerop (length s)) nil)
+          (t (let ((down (string-downcase s)))
+               (cond ((string= down "1") "decimal")
+                     ((string= down "disc") "disc")
+                     ((string= down "circle") "circle")
+                     ((string= down "square") "square")))))))
 
 (defun html-dimension-raw (raw)
   "An HTML width or height attribute, as a CSS length."

@@ -1250,27 +1250,68 @@ then adds one pixel: size/5 for sub, size/3 for super."
               (progn (write-char c o) (setf sp nil))))))))
 
 (defun list-item-number (el)
-  "1-based index of EL among li siblings, honoring an ol start attribute."
+  "1-based index of EL among li siblings. ol start sets the first number,
+and li value sets that item and the ones after it."
   (let ((parent (dom-node-parent el))
-        (start 1)
-        (n 0))
+        (start 1))
     (when (and (dom-element-p parent) (dom-attr parent "start"))
       (let ((v (ignore-errors (parse-integer (dom-attr parent "start") :junk-allowed t))))
         (when v (setf start v))))
-    (when (dom-element-p parent)
-      (dolist (c (dom-node-children parent))
-        (when (and (dom-element-p c) (string= (dom-element-tag c) "li"))
-          (incf n)
-          (when (eq c el)
-            (return-from list-item-number (+ start (1- n)))))))
-    start))
+    (if (dom-element-p parent)
+        (let ((counter (1- start)))
+          (dolist (c (dom-node-children parent) start)
+            (when (and (dom-element-p c) (string= (dom-element-tag c) "li"))
+              (let* ((raw (and (dom-attr c "value")
+                               (string-trim '(#\space #\newline #\tab #\return)
+                                            (dom-attr c "value"))))
+                     (v (and raw (plusp (length raw))
+                             (ignore-errors (parse-integer raw :junk-allowed t)))))
+                (setf counter (if v v (1+ counter))))
+              (when (eq c el) (return counter)))))
+        start)))
+
+(defun alphabetic-marker (n upcase)
+  "CSS alphabetic numbering. 1 is a, 26 is z, 27 is aa."
+  (if (< n 1)
+      (format nil "~D" n)
+      (let ((letters (if upcase "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                         "abcdefghijklmnopqrstuvwxyz"))
+            (chars nil)
+            (x n))
+        (loop while (> x 0) do
+          (decf x)
+          (push (char letters (mod x 26)) chars)
+          (setf x (floor x 26)))
+        (coerce chars 'string))))
+
+(defun roman-marker (n upcase)
+  "CSS additive roman numbering. Non-positive values stay decimal."
+  (if (< n 1)
+      (format nil "~D" n)
+      (let ((pairs '((1000 "m") (900 "cm") (500 "d") (400 "cd")
+                     (100 "c") (90 "xc") (50 "l") (40 "xl")
+                     (10 "x") (9 "ix") (5 "v") (4 "iv") (1 "i")))
+            (out ""))
+        (dolist (pair pairs)
+          (loop while (>= n (car pair)) do
+            (decf n (car pair))
+            (setf out (concatenate 'string out (cadr pair)))))
+        (if upcase (string-upcase out) out))))
 
 (defun list-item-marker (el style)
-  "A decimal item is its number. Other markers stay the list-style keyword."
+  "A numbered item is its marker text. Other markers stay the list-style keyword."
   (cond
     ((eq (computed-list-style style) :none) :none)
     ((eq (computed-list-style style) :decimal)
      (format nil "~D." (list-item-number el)))
+    ((eq (computed-list-style style) :lower-alpha)
+     (format nil "~A." (alphabetic-marker (list-item-number el) nil)))
+    ((eq (computed-list-style style) :upper-alpha)
+     (format nil "~A." (alphabetic-marker (list-item-number el) t)))
+    ((eq (computed-list-style style) :lower-roman)
+     (format nil "~A." (roman-marker (list-item-number el) nil)))
+    ((eq (computed-list-style style) :upper-roman)
+     (format nil "~A." (roman-marker (list-item-number el) t)))
     (t (computed-list-style style))))
 
 (defun inline-text (el)
