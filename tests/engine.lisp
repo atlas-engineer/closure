@@ -5424,6 +5424,54 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-body-presentational ()
+  (let* ((html "<body id='bd' text='red' link='#0a0' background='square.png' bgcolor='#eee'>
+                  <p id='p'>Hello <a id='a' href='#'>link</a><a id='n'>x</a></p>
+                  <p id='c' style='color:blue'>Blue</p>
+                </body>")
+         (root (closure.engine:layout-html html :width 300 :height 80
+                                          :stylesheet "body{margin:0} a.win{color:blue}"))
+         (styled (closure.engine:layout-html
+                  "<body text='red'><a id='w' class='win' href='#'>x</a></body>"
+                  :width 200 :height 40
+                  :stylesheet "body{margin:0} a.win{color:blue}"))
+         (body (closure.engine:find-box root "bd"))
+         (p (closure.engine:find-box root "p"))
+         (a (closure.engine:find-box root "a"))
+         (n (closure.engine:find-box root "n"))
+         (c (closure.engine:find-box root "c"))
+         (w (closure.engine:find-box styled "w"))
+         (bs (and body (closure.engine::box-style body)))
+         (ps (and p (closure.engine::box-style p)))
+         (as (and a (closure.engine::box-style a)))
+         (ns (and n (closure.engine::box-style n)))
+         (cs (and c (closure.engine::box-style c)))
+         (ws (and w (closure.engine::box-style w))))
+    (check "body presentational boxes" (and body p a n c w))
+    (check "text sets the body color and it inherits"
+           (and ps
+                (~ (* (first (closure.engine::computed-color ps)) 255d0) 255d0 2d0)
+                (~ (* (second (closure.engine::computed-color ps)) 255d0) 0d0 2d0)))
+    (check "link colors an anchor with an href"
+           (and as
+                (~ (* (second (closure.engine::computed-color as)) 255d0) 170d0 2d0)
+                (< (* (first (closure.engine::computed-color as)) 255d0) 20d0)))
+    (check "an anchor without an href keeps the text color"
+           (and ns
+                (~ (* (first (closure.engine::computed-color ns)) 255d0) 255d0 2d0)))
+    (check "background tiles the named image"
+           (and bs
+                (search "square.png"
+                        (or (closure.engine::computed-background-image bs) "")
+                        :test #'char-equal)))
+    (check "bgcolor still paints the body"
+           (and bs
+                (~ (* (first (closure.engine::computed-background bs)) 255d0) 238d0 2d0)))
+    (check "an author color wins over text and link"
+           (and cs ws
+                (> (* (third (closure.engine::computed-color cs)) 255d0) 200d0)
+                (> (* (third (closure.engine::computed-color ws)) 255d0) 200d0)))))
+
 (defun test-disclosure-open ()
   (let ((path "/tmp/closure-engine-disclosure-open.png"))
     (closure.engine:render-html
@@ -6447,6 +6495,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-body-presentational)
   (test-disclosure-open)
   (test-dotted-underline)
   (test-optgroup-list)

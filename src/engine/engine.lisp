@@ -54,8 +54,7 @@ script element after style and layout. Left unset until that engine exists.")
    rp { display: none; }
    sub { vertical-align: sub; font-size: smaller; }
    sup { vertical-align: super; font-size: smaller; }
-   a { color: #0000ee; }
-   a:link { text-decoration: underline; }
+   a:link { color: #0000ee; text-decoration: underline; }
    code, kbd, samp, tt, pre, listing, xmp, plaintext { font-family: monospace; font-size: 13px; }
    pre, listing, xmp, plaintext { display: block; white-space: pre; }
    abbr[title], acronym[title] { text-decoration: underline dotted; }

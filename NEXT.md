@@ -540,6 +540,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A list select shows an optgroup label in bold, indents its options, and grays a disabled group.
 - A dotted underline is Chromium's 2px squares with a 2px gap.
 - An open disclosure triangle reaches Chromium's right edge, and its tip sits on Chromium's row.
+- body text, link, and background set the color and tiled image Chromium uses. An author rule wins.
 
 ## Next
 
