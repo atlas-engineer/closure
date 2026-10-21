@@ -5424,6 +5424,53 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-fieldset-disabled ()
+  (let* ((html "<fieldset disabled>
+                  <legend><button id='lb'>OK</button></legend>
+                  <button id='b'>OK</button>
+                  <input id='i' value='Hi'>
+                  <input id='a' value='Hi' style='color:#c00'>
+                </fieldset>
+                <fieldset><input id='n' value='Hi'></fieldset>")
+         (root (closure.engine:layout-html html :width 400 :height 160
+                                          :stylesheet "body{margin:0}"))
+         (lb (closure.engine:find-box root "lb"))
+         (b (closure.engine:find-box root "b"))
+         (i (closure.engine:find-box root "i"))
+         (a (closure.engine:find-box root "a"))
+         (n (closure.engine:find-box root "n")))
+    (check "fieldset disabled boxes" (and lb b i a n))
+    (check "a control in a disabled fieldset fades like a disabled field"
+           (and i
+                (~ (* (first (closure.engine::computed-color
+                              (closure.engine::box-style i)))
+                      255d0)
+                   84d0 2d0)
+                (< (fourth (closure.engine::computed-background
+                            (closure.engine::box-style i)))
+                   0.5d0)))
+    (check "a button in a disabled fieldset fades"
+           (and b
+                (< (fourth (closure.engine::computed-color
+                            (closure.engine::box-style b)))
+                   0.5d0)))
+    (check "a button in the legend stays enabled"
+           (and lb
+                (> (fourth (closure.engine::computed-color
+                            (closure.engine::box-style lb)))
+                   0.9d0)))
+    (check "a field outside the disabled fieldset stays dark"
+           (and n
+                (< (* (first (closure.engine::computed-color
+                              (closure.engine::box-style n)))
+                      255d0)
+                   20d0)))
+    (check "an author color wins inside a disabled fieldset"
+           (and a
+                (> (first (closure.engine::computed-color
+                           (closure.engine::box-style a)))
+                   0.7d0)))))
+
 (defun test-progress-indeterminate ()
   (let* ((html "<progress id='i'></progress>
                 <progress id='z' value='0'></progress>
@@ -6321,6 +6368,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-fieldset-disabled)
   (test-progress-indeterminate)
   (test-canvas-size)
   (test-meter-color)

@@ -536,6 +536,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A meter is green in the optimum region, yellow beside it, and red on the far side.
 - width and height on a canvas or video set the size Chromium uses. An author size wins.
 - An indeterminate progress paints a short blue bar. A value of zero stays empty.
+- A disabled fieldset fades its controls. A control in the first legend stays enabled.
 
 ## Next
 
