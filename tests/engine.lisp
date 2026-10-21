@@ -3103,6 +3103,16 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
     (multiple-value-bind (r g b) (png-rgb path 20 8)
       (declare (ignore g))
       (check "the range fill is blue" (and (< r 40) (> b 200))))
+    (multiple-value-bind (r g b) (png-rgb path 20 4)
+      (check "the range fill has a fringe"
+             (and (< (abs (- r 59)) 30)
+                  (< (abs (- g 117)) 30)
+                  (< (abs (- b 186)) 30))))
+    (multiple-value-bind (r g b) (png-rgb path 110 4)
+      (check "the range track has a gray fringe"
+             (and (< (abs (- r 178)) 30)
+                  (< (abs (- g 178)) 30)
+                  (< (abs (- b 178)) 30))))
     (multiple-value-bind (r g b) (png-rgb path 64 2)
       (declare (ignore g))
       (check "the range thumb is a blue disc" (and (< r 40) (> b 200))))
