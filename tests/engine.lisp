@@ -4127,6 +4127,28 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
            (and para submit
                 (~ (- (closure.engine:box-y submit) (closure.engine:box-y para)) 1d0 0.2d0)))))
 
+(defun test-disabled-check ()
+  (let ((path "/tmp/closure-engine-disabled-check.png"))
+    (closure.engine:render-html
+     "<input type='checkbox' checked disabled style='margin:0;display:block'>
+      <input type='checkbox' disabled style='margin:0;display:block'>
+      <input type='checkbox' checked style='margin:0;display:block'>"
+     :width 40 :height 60
+     :stylesheet "body{margin:0}"
+     :output path)
+    (multiple-value-bind (r g b) (png-rgb path 2 2)
+      (check "a disabled checked box is gray"
+             (and (> r 180) (< r 230)
+                  (< (abs (- r g)) 8)
+                  (< (abs (- r b)) 8))))
+    (multiple-value-bind (r g b) (png-rgb path 6 19)
+      (check "a disabled unchecked box is light"
+             (and (> r 230) (> g 230) (> b 230))))
+    (multiple-value-bind (r g b) (png-rgb path 6 28)
+      (declare (ignore g))
+      (check "an enabled checked box stays blue"
+             (and (< r 40) (> b 200))))))
+
 (defun test-checkbox-round ()
   (let ((path "/tmp/closure-engine-checkbox.png"))
     (closure.engine:render-html
@@ -8263,6 +8285,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-font-marquee)
   (test-replaced-widgets)
   (test-check-line)
+  (test-disabled-check)
   (test-checkbox-round)
   (test-radio-shape)
   (test-check-paint)
