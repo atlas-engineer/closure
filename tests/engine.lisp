@@ -5424,6 +5424,32 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-img-align ()
+  (let* ((root (closure.engine:layout-html
+                "<p id='p'>X<img id='top' align='top' src='square.png' width='20' height='20'><img id='mid' align='middle' src='square.png' width='20' height='20'><img id='abs' align='absmiddle' src='square.png' width='20' height='20'><img id='bot' align='absbottom' src='square.png' width='20' height='20'><img id='base' align='bottom' src='square.png' width='20' height='20'><img id='own' align='middle' style='vertical-align:top' src='square.png' width='20' height='20'></p>"
+                :width 500 :height 80
+                :stylesheet "body{margin:0} p{margin:0}"))
+         (top (closure.engine:find-box root "top"))
+         (mid (closure.engine:find-box root "mid"))
+         (abs (closure.engine:find-box root "abs"))
+         (bot (closure.engine:find-box root "bot"))
+         (base (closure.engine:find-box root "base"))
+         (own (closure.engine:find-box root "own")))
+    (check "image align boxes" (and top mid abs bot base own))
+    (check "align=top sits at the top of the line"
+           (and top (~ (closure.engine:box-y top) 0d0 1d0)))
+    (check "align=middle centers the image on the baseline"
+           (and mid abs top
+                (> (closure.engine:box-y mid) (closure.engine:box-y top))
+                (~ (- (closure.engine:box-y mid) (closure.engine:box-y abs)) 4d0 1d0)))
+    (check "align=absmiddle sits higher than align=middle"
+           (and abs mid (< (closure.engine:box-y abs) (closure.engine:box-y mid))))
+    (check "align=absbottom sits lower than align=bottom"
+           (and bot base (> (+ (closure.engine:box-y bot) (closure.engine:box-height bot))
+                            (+ (closure.engine:box-y base) (closure.engine:box-height base)))))
+    (check "an author vertical-align wins over align"
+           (and own (~ (closure.engine:box-y own) (closure.engine:box-y top) 1d0)))))
+
 (defun test-frameborder ()
   (let* ((root (closure.engine:layout-html
                 "<iframe id='z' frameborder='0'></iframe>
@@ -6627,6 +6653,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-img-align)
   (test-frameborder)
   (test-align-hr-legend)
   (test-body-margin)
