@@ -1939,6 +1939,12 @@
                        :test #'string-equal))
       (dolist (name '("width" "height"))
         (let ((raw (html-dimension-raw (dom-attr element name))))
+          ;; A canvas width or height is a pixel count. 50% is 50 pixels.
+          (when (and raw
+                     (string-equal (dom-element-tag element) "canvas")
+                     (plusp (length raw))
+                     (char= (char raw (1- (length raw))) #\%))
+            (setf raw (html-dimension-raw (subseq raw 0 (1- (length raw))))))
           (when raw
             (let ((decl (make-css-decl :property (intern (string-upcase name) :keyword)
                                        :raw raw :origin :author :order 0)))

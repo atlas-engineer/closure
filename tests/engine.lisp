@@ -6363,6 +6363,27 @@ mono two</pre>")
            (or (null ds)
                (null (closure.engine::computed-background ds))))))
 
+(defun test-canvas-percent ()
+  (let* ((root (closure.engine:layout-html
+                "<canvas id='c' width='50%' height='50%'></canvas>
+                 <canvas id='n' width='40' height='20'></canvas>
+                 <canvas id='own' width='50%' height='50%' style='width:80px;height:12px'></canvas>"
+                :width 200 :height 80
+                :stylesheet "body{margin:0}"))
+         (c (closure.engine:find-box root "c"))
+         (n (closure.engine:find-box root "n"))
+         (own (closure.engine:find-box root "own")))
+    (check "canvas size boxes" (and c n own))
+    (check "a canvas percentage is a pixel count"
+           (and (~ (closure.engine:box-width c) 50d0)
+                (~ (closure.engine:box-height c) 50d0)))
+    (check "a canvas pixel size stays in pixels"
+           (and (~ (closure.engine:box-width n) 40d0)
+                (~ (closure.engine:box-height n) 20d0)))
+    (check "an author size wins over a canvas percentage"
+           (and (~ (closure.engine:box-width own) 80d0)
+                (~ (closure.engine:box-height own) 12d0)))))
+
 (defun test-img-percent-height ()
   (let* ((png "file:///home/jmercouris/Source/closure/screenshots/square.png")
          (root (closure.engine:layout-html
@@ -8152,6 +8173,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-canvas-percent)
   (test-img-percent-height)
   (test-img-percent)
   (test-cell-percent)
