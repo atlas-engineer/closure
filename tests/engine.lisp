@@ -3128,7 +3128,10 @@ two</xmp><p id='n' style='width:40px'><nobr id='nb'>nobr text</nobr></p>"
              (and (> r 250) (> g 250) (> b 250))))
     (multiple-value-bind (r g b) (png-rgb path 4 8)
       (check "the fieldset border crosses the legend"
-             (and (< r 180) (< g 180) (< b 180))))
+             (and (< r 180) (< g 180) (< b 180) (> r 140))))
+    (multiple-value-bind (r g b) (png-rgb path 4 9)
+      (check "the inner fieldset edge is the border color"
+             (and (> r 220) (> g 220) (> b 220) (< r 250))))
     (multiple-value-bind (r g b) (png-rgb path 17 8)
       (check "the legend leaves a gap in the top border"
              (and (> r 250) (> g 250) (> b 250))))

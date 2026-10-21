@@ -468,6 +468,7 @@ from the Lisp engine without calling Node or another browser engine.
 - A fieldset border crosses the middle of the legend and leaves a gap behind it.
 - That border is not painted again across the fieldset's text line.
 - File, range, color, and time share Chromium's baselines. The line is 28.5px.
+- A fieldset groove is a dark pixel beside the border color, not one dark stroke.
 
 ## Next
 
