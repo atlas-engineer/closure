@@ -5424,6 +5424,32 @@ mono two</pre>")
                (and (not (ink (rgb 100 (1- y))))
                     (not (ink (rgb 100 (+ y 2))))))))))
 
+(defun test-nowrap-attr ()
+  (let* ((html "<table id='wide' style='width:40px'><tr><td id='a' nowrap>one two three</td></tr></table>
+                <table id='wrap' style='width:40px'><tr><td id='b'>one two three</td></tr></table>
+                <table id='css' style='width:40px'><tr><td id='c' nowrap style='white-space:normal'>one two three</td></tr></table>")
+         (root (closure.engine:layout-html html :width 200
+                                          :stylesheet "body{margin:0}"))
+         (wide (closure.engine:find-box root "wide"))
+         (a (closure.engine:find-box root "a"))
+         (wrap (closure.engine:find-box root "wrap"))
+         (b (closure.engine:find-box root "b"))
+         (css (closure.engine:find-box root "css"))
+         (c (closure.engine:find-box root "c")))
+    (check "nowrap cells" (and wide a wrap b css c))
+    (check "nowrap keeps the cell on one line and widens the table"
+           (and wide a wrap b
+                (> (closure.engine:box-width wide) 70d0)
+                (> (closure.engine:box-width wide) (+ (closure.engine:box-width wrap) 20d0))
+                (< (closure.engine:box-height a) 30d0)
+                (> (closure.engine:box-height b) 40d0)))
+    (check "an author white-space wins over nowrap"
+           (and css c
+                (< (closure.engine:box-width css) 60d0)
+                (> (closure.engine:box-height c) 40d0)
+                (eq (closure.engine::computed-white-space (closure.engine::box-style c))
+                    :normal)))))
+
 (defun test-hr-size ()
   (let* ((html "<hr id='s' size='8'>
                 <hr id='n' noshade size='6' width='80'>
@@ -5830,6 +5856,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-line-through)
   (test-list-markers)
   (test-hr)
+  (test-nowrap-attr)
   (test-hr-size)
   (test-q)
   (test-blockquote)

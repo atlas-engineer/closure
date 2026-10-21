@@ -1977,6 +1977,22 @@ wraps a line stretch to the available width, so their own width is ignored."
              (declare (ignore pt pb))
              (+ (line-items-width box) bl br pl pr)))))))
 
+(defun cell-nowrap-width (cell)
+  "Border box of CELL on one line. A specified width does not shrink it."
+  (let* ((style (dom-element-style cell))
+         (saved (computed-width style)))
+    (setf (computed-width style) :auto)
+    (unwind-protect
+         (let ((box (layout-element cell 0d0 0d0 100000d0 nil nil :shrink t)))
+           (if (or (null box) (null style))
+               0d0
+               (multiple-value-bind (bt br bb bl) (border4 style)
+                 (declare (ignore bt bb))
+                 (multiple-value-bind (pt pr pb pl) (pad4 style 0d0)
+                   (declare (ignore pt pb))
+                   (+ (line-items-width box) bl br pl pr)))))
+      (setf (computed-width style) saved))))
+
 (defun element-min-content-width (el)
   "Width of the longest unbreakable line. Used so a caption can widen a table."
   (let* ((style (dom-element-style el))
@@ -2385,6 +2401,25 @@ supplies the width, defaulting to 1px. An author border is left alone."
                                                (max 0 (1- ncols)))
                                             0d0))))
                       bw (+ cw bl br pl pr)))))
+            ;; nowrap content is wider than a specified column, so the
+            ;; table grows the way Chromium's automatic layout does.
+            (let ((grow 0d0))
+              (dolist (row rows)
+                (let ((col 0))
+                  (dolist (cell (row-cells row))
+                    (let ((st (and (dom-element-p cell) (dom-element-style cell))))
+                      (when (and st (eq (computed-white-space st) :nowrap)
+                                 (= (cell-colspan cell) 1)
+                                 (< col ncols))
+                        (let* ((need (cell-nowrap-width cell))
+                               (have (aref cols col)))
+                          (when (> need (+ have 0.5d0))
+                            (incf grow (- need have))
+                            (setf (aref cols col) need)))))
+                    (incf col (cell-colspan cell)))))
+              (when (> grow 0d0)
+                (incf cw grow)
+                (incf bw grow)))
             (let* ((cap-bottom (and cap-el
                                   (dom-element-style cap-el)
                                   (eq (computed-caption-side (dom-element-style cap-el)) :bottom)))

@@ -1918,6 +1918,14 @@
                                       :origin :author :order 0)))
             (dolist (pair (expand-declaration :height (css-decl-raw decl)))
               (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))))
+    ;; nowrap on a cell loses to an author white-space.
+    (when (and (not pseudo)
+               (member (dom-element-tag element) '("td" "th") :test #'string-equal)
+               (dom-attr element "nowrap"))
+      (let ((decl (make-css-decl :property :white-space :raw "nowrap"
+                                 :origin :author :order 0)))
+        (dolist (pair (expand-declaration :white-space "nowrap"))
+          (push (list (car pair) (cdr pair) decl '(0 0 0 0)) found))))
     found))
 
 (defun html-dimension-raw (raw)
