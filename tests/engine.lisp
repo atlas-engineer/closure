@@ -1423,6 +1423,28 @@
           (check "underline under the nested word stays the link color"
                  (loop for y from y0 to (+ y0 4) thereis (and (< y 40) (blue y)))))))))
 
+(defun test-image-one-axis ()
+  (let* ((png "/tmp/closure-one-axis.png")
+         (html (format nil "<img id='badw' src='/tmp/closure-does-not-exist.png' width='40' alt='Hello'>
+                         <img id='badh' src='/tmp/closure-does-not-exist.png' height='20' alt='Hello'>
+                         <img id='ok' src='~A' width='40'>" png)))
+    (write-solid-png png 20 10 0.2d0 0.4d0 0.8d0)
+    (let* ((root (closure.engine:layout-html html :width 200 :height 40
+                                            :stylesheet "body{margin:0}"))
+           (badw (closure.engine:find-box root "badw"))
+           (badh (closure.engine:find-box root "badh"))
+           (ok (closure.engine:find-box root "ok")))
+      (check "one-axis image boxes" (and badw badh ok))
+      (check "a broken image with only a width has no height"
+             (and badw (~ (closure.engine:box-width badw) 40d0)
+                  (< (closure.engine:box-height badw) 1d0)))
+      (check "a broken image with only a height has no width"
+             (and badh (~ (closure.engine:box-height badh) 20d0)
+                  (< (closure.engine:box-width badh) 1d0)))
+      (check "a loaded image keeps its ratio"
+             (and ok (~ (closure.engine:box-width ok) 40d0)
+                  (~ (closure.engine:box-height ok) 20d0))))))
+
 (defun test-image-alt ()
   (let* ((html "<img id='gone' src='/tmp/closure-does-not-exist.png' alt='missing'><img id='alt' alt='missing'>")
          (out "/tmp/closure-engine-alt.png")
@@ -7303,6 +7325,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-link-underline-nested)
   (test-inline-image-baseline)
   (test-inline-image-middle)
+  (test-image-one-axis)
   (test-image-alt)
   (test-image-alt-clip)
   (test-svg-text)
