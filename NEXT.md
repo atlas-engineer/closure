@@ -557,6 +557,7 @@ from the Lisp engine without calling Node or another browser engine.
 - visibility:collapse on a row group removes those rows. The gap between groups stays.
 - A short ruby annotation stretches to the base. The glyphs stay centered.
 - A table cell centers its text. valign and an author vertical-align still win.
+- A right-to-left bdo reverses its characters. A left-to-right bdo does not.
 
 ## Next
 

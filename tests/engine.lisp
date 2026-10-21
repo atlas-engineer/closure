@@ -2728,6 +2728,47 @@ b</div>"
                 (~ (closure.engine:box-height rb) 17d0)
                 (~ (closure.engine:box-x rb) (closure.engine:box-x ruby) 0.2d0)))))
 
+(defun test-bdo-rtl ()
+  (labels ((texts (root id)
+             (let ((found nil))
+               (labels ((walk (b)
+                          (when b
+                            (when (and (eq (closure.engine::box-kind b) :text)
+                                       (closure.engine::box-element b)
+                                       (string= (or (closure.engine::box-id b)
+                                                    (closure.engine::dom-element-id
+                                                     (closure.engine::box-element b)))
+                                               id))
+                              (push b found))
+                            (dolist (c (closure.engine::box-children b)) (walk c)))))
+                 (walk root))
+               (nreverse found))))
+    (let* ((root (closure.engine:layout-html
+                  "<p>X<bdo id='b' dir='rtl'>AB</bdo>Y</p>
+                   <p>X<bdo id='c' dir='rtl'><b id='bold'>A</b>B</bdo>Y</p>
+                   <p><bdo id='e'>AB</bdo></p>
+                   <p dir='rtl' style='width:400px'><bdo id='d'>AB</bdo></p>"
+                  :width 400 :height 120
+                  :stylesheet "body{margin:0} p{margin:0}"))
+           (plain (texts root "b"))
+           (bold (closure.engine:find-box root "bold"))
+           (rest (texts root "c"))
+           (kept (texts root "e"))
+           (inherited (texts root "d")))
+      (check "bdo boxes" (and plain bold rest kept inherited))
+      (check "a rtl bdo reverses its characters"
+             (and plain (string= (closure.engine::box-text (first plain)) "BA")))
+      (check "a ltr bdo keeps source order"
+             (and kept (string= (closure.engine::box-text (first kept)) "AB")))
+      (check "a bold letter stays bold and follows the reversed text"
+             (and bold rest
+                  (eq (closure.engine::computed-font-weight
+                       (closure.engine::box-style bold))
+                      :bold)
+                  (> (closure.engine:box-x bold)
+                     (closure.engine:box-x (first rest)))
+                  (> (closure.engine:box-x (first inherited)) 200d0))))))
+
 (defun test-ruby-annotation-box ()
   (let* ((root (closure.engine:layout-html
                 "<p>X<ruby id='r'>WWW<rt id='t' style='background:#c00'>note</rt></ruby>Y</p>"
@@ -7027,6 +7068,7 @@ HTTPServer(('127.0.0.1', 18766), H).serve_forever()
   (test-aspect-ratio-image-height)
   (test-wbr)
   (test-address)
+  (test-bdo-rtl)
   (test-ruby-annotation-box)
   (test-ruby-rtc)
   (test-ruby-rb)
